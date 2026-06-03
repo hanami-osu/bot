@@ -1,30 +1,31 @@
 {
-  "version": "1.0.0",
-  "private": true,
-  "name": "hanamibot",
-  "type": "module",
-  "main": "src/index.ts",
-  "scripts": {
-    "dev": "APP_ENV=development bun src/index.ts",
-    "start": "APP_ENV=production bun src/index.ts",
-    "check": "tsc --noEmit && eslint",
-    "format": "prettier --write .",
-    "test": "bun test"
-  },
-  "dependencies": {
-    "@lilybird/handlers": "^0.5.0",
-    "@lilybird/transformers": "^0.4.1",
-    "lilybird": "^0.7.1",
-    "osu-api-extended": "^3.1.12",
-    "redis": "^5.7.0",
-    "rosu-pp-js": "3.1.0"
-  },
-  "devDependencies": {
-    "@eslint/js": "^9.32.0",
-    "@types/bun": "latest",
-    "eslint": "9.32.0",
-    "prettier": "^3.6.2",
-    "typescript": "^6.0.3",
-    "typescript-eslint": "^8.38.0"
-  }
+    "version": "1.0.0",
+    "private": true,
+    "name": "hanamibot",
+    "type": "module",
+    "main": "src/index.ts",
+    "scripts": {
+        "dev": "DEV=true bun src/index.ts",
+        "dev:no-app": "DEV=true bun src/index.ts --no-application",
+        "start": "DEV=false bun src/index.ts",
+        "check": "tsc --noEmit && eslint",
+        "format": "prettier --write .",
+        "test": "bun test"
+    },
+    "dependencies": {
+        "@lilybird/handlers": "^0.5.0",
+        "@lilybird/transformers": "^0.4.1",
+        "lilybird": "^0.7.1",
+        "osu-api-extended": "^3.1.12",
+        "redis": "^5.7.0",
+        "rosu-pp-js": "3.1.0"
+    },
+    "devDependencies": {
+        "@eslint/js": "^9.32.0",
+        "@types/bun": "latest",
+        "eslint": "9.32.0",
+        "prettier": "^3.6.2",
+        "typescript": "^6.0.3",
+        "typescript-eslint": "^8.38.0"
+    }
 }

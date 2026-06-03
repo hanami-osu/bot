@@ -9,6 +9,7 @@ declare module "bun" {
         REDIS_URL: string;
         ERROR_CHANNEL_ID: string;
         DEV_GUILD_ID: string;
+        DEV: string;
     }
 }
 

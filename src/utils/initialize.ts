@@ -58,8 +58,15 @@ export async function loadCommands(lilyClient: Client): Promise<void> {
         }
     }
 
+    const noApplication = process.argv.includes("--no-application");
+
+    if (noApplication) {
+        logger.info("Skipping application command registration (--no-application flag set).");
+        return;
+    }
+
     // overwrite application commands
-    if (process.env.DEV) {
+    if (process.env.DEV === "true") {
         logger.info("Processing commands as Development.");
         const guildCommandIds = await lilyClient.rest.bulkOverwriteGuildApplicationCommand(lilyClient.user.id, process.env.DEV_GUILD_ID, applicationCommands);
 
