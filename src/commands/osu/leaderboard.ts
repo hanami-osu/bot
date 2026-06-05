@@ -95,12 +95,28 @@ async function getEmbeds(beatmapId: string | undefined, authorId: string, mods: 
         };
     }
 
-    const scores = await getBeatmapTopScores({
+    const scoresRequest = await safeParse(getBeatmapTopScores({
         beatmapId: Number(resolvedBeatmapId),
         mode: beatmap.mode as GameMode,
         isGlobal,
         mods: mods.name ? ((typeof mods.name === "string" ? mods.name : mods.name.acronym).match(/.{1,2}/g) as Array<string>) : undefined,
-    });
+    }));
+
+    if (!scoresRequest.success) {
+        return {
+            reply: {
+                embeds: [
+                    {
+                        type: EmbedType.Rich,
+                        title: "Uh oh! :x:",
+                        description: "Failed to fetch top scores! If you were using mods or a country leaderboard, maybe my osu! supporter ran out? Support me at https://yorunoken.com#support :3",
+                    },
+                ],
+            }
+        };
+    }
+
+    const scores = scoresRequest.data;
 
     if (scores.length === 0) {
         return {
