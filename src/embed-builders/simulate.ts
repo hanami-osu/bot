@@ -26,7 +26,7 @@ export async function simulateBuilder({ beatmapId, mods, options }: SimulateBuil
 
     const { beatmapset: mapset, mode, version } = map;
 
-    const mapData = getEntry(Tables.MAP, beatmapId)?.data ?? (await downloadBeatmap(beatmapId)).contents;
+    const mapData = (await getEntry(Tables.MAP, beatmapId))?.data ?? (await downloadBeatmap(beatmapId)).contents;
 
     const performance = await getPerformanceResults({
         beatmapId,

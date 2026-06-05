@@ -10,11 +10,11 @@ export default {
     run: async (guild) => {
         // Remove guild from database if it's unavailable.
         if (!("name" in guild)) {
-            removeEntry(Tables.GUILD, guild.id);
+            (await removeEntry(Tables.GUILD, guild.id));
             return;
         }
 
-        const document = getEntry(Tables.GUILD, guild.id);
+        const document = (await getEntry(Tables.GUILD, guild.id));
 
         const data: Array<{ key: keyof Guild; value: string | number | null }> = [
             { key: "name", value: guild.name },
@@ -24,11 +24,11 @@ export default {
 
         if (document === null) data.push({ key: "prefixes", value: null });
 
-        insertData({
-            table: Tables.GUILD,
-            id: guild.id,
-            data,
-        });
+        (await insertData({
+                    table: Tables.GUILD,
+                    id: guild.id,
+                    data,
+                }));
 
         if (document !== null && document.prefixes !== null) {
             try {

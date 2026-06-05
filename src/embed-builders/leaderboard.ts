@@ -25,7 +25,7 @@ export async function leaderboardBuilder({ scores, beatmap, page = 0 }: Leaderbo
 async function getPlays(plays: Array<LeaderboardScore>, beatmap: Beatmap, page: number): Promise<Array<Embed.Structure>> {
     const beatmapId = beatmap.id;
     const mode = beatmap.mode as Mode;
-    const mapData = getEntry(Tables.MAP, beatmapId)?.data ?? (await downloadBeatmap(beatmapId)).contents;
+    const mapData = (await getEntry(Tables.MAP, beatmapId))?.data ?? (await downloadBeatmap(beatmapId)).contents;
 
     const pageStart = page * 5;
     const pageEnd = pageStart + 5;

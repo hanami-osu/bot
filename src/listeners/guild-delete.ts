@@ -7,7 +7,7 @@ import { guildPrefixesCache } from "@utils/cache";
 export default {
     event: "guildDelete",
     run: async (_, guild) => {
-        removeEntry(Tables.GUILD, guild.id);
+        (await removeEntry(Tables.GUILD, guild.id));
         try {
             guildPrefixesCache.delete(guild.id);
         } catch (error) {

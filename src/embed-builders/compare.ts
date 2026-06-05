@@ -44,7 +44,7 @@ export async function compareBuilder({ beatmap, plays, user, mode, mods, page = 
 
 async function getMultiplePlays({ plays, profile, beatmap, mode, page }: { plays: Array<Score | ScoreV2>; profile: ProfileInfo; beatmap: Beatmap; mode: Mode; page: number }): Promise<Array<Embed.Structure>> {
     const beatmapId = beatmap.id;
-    const mapData = getEntry(Tables.MAP, beatmapId)?.data ?? (await downloadBeatmap(beatmapId)).contents;
+    const mapData = (await getEntry(Tables.MAP, beatmapId))?.data ?? (await downloadBeatmap(beatmapId)).contents;
 
     const pageStart = page * 5;
     const pageEnd = pageStart + 5;

@@ -127,9 +127,9 @@ async function run(message: Message): Promise<void> {
         });
     } finally {
         const id = `${data.name}:prefix`;
-        const docs = getEntry(Tables.COMMAND, id);
-        if (docs === null) insertData({ table: Tables.COMMAND, data: [{ key: "count", value: 1 }], id });
-        else insertData({ table: Tables.COMMAND, data: [{ key: "count", value: Number(docs.count ?? 0) + 1 }], id: docs.id });
+        const docs = (await getEntry(Tables.COMMAND, id));
+        if (docs === null) (await insertData({ table: Tables.COMMAND, data: [{ key: "count", value: 1 }], id }));
+        else (await insertData({ table: Tables.COMMAND, data: [{ key: "count", value: Number(docs.count ?? 0) + 1 }], id: docs.id }));
     }
 
     // set cooldown

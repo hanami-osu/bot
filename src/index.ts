@@ -11,6 +11,7 @@ await initializeOsuApi();
 await initializeRedis();
 
 process.on("unhandledRejection", async (error: Error) => {
+    console.error("Unhandled promise rejection stack:", error);
     await logger.fatal("Unhandled promise rejection", error);
 });
 process.on("uncaughtException", async (error: Error) => {
@@ -32,7 +33,7 @@ async function gracefulShutdown(signal: string) {
 process.on("SIGINT", () => gracefulShutdown("SIGINT"));
 process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
 
-initializeDatabase();
+(await initializeDatabase());
 
 const listeners = await createHandler({
     dirs: {

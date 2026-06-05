@@ -3,12 +3,12 @@ import { getRowCount, getRowSum } from "@utils/database";
 import { commandsCache, commandAliasesCache } from "@utils/cache";
 import type { Embed } from "lilybird";
 
-export function helpBuilder(commandName?: string, preferSlash?: boolean): Array<Embed.Structure> {
+export async function helpBuilder(commandName?: string, preferSlash?: boolean): Promise<Array<Embed.Structure>> {
     if (commandName) {
         return displayCommandInfo(commandName, preferSlash);
     }
 
-    return displayAllCommands();
+    return await displayAllCommands();
 }
 
 function displayCommandInfo(name: string, preferSlash?: boolean): Array<Embed.Structure> {
@@ -93,11 +93,11 @@ function displayCommandInfo(name: string, preferSlash?: boolean): Array<Embed.St
     ];
 }
 
-function displayAllCommands(): Array<Embed.Structure> {
-    const joinedServers = getRowCount(Tables.GUILD);
-    const linkedUsers = getRowCount(Tables.USER);
-    const downloadedMaps = getRowCount(Tables.MAP);
-    const usedCommands = getRowSum(Tables.COMMAND);
+async function displayAllCommands(): Promise<Array<Embed.Structure>> {
+    const joinedServers = (await getRowCount(Tables.GUILD));
+    const linkedUsers = (await getRowCount(Tables.USER));
+    const downloadedMaps = (await getRowCount(Tables.MAP));
+    const usedCommands = (await getRowSum(Tables.COMMAND));
 
     const allCommands = Array.from(commandsCache.keys()).sort();
 
