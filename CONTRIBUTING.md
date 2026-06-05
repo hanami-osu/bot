@@ -11,7 +11,7 @@ To start contributing, you need to install [Bun](https://bun.sh/)
     - `git clone https://github.com/hanami-osu/bot`
 
 3. Navigate inside the directory and install the dev, and normal dependencies.
-    - `cd hanami && bun install`
+    - `cd bot && bun install`
 
 4. Install ESLint and Prettier as an extension in your IDE to help with types and formatting.
 
