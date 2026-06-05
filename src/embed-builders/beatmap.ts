@@ -24,7 +24,7 @@ export async function beatmapBuilder({ beatmapId, mods }: BeatmapBuilderOptions)
 
     const { beatmapset: mapset, mode, version } = map;
 
-    const mapData = getEntry(Tables.MAP, beatmapId)?.data ?? (await downloadBeatmap(beatmapId)).contents;
+    const mapData = (await getEntry(Tables.MAP, beatmapId))?.data ?? (await downloadBeatmap(beatmapId)).contents;
 
     const performancesAsync = [];
     const accuracyList = [98, 97, 95];

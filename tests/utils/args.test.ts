@@ -11,100 +11,100 @@ describe("args parser", () => {
         const testDiscordId = "123456789012345678";
         const testBanchoId = "yorunoken";
 
-        test("parses map link correctly", () => {
+        test("parses map link correctly", async () => {
             const message = { author: { id: testDiscordId } } as any;
             const args = ["https://osu.ppy.sh/b/72727"];
             
-            const result = parseOsuArguments(message, args, Mode.OSU);
+            const result = (await parseOsuArguments(message, args, Mode.OSU));
             expect(result.user.beatmapId).toBe("72727");
         });
 
-        test("parses map link with beatmapset correctly", () => {
+        test("parses map link with beatmapset correctly", async () => {
             const message = { author: { id: testDiscordId } } as any;
             const args = ["https://osu.ppy.sh/beatmapsets/123456#osu/72727"];
             
-            const result = parseOsuArguments(message, args, Mode.OSU);
+            const result = (await parseOsuArguments(message, args, Mode.OSU));
             expect(result.user.beatmapId).toBe("72727");
         });
 
-        test("parses explicit user string correctly", () => {
+        test("parses explicit user string correctly", async () => {
             const message = { author: { id: "0000" } } as any; // Unregistered user
             const args = ["peppy"];
             
-            const result = parseOsuArguments(message, args, Mode.OSU);
+            const result = (await parseOsuArguments(message, args, Mode.OSU));
             expect(result.user.type).toBe(UserType.SUCCESS);
             if (result.user.type === UserType.SUCCESS) {
                 expect(result.user.banchoId).toBe("peppy");
             }
         });
 
-        test("parses discord mention", () => {
+        test("parses discord mention", async () => {
             // First we need to temporarily insert the user in the real db to test it without mocking
-            insertData({ table: Tables.USER, id: testDiscordId, data: [{ key: "banchoId", value: testBanchoId }] });
+            (await insertData({ table: Tables.USER, id: testDiscordId, data: [{ key: "banchoId", value: testBanchoId }] }));
 
             const message = { author: { id: "0000" } } as any;
             const args = [`<@${testDiscordId}>`];
             
-            const result = parseOsuArguments(message, args, Mode.OSU);
+            const result = (await parseOsuArguments(message, args, Mode.OSU));
             expect(result.user.type).toBe(UserType.SUCCESS);
             if (result.user.type === UserType.SUCCESS) {
                 expect(result.user.banchoId).toBe(testBanchoId);
             }
             
             // Clean up
-            removeEntry(Tables.USER, testDiscordId);
+            (await removeEntry(Tables.USER, testDiscordId));
         });
 
-        test("fails on unregistered discord mention", () => {
+        test("fails on unregistered discord mention", async () => {
             const unregisteredDiscordId = "999999999999999999";
             // Ensure they are not in the DB
-            removeEntry(Tables.USER, unregisteredDiscordId);
+            (await removeEntry(Tables.USER, unregisteredDiscordId));
 
             const message = { author: { id: "0000" } } as any;
             const args = [`<@${unregisteredDiscordId}>`];
             
-            const result = parseOsuArguments(message, args, Mode.OSU);
+            const result = (await parseOsuArguments(message, args, Mode.OSU));
             expect(result.user.type).toBe(UserType.FAIL);
         });
 
-        test("parses single string parameter correctly", () => {
+        test("parses single string parameter correctly", async () => {
             const message = { author: { id: "0000" } } as any;
             const args = ['"mrekk"'];
             
-            const result = parseOsuArguments(message, args, Mode.OSU);
+            const result = (await parseOsuArguments(message, args, Mode.OSU));
             expect(result.user.type).toBe(UserType.SUCCESS);
             if (result.user.type === UserType.SUCCESS) {
                 expect(result.user.banchoId).toBe("mrekk");
             }
         });
 
-        test("parses mods correctly", () => {
+        test("parses mods correctly", async () => {
             const message = { author: { id: "0000" } } as any;
             
             // +HDHR (include)
             let args = ["peppy", "+HDHR"];
-            let result = parseOsuArguments(message, args, Mode.OSU);
+            let result = (await parseOsuArguments(message, args, Mode.OSU));
             expect(result.mods.include).toBe(true);
             expect(result.mods.name).toBe("HDHR");
 
             // +HDHR! (force include)
             args = ["peppy", "+HDHR!"];
-            result = parseOsuArguments(message, args, Mode.OSU);
+            result = (await parseOsuArguments(message, args, Mode.OSU));
             expect(result.mods.forceInclude).toBe(true);
             expect(result.mods.name).toBe("HDHR");
 
             // -HDHR! (exclude)
             args = ["peppy", "-HDHR!"];
-            result = parseOsuArguments(message, args, Mode.OSU);
+            result = (await parseOsuArguments(message, args, Mode.OSU));
             expect(result.mods.exclude).toBe(true);
             expect(result.mods.name).toBe("HDHR");
         });
 
-        test("parses flags correctly", () => {
+        test("parses flags correctly", async () => {
             const message = { author: { id: "0000" } } as any;
             const args = ["peppy", "p=3", "-HDHR!"];
             
-            const result = parseOsuArguments(message, args, Mode.OSU);
+            const result = (await parseOsuArguments(message, args, Mode.OSU));
             expect(result.flags.p).toBe("3");
         });
     });
@@ -122,7 +122,7 @@ describe("args parser", () => {
             } as any;
         };
 
-        test("parses mode, map, username, and mods", () => {
+        test("parses mode, map, username, and mods", async () => {
             const interaction = createMockInteraction({
                 username: "peppy",
                 mode: Mode.TAIKO,
@@ -131,7 +131,7 @@ describe("args parser", () => {
                 force_include: true,
             });
 
-            const result = getCommandArgs(interaction);
+            const result = (await getCommandArgs(interaction));
             expect(result.user.type).toBe(UserType.SUCCESS);
             if (result.user.type === UserType.SUCCESS) {
                 expect(result.user.banchoId).toBe("peppy");
@@ -143,14 +143,14 @@ describe("args parser", () => {
             expect(result.mods.forceInclude).toBe(true);
         });
 
-        test("parses difficulty attributes", () => {
+        test("parses difficulty attributes", async () => {
             const interaction = createMockInteraction({
                 username: "peppy",
                 bpm: 200,
                 cs: 5,
             });
 
-            const result = getCommandArgs(interaction, true);
+            const result = (await getCommandArgs(interaction, true));
             expect(result.difficultySettings).toBeDefined();
             expect(result.difficultySettings?.bpm).toBe(200);
             expect(result.difficultySettings?.cs).toBe(5);

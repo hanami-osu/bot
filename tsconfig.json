@@ -22,8 +22,7 @@
             "@type/*": ["types/*"],
             "@utils/*": ["utils/*"],
             "@listeners/*": ["listeners/*"],
-            "@builders": ["embed-builders/index.ts"],
-            "@db": ["../data.db"]
+            "@builders": ["embed-builders/index.ts"]
         },
         "types": [
             "bun-types", // add Bun global

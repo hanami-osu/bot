@@ -29,7 +29,7 @@ import { CommandContext } from "@utils/command-context";
 export async function run(ctx: CommandContext) {
     await ctx.defer();
     const mode = modeAliases[ctx.commandName ?? "compare"]?.mode ?? Mode.OSU;
-    const { user, mods } = parseCommandArgs(ctx, mode);
+    const { user, mods } = (await parseCommandArgs(ctx, mode));
 
     if (user.type === UserType.FAIL) {
         await ctx.editReply(user.failMessage);

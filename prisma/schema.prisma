@@ -1,0 +1,74 @@
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider = "mysql"
+    url      = env("DATABASE_URL")
+}
+
+model User {
+    id           String  @id @db.VarChar(255)
+    banchoId     String? @db.VarChar(255)
+    score_embeds Int?
+    mode         String? @db.VarChar(255)
+    embed_type   String? @db.VarChar(255)
+    score_data   Int?
+
+    @@map("users")
+}
+
+model Guild {
+    id        String  @id @db.VarChar(255)
+    name      String? @db.Text
+    owner_id  String? @db.VarChar(255)
+    joined_at BigInt?
+    prefixes  String? @db.Text
+
+    @@map("guilds")
+}
+
+model Map {
+    id   String @id @db.VarChar(255)
+    data String @db.LongText
+
+    @@map("maps")
+}
+
+model Command {
+    id    String @id @db.VarChar(255)
+    count Int?
+
+    @@map("commands")
+}
+
+model Score {
+    id         BigInt  @id
+    user_id    BigInt?
+    map_id     BigInt?
+    gamemode   Int?
+    mods       String? @db.VarChar(255)
+    score      BigInt?
+    accuracy   Float?
+    max_combo  Int?
+    grade      String? @db.VarChar(255)
+    count_50   Int?
+    count_100  Int?
+    count_300  Int?
+    count_miss Int?
+    count_geki Int?
+    count_katu Int?
+    map_state  String? @db.VarChar(255)
+    ended_at   String? @db.VarChar(255)
+
+    @@map("osu_scores")
+}
+
+model ScorePp {
+    id         BigInt @id
+    pp         Float?
+    pp_fc      Float?
+    pp_perfect Float?
+
+    @@map("osu_scores_pp")
+}

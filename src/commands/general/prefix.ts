@@ -51,7 +51,7 @@ async function add({ prefix, interaction, guildId }: { prefix?: string; interact
     const checkPerms = await checkForPermissions(interaction);
     if (checkPerms === false) return;
 
-    const guild = getEntry(Tables.GUILD, guildId);
+    const guild = (await getEntry(Tables.GUILD, guildId));
     if (typeof prefix === "undefined" || guild === null) return;
     let { prefixes } = guild;
 
@@ -69,7 +69,7 @@ async function add({ prefix, interaction, guildId }: { prefix?: string; interact
 
     const newPrefixes = prefixes === null ? [prefix] : [...prefixes, prefix];
 
-    insertData({ table: Tables.GUILD, id: guildId, data: [{ key: "prefixes", value: JSON.stringify(newPrefixes) }] });
+    (await insertData({ table: Tables.GUILD, id: guildId, data: [{ key: "prefixes", value: JSON.stringify(newPrefixes) }] }));
     guildPrefixesCache.set(guildId, newPrefixes);
 
     await interaction.editReply(`**The prefix \`${prefix}\` has been added to the list.**`);
@@ -80,7 +80,7 @@ async function remove({ prefix, interaction, guildId }: { prefix?: string; inter
     const checkPerms = await checkForPermissions(interaction);
     if (checkPerms === false) return;
 
-    const guild = getEntry(Tables.GUILD, guildId);
+    const guild = (await getEntry(Tables.GUILD, guildId));
     if (typeof prefix === "undefined" || guild === null) return;
     const { prefixes } = guild;
 
@@ -95,7 +95,7 @@ async function remove({ prefix, interaction, guildId }: { prefix?: string; inter
     }
 
     const newPrefixes = prefixes.filter((item) => item !== prefix);
-    insertData({ table: Tables.GUILD, id: guildId, data: [{ key: "prefixes", value: newPrefixes.length > 0 ? JSON.stringify(newPrefixes) : null }] });
+    (await insertData({ table: Tables.GUILD, id: guildId, data: [{ key: "prefixes", value: newPrefixes.length > 0 ? JSON.stringify(newPrefixes) : null }] }));
     guildPrefixesCache.set(guildId, newPrefixes.length > 0 ? newPrefixes : DEFAULT_PREFIX);
 
     let message = `**The prefix \`${prefix}\` has been removed from the list.**`;
@@ -106,7 +106,7 @@ async function remove({ prefix, interaction, guildId }: { prefix?: string; inter
 }
 
 async function list({ interaction, guildId }: { interaction: GuildInteraction<ApplicationCommandData>; guildId: string }): Promise<void> {
-    const guild = getEntry(Tables.GUILD, guildId);
+    const guild = (await getEntry(Tables.GUILD, guildId));
     if (guild === null) return;
 
     const { prefixes } = guild;

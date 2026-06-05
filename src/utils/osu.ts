@@ -80,7 +80,7 @@ export async function getPerformanceResults({
     else if (typeof play !== "undefined" && "mode" in play) rulesetId = play.ruleset_id;
     else rulesetId = setId!;
 
-    mapData ??= getEntry(Tables.MAP, beatmapId)?.data ?? (await downloadBeatmap(beatmapId)).contents;
+    mapData ??= (await getEntry(Tables.MAP, beatmapId))?.data ?? (await downloadBeatmap(beatmapId)).contents;
     if (!mapData) return null;
 
     let modsStringArray: Array<string> = [];
@@ -200,9 +200,9 @@ export async function downloadBeatmap(
                 response.on("data", function (chunk: Uint8Array) {
                     chunks.push(chunk);
                 });
-                response.on("end", function () {
+                response.on("end", async function () {
                     const data = Buffer.concat(chunks).toString();
-                    insertData({ table: Tables.MAP, id, data: [{ key: "data", value: data }] });
+                    (await insertData({ table: Tables.MAP, id, data: [{ key: "data", value: data }] }));
                     resolve({ id, contents: data });
                 });
             })
@@ -363,13 +363,13 @@ export function hitValueCalculator(
     return hitValues;
 }
 
-export function saveScoreDatas(scores: Array<Score>, mode: Mode, mapTemp?: BeatmapWeb): void {
+export async function saveScoreDatas(scores: Array<Score>, mode: Mode, mapTemp?: BeatmapWeb): Promise<void> {
     const scoresList = [];
     for (const score of scores) {
         if (score.passed) scoresList.push(saveScore(score, mode, mapTemp));
     }
 
-    if (scoresList.length > 0) bulkInsertData(scoresList);
+    if (scoresList.length > 0) (await bulkInsertData(scoresList));
 }
 
 function saveScore(

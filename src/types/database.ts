@@ -28,7 +28,7 @@ export interface Guild {
     id: string;
     name: string;
     owner_id: string;
-    joined_at: string;
+    joined_at: number | null;
     prefixes: Array<string> | null;
 }
 
@@ -39,7 +39,7 @@ export interface Map {
 
 export interface Command {
     id: string;
-    count: string | null;
+    count: number | null;
 }
 
 export interface Score {

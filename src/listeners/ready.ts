@@ -8,7 +8,7 @@ export default {
         logger.info(`Successfully logged in as ${client.user.username} ✅`);
         await loadCommands(client);
         logger.info("Loaded commands ✅");
-        refreshGuildsDatabase();
+        (await refreshGuildsDatabase());
         logger.info("Refreshed servers database ✅");
         await loadGuildPrefixes();
     },
