@@ -12,7 +12,7 @@ import { CommandContext } from "@utils/command-context";
 
 export async function run(ctx: CommandContext) {
     await ctx.defer();
-    const { user, mods } = parseCommandArgs(ctx, Mode.OSU);
+    const { user, mods } = (await parseCommandArgs(ctx, Mode.OSU));
 
     const beatmapId = user.beatmapId ?? (await getBeatmapIdFromContext({ 
         message: ctx.message, 

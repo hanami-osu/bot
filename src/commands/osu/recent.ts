@@ -53,7 +53,7 @@ export async function run(ctx: CommandContext) {
         index = ctx.index ?? 0;
     }
 
-    const { user, mods } = parseCommandArgs(ctx, mode);
+    const { user, mods } = (await parseCommandArgs(ctx, mode));
 
     if (user.type === UserType.FAIL) {
         await ctx.editReply(user.failMessage);

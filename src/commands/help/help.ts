@@ -11,7 +11,7 @@ export async function run(ctx: CommandContext) {
     const preferSlash = ctx.isInteraction;
 
     await ctx.editReply({
-        embeds: helpBuilder(commandName, preferSlash),
+        embeds: await helpBuilder(commandName, preferSlash),
     });
 }
 

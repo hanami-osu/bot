@@ -36,7 +36,7 @@ export async function run(ctx: CommandContext) {
         isGlobal = modeAliases[ctx.commandName ?? "leaderboard"]?.isGlobal ?? true;
     }
 
-    const { user, mods, flags } = parseCommandArgs(ctx, Mode.OSU);
+    const { user, mods, flags } = (await parseCommandArgs(ctx, Mode.OSU));
     if (!ctx.isInteraction) {
         page = Number(flags.p ?? flags.page ?? 1) - 1;
     }

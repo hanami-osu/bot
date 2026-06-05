@@ -11,7 +11,7 @@ import { CommandContext } from "@utils/command-context";
 
 export async function run(ctx: CommandContext) {
     await ctx.defer();
-    const { user, mods, flags } = parseCommandArgs(ctx, Mode.OSU);
+    const { user, mods, flags } = (await parseCommandArgs(ctx, Mode.OSU));
 
     const context = ctx.isInteraction 
         ? { channelId: ctx.channelId, client: ctx.client }

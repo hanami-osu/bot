@@ -13,13 +13,13 @@ export async function run(ctx: CommandContext) {
     const linkCommandId = slashCommandIdsCache.get("link");
     const linkCommand = linkCommandId ?? "/link";
     const userId = interaction!.member.user.id;
-    const user = getEntry(Tables.USER, userId);
+    const user = (await getEntry(Tables.USER, userId));
     if (!user?.banchoId) {
         await interaction!.editReply(`You are not linked to the bot! You can link yourself using ${linkCommand}, if you want.`);
         return;
     }
 
-    removeEntry(Tables.USER, userId);
+    (await removeEntry(Tables.USER, userId));
     await interaction!.editReply(`Sad to see you go :(\nYou can always re-link yourself using ${linkCommand}!`);
 }
 

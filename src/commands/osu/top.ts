@@ -29,7 +29,7 @@ export async function run(ctx: CommandContext) {
     await ctx.defer();
 
     const mode = modeAliases[ctx.commandName ?? "top"]?.mode ?? Mode.OSU;
-    const { user, mods, flags } = parseCommandArgs(ctx, mode);
+    const { user, mods, flags } = (await parseCommandArgs(ctx, mode));
 
     if (user.type === UserType.FAIL) {
         await ctx.editReply(user.failMessage);

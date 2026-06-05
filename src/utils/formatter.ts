@@ -87,27 +87,27 @@ export async function getFormattedScore({
     const { fc, current, difficultyAttrs, perfect, mapValues } = performance;
 
     if (play.passed && "score" in play) {
-        insertData(
-            {
-                table: Tables.PP,
-                id: play.id,
-                data: [
+        (await insertData(
                     {
-                        key: "pp",
-                        value: current.pp,
+                        table: Tables.PP,
+                        id: play.id,
+                        data: [
+                            {
+                                key: "pp",
+                                value: current.pp,
+                            },
+                            {
+                                key: "pp_fc",
+                                value: fc.pp,
+                            },
+                            {
+                                key: "pp_perfect",
+                                value: perfect.pp,
+                            },
+                        ],
                     },
-                    {
-                        key: "pp_fc",
-                        value: fc.pp,
-                    },
-                    {
-                        key: "pp_perfect",
-                        value: perfect.pp,
-                    },
-                ],
-            },
-            true,
-        );
+                    true,
+                ));
     }
 
     const hitValues = hitValueCalculator(mode, scoreStatistics);
