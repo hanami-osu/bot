@@ -8,7 +8,7 @@ import https from "https";
 import type { Score as ScoreDatabase } from "@type/database";
 import type { Message } from "@lilybird/transformers";
 import type { Mod } from "@type/mods";
-import type { PerformanceInfo, Score, LeaderboardScore, GameMode, Rank, ScoreStatistics, Beatmap as BeatmapWeb } from "@type/osu";
+import type { PerformanceInfo, Score, LeaderboardScore, GameMode, Rank, ScoreStatistics, Beatmap as BeatmapWeb, LeaderboardScoresRaw } from "@type/osu";
 import type { Client, Embed } from "lilybird";
 
 function getModsEnum(mods: Array<string>, derivativeModsWithOriginal?: boolean): number {
@@ -29,7 +29,7 @@ function getModsEnum(mods: Array<string>, derivativeModsWithOriginal?: boolean):
 }
 
 export async function getBeatmapTopScores({ beatmapId, isGlobal, mode, mods }: { beatmapId: number; isGlobal: boolean; mode: GameMode; mods: Array<string> | undefined }): Promise<Array<LeaderboardScore>> {
-    const url = new URL(`https://osu.ppy.sh/api/v2/beatmaps/${beatmapId}/scores`);
+    const url = new URL(`https://osu.ppy.sh/beatmaps/${beatmapId}/scores`);
     url.searchParams.append("mode", mode);
     url.searchParams.append("type", isGlobal ? "global" : "country");
 
@@ -41,18 +41,22 @@ export async function getBeatmapTopScores({ beatmapId, isGlobal, mode, mods }: {
 
     const req = await fetch(url, {
         headers: {
-            Authorization: `Bearer ${process.env.OSU_ACCESS_TOKEN}`,
-            Accept: "application/json",
+            "Content-Type": "application/json",
+            Cookie: `osu_session=${process.env.OSU_ACCESS_TOKEN}`,
         },
     });
 
-    const data = (await req.json()) as any;
+    const data = (await req.json()) as unknown as LeaderboardScoresRaw;
 
     if (!req.ok) {
-        throw new Error(data.error ?? "Failed to fetch top scores");
+        throw new Error("Failed to fetch top scores");
     }
 
-    const scores = data.scores as Array<LeaderboardScore>;
+    const scores = data.scores;
+    if (!Array.isArray(scores)) {
+        throw new Error("Failed to fetch top scores or scores array is missing");
+    }
+
     scores.forEach((r: any, index: number) => (r.index = index));
 
     return scores;
