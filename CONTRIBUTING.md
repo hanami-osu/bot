@@ -8,10 +8,10 @@ To start contributing, you need to install [Bun](https://bun.sh/)
     - `powershell -c "irm bun.sh/install.ps1 | iex"`
 
 2. Clone the repository.
-    - `git clone https://github.com/yorunoken/hanamibot`
+    - `git clone https://github.com/hanami-osu/bot`
 
 3. Navigate inside the directory and install the dev, and normal dependencies.
-    - `cd HanamiBot && bun install`
+    - `cd hanami && bun install`
 
 4. Install ESLint and Prettier as an extension in your IDE to help with types and formatting.
 
@@ -19,7 +19,7 @@ To start contributing, you need to install [Bun](https://bun.sh/)
 
 ## Getting API keys
 
-You need to fill `.env.local` with the approriate API keys to make the bot work. Here's how:
+You need to fill `.env.local` with the appropriate API keys to make the bot work. Here's how:
 
 ### DISCORD_BOT_TOKEN (your bot's token)
 
@@ -29,11 +29,11 @@ You need to fill `.env.local` with the approriate API keys to make the bot work.
 
 3. Reset its token and get the new one.
 
-4. You should also enable all 3 of the privilaged intents for the bot to function.
+4. You should also enable all 3 of the privileged intents for the bot to function.
 
 ### OSU_ACCESS_TOKEN (osu! key to make leaderboard commands function)
 
-1. Go to [osu!s home page](https://osu.ppy.sh/home) and press f12 to open up the developer page.
+1. Go to [osu!'s home page](https://osu.ppy.sh/home) and press f12 to open up the developer page.
 
 2. Navigate to the `Storage` tab. If you don't see it, click on the arrow and reveal the dropout box.
 
@@ -55,15 +55,15 @@ You need to fill `.env.local` with the approriate API keys to make the bot work.
 
 ### OSU_AUTH_URL (callback URL for /link command)
 
-This one is a little tricky, because you will need to host a website.
+This one is a little tricky, because you will need to host the callback website (which runs a Bun server).
 
-1. Hosting websites is free using [Vercel](https://vercel.com).
+1. You can host this using platforms that support Docker or Bun, such as [Railway](https://railway.app), [Render](https://render.com), or your own VPS.
 
-2. Create a new project in the free hosting platform, [Vercel](https://vercel.com) and select the `Import Third-Party Git Repository` option.
+2. For example, on Railway or Render: create a new project, select "Deploy from GitHub repo", and input the template repo <https://github.com/hanami-osu/web>.
 
-3. Input my template repo <https://github.com/YoruNoKen/hanamiVerifier> and build the website.
+3. The platform will automatically detect the Dockerfile or Bun environment and build the website for you.
 
-4. Copy the URL, add it to `Application Callback URLs` in your osu! Application and your .env.local file.
+4. Once deployed, copy the provided URL, add it to `Application Callback URLs` in your osu! Application, and set it as `OSU_AUTH_URL` in your `.env.local` file.
 
 ### ERROR_CHANNEL_ID (Optional - for error logging)
 
@@ -85,6 +85,14 @@ This one is a little tricky, because you will need to host a website.
 
 Set this to `1` to enable development mode, or `0` for production. For local development, keep it as `1`.
 
+### Database Configuration (MariaDB/MySQL)
+
+Hanami uses MariaDB (MySQL) with Prisma as the ORM. You need to set this up for the bot to run properly:
+
+1. Install MariaDB/MySQL on your system or use Docker.
+2. Create a database for the bot (e.g., `CREATE DATABASE hanami;`).
+3. Set the `DATABASE_URL` in your `.env.local` to point to your database (e.g., `DATABASE_URL="mysql://username:password@localhost:3306/hanami"`).
+
 ### Redis Configuration
 
 This project uses Redis to remember button message data even after the bot was restarted:
@@ -97,11 +105,8 @@ This project uses Redis to remember button message data even after the bot was r
     - **Linux/macOS**: `redis-server`
     - **Windows**: Run the Redis server executable
 
-3. The default configuration should work:
-    - `REDIS_HOST=localhost`
-    - `REDIS_PORT=6379`
-    - `REDIS_PASSWORD=very_secure_password` (change this to a secure password)
-    - `REDIS_DB=0`
+3. Ensure the Redis connection string is configured in `.env.local`:
+    - `REDIS_URL="redis://localhost:6379/0"` (this is the default and should work out of the box)
 
 ## Running the Bot
 
@@ -115,10 +120,11 @@ After setting up all the environment variables:
 
 2. Fill in all the required values in `.env.local` according to the sections above.
 
-3. Register the bot's slash commands:
+3. Set up the database schema and generate the Prisma client:
 
     ```bash
-    bun run register-commands.ts
+    bunx prisma db push
+    bunx prisma generate
     ```
 
 4. Start the bot:
