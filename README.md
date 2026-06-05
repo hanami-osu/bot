@@ -6,11 +6,11 @@ I mainly wrote this bot for my friends, but a lot more people wanted to use it t
 
 If you're here to contribute/look at the code, welcome! Although, the code is not very well documented, I tried my best!
 
-Feel free to open up an issue/pull request at this [repository](https://github.com/yorunoken/HanamiBot)
+Feel free to open up an issue/pull request at this [repository](https://github.com/hanami-osu/bot)
 
 ## What does it do?
 
-HanamiBot is a comprehensive osu! Discord bot that provides detailed statistics and gameplay information. Features include:
+Hanami is a comprehensive osu! Discord bot that provides detailed statistics and gameplay information. Features include:
 
 - **Player Statistics**: View detailed profiles, rankings, and performance metrics
 - **Recent Activity**: Track recent plays and scores
@@ -39,7 +39,7 @@ You can look at all of the libraries I use by going to `package.json` in the mai
 
 ## Contributing
 
-Read the [CONTRIBUTING.md](https://github.com/YoruNoKen/HanamiBot/blob/main/CONTRIBUTING.md) file.
+Read the [CONTRIBUTING.md](https://github.com/hanami-osu/bot/blob/main/CONTRIBUTING.md) file.
 
 ## Contact me
 

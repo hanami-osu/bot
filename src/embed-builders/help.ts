@@ -200,7 +200,7 @@ async function displayAllCommands(): Promise<Array<Embed.Structure>> {
 
     return [
         {
-            title: "Hanami Bot - Help",
+            title: "Hanami - Help",
             description: "Hanami is a Discord bot for osu!",
             fields,
             color: 0xffc0cb,
