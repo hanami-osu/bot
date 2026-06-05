@@ -36,25 +36,27 @@ export async function run(ctx: CommandContext) {
         return;
     }
 
-    const context = ctx.isInteraction 
-        ? { channelId: ctx.channelId, client: ctx.client, id: ctx.interaction!.id }
-        : { message: ctx.message, client: ctx.client };
-
-    const reply = await getEmbeds(user, ctx.user.id, mods, context);
-    await ctx.editReply(reply);
+    const { reply, embedOptions } = await getEmbeds(user, ctx.user.id, mods, ctx);
+    if (embedOptions) {
+        await ctx.sendWithPagination(reply, embedOptions);
+    } else {
+        await ctx.editReply(reply);
+    }
 }
 
-async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context: any): Promise<MessageReplyOptions> {
+async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context: CommandContext): Promise<{ reply: MessageReplyOptions, embedOptions?: any }> {
     const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
     if (!osuUserRequest.success) {
         return {
-            embeds: [
-                {
-                    type: EmbedType.Rich,
-                    title: "Uh oh! :x:",
-                    description: `It seems like the user **\`${user.banchoId}\`** doesn't exist! :(`,
-                },
-            ],
+            reply: {
+                embeds: [
+                    {
+                        type: EmbedType.Rich,
+                        title: "Uh oh! :x:",
+                        description: `It seems like the user **\`${user.banchoId}\`** doesn't exist! :(`,
+                    },
+                ],
+            }
         };
     }
     const osuUser = osuUserRequest.data;
@@ -62,39 +64,45 @@ async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context
     const beatmapId = user.beatmapId ?? (await getBeatmapIdFromContext(context));
     if (typeof beatmapId === "undefined" || beatmapId === null) {
         return {
-            embeds: [
-                {
-                    type: EmbedType.Rich,
-                    title: "Uh oh! :x:",
-                    description: "It seems like the beatmap ID couldn't be found :(\n",
-                },
-            ],
+            reply: {
+                embeds: [
+                    {
+                        type: EmbedType.Rich,
+                        title: "Uh oh! :x:",
+                        description: "It seems like the beatmap ID couldn't be found :(\n",
+                    },
+                ],
+            }
         };
     }
 
     const beatmapRequest = await safeParse(v2.beatmaps.details({ type: 'difficulty', id: Number(beatmapId) }));
     if (!beatmapRequest.success) {
         return {
-            embeds: [
-                {
-                    type: EmbedType.Rich,
-                    title: "Uh oh! :x:",
-                    description: "It seems like this beatmap doesn't exist! :(",
-                },
-            ],
+            reply: {
+                embeds: [
+                    {
+                        type: EmbedType.Rich,
+                        title: "Uh oh! :x:",
+                        description: "It seems like this beatmap doesn't exist! :(",
+                    },
+                ],
+            }
         };
     }
     const beatmap = beatmapRequest.data;
 
     if (beatmap.status === "pending" || beatmap.status === "wip" || beatmap.status === "graveyard") {
         return {
-            embeds: [
-                {
-                    type: EmbedType.Rich,
-                    title: "Uh oh! :x:",
-                    description: "It seems like this beatmap's leaderboard doesn't exist! :(",
-                },
-            ],
+            reply: {
+                embeds: [
+                    {
+                        type: EmbedType.Rich,
+                        title: "Uh oh! :x:",
+                        description: "It seems like this beatmap's leaderboard doesn't exist! :(",
+                    },
+                ],
+            }
         };
     }
 
@@ -102,13 +110,15 @@ async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context
 
     if (plays.length === 0) {
         return {
-            embeds: [
-                {
-                    type: EmbedType.Rich,
-                    title: "Uh oh! :x:",
-                    description: `It seems like \`${osuUser.username}\` has no plays on that beatmap!`,
-                },
-            ],
+            reply: {
+                embeds: [
+                    {
+                        type: EmbedType.Rich,
+                        title: "Uh oh! :x:",
+                        description: `It seems like \`${osuUser.username}\` has no plays on that beatmap!`,
+                    },
+                ],
+            }
         };
     }
 
@@ -124,14 +134,13 @@ async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context
     };
 
     const embeds = await compareBuilder(embedOptions);
-    const messageOptions = {
-        embeds,
-        components: createPaginationActionRow(embedOptions),
+    return {
+        reply: {
+            embeds,
+            components: createPaginationActionRow(embedOptions),
+        },
+        embedOptions,
     };
-
-    await context.sendWithPagination(messageOptions, embedOptions);
-
-    return messageOptions;
 }
 
 export const data = {

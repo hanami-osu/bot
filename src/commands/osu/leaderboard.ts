@@ -41,51 +41,57 @@ export async function run(ctx: CommandContext) {
         page = Number(flags.p ?? flags.page ?? 1) - 1;
     }
 
-    const context = ctx.isInteraction 
-        ? { channelId: ctx.channelId, client: ctx.client, id: ctx.interaction!.id }
-        : { message: ctx.message, client: ctx.client };
-
-    const reply = await getEmbeds(user.beatmapId ?? undefined, ctx.user.id, mods, isGlobal, page, context);
-    await ctx.editReply(reply);
+    const { reply, embedOptions } = await getEmbeds(user.beatmapId ?? undefined, ctx.user.id, mods, isGlobal, page, ctx);
+    if (embedOptions) {
+        await ctx.sendWithPagination(reply, embedOptions);
+    } else {
+        await ctx.editReply(reply);
+    }
 }
 
-async function getEmbeds(beatmapId: string | undefined, authorId: string, mods: any, isGlobal: boolean, page: number, context: any): Promise<MessageReplyOptions> {
+async function getEmbeds(beatmapId: string | undefined, authorId: string, mods: any, isGlobal: boolean, page: number, context: CommandContext): Promise<{ reply: MessageReplyOptions, embedOptions?: LeaderboardBuilderOptions }> {
     const resolvedBeatmapId = beatmapId ?? (await getBeatmapIdFromContext(context));
     if (typeof resolvedBeatmapId === "undefined" || resolvedBeatmapId === null) {
         return {
-            embeds: [
-                {
-                    type: EmbedType.Rich,
-                    title: "Uh oh! :x:",
-                    description: "It seems like the beatmap ID couldn't be found :(\n",
-                },
-            ],
+            reply: {
+                embeds: [
+                    {
+                        type: EmbedType.Rich,
+                        title: "Uh oh! :x:",
+                        description: "It seems like the beatmap ID couldn't be found :(\n",
+                    },
+                ],
+            }
         };
     }
 
     const beatmapRequest = await safeParse(v2.beatmaps.details({ type: 'difficulty', id: Number(resolvedBeatmapId) }));
     if (!beatmapRequest.success) {
         return {
-            embeds: [
-                {
-                    type: EmbedType.Rich,
-                    title: "Uh oh! :x:",
-                    description: "It seems like this beatmap doesn't exist! :(",
-                },
-            ],
+            reply: {
+                embeds: [
+                    {
+                        type: EmbedType.Rich,
+                        title: "Uh oh! :x:",
+                        description: "It seems like this beatmap doesn't exist! :(",
+                    },
+                ],
+            }
         };
     }
     const beatmap = beatmapRequest.data;
 
     if (beatmap.status === "pending" || beatmap.status === "wip" || beatmap.status === "graveyard") {
         return {
-            embeds: [
-                {
-                    type: EmbedType.Rich,
-                    title: "Uh oh! :x:",
-                    description: "It seems like this beatmap's leaderboard doesn't exist! :(",
-                },
-            ],
+            reply: {
+                embeds: [
+                    {
+                        type: EmbedType.Rich,
+                        title: "Uh oh! :x:",
+                        description: "It seems like this beatmap's leaderboard doesn't exist! :(",
+                    },
+                ],
+            }
         };
     }
 
@@ -98,13 +104,15 @@ async function getEmbeds(beatmapId: string | undefined, authorId: string, mods: 
 
     if (scores.length === 0) {
         return {
-            embeds: [
-                {
-                    type: EmbedType.Rich,
-                    title: "Uh oh! :x:",
-                    description: "It seems like this beatmap's leaderboard doesn't exist! :(",
-                },
-            ],
+            reply: {
+                embeds: [
+                    {
+                        type: EmbedType.Rich,
+                        title: "Uh oh! :x:",
+                        description: "It seems like this beatmap's leaderboard doesn't exist! :(",
+                    },
+                ],
+            }
         };
     }
 
@@ -117,14 +125,13 @@ async function getEmbeds(beatmapId: string | undefined, authorId: string, mods: 
     };
 
     const embeds = await leaderboardBuilder(embedOptions);
-    const messageOptions: MessageReplyOptions = {
-        embeds,
-        components: createPaginationActionRow(embedOptions),
+    return {
+        reply: {
+            embeds,
+            components: createPaginationActionRow(embedOptions),
+        },
+        embedOptions,
     };
-
-    await context.sendWithPagination(messageOptions, embedOptions);
-
-    return messageOptions;
 }
 
 export const data = {
