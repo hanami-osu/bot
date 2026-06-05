@@ -135,6 +135,7 @@ SliderTickRate:1
             const { Mode } = await import("../../src/types/osu");
 
             const mockScore: any = {
+                id: 123456789,
                 score: 1000000,
                 created_at: "2023-01-01T00:00:00Z",
                 statistics: {

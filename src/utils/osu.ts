@@ -436,11 +436,11 @@ function saveScore(
             },
             {
                 key: "gamemode",
-                value: mode,
+                value: mode === "osu" ? 0 : mode === "taiko" ? 1 : mode === "fruits" ? 2 : mode === "mania" ? 3 : 0,
             },
             {
                 key: "mods",
-                value: play.mods.join(""),
+                value: play.mods.map(m => typeof m === "object" && m !== null && "acronym" in m ? m.acronym : m).join(""),
             },
             {
                 key: "score",
