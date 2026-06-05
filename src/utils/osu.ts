@@ -101,6 +101,8 @@ export async function getPerformanceResults({
     mapData?: string;
     objectsHit?: number;
 }): Promise<PerformanceInfo | null> {
+    const isLazer = false;
+
     let rulesetId: number;
     if (typeof play !== "undefined" && "mode_int" in play) rulesetId = play.mode_int;
     else if (typeof play !== "undefined" && "mode" in play) rulesetId = play.ruleset_id;
@@ -143,6 +145,7 @@ export async function getPerformanceResults({
     }).build();
 
     const perfect = new Performance({
+        lazer: isLazer,
         ar: mapSettings?.ar,
         cs: mapSettings?.cs,
         od: mapSettings?.od,
@@ -165,6 +168,7 @@ export async function getPerformanceResults({
     const current = new Performance(
         typeof accuracy === "undefined"
             ? {
+                  lazer: isLazer,
                   mods: modsInt,
                   n100,
                   n300,
@@ -180,6 +184,7 @@ export async function getPerformanceResults({
                   clockRate,
               }
             : {
+                  lazer: isLazer,
                   mods: modsInt,
                   accuracy,
                   misses,
@@ -195,6 +200,7 @@ export async function getPerformanceResults({
     const fc = new Performance(
         typeof accuracy === "undefined"
             ? {
+                  lazer: isLazer,
                   mods: modsInt,
                   n100,
                   n50,
@@ -206,6 +212,7 @@ export async function getPerformanceResults({
                   clockRate,
               }
             : {
+                  lazer: isLazer,
                   mods: modsInt,
                   misses: 0,
                   accuracy,
