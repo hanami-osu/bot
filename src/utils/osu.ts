@@ -2,7 +2,7 @@ import { bulkInsertData, getEntry, insertData } from "@utils/database";
 import { Mode } from "@type/osu";
 import { Tables } from "@type/database";
 import { Beatmap, BeatmapAttributesBuilder, Performance } from "rosu-pp-js";
-import { enums, v2, type Modes_names } from "osu-api-extended";
+import { enums } from "osu-api-extended";
 import { ChannelType } from "lilybird";
 import https from "https";
 import type { Score as ScoreDatabase } from "@type/database";
@@ -10,8 +10,6 @@ import type { Message } from "@lilybird/transformers";
 import type { Mod } from "@type/mods";
 import type { PerformanceInfo, Score, LeaderboardScore, GameMode, Rank, ScoreStatistics, Beatmap as BeatmapWeb } from "@type/osu";
 import type { Client, Embed } from "lilybird";
-
-
 
 function getModsEnum(mods: Array<string>, derivativeModsWithOriginal?: boolean): number {
     return mods.reduce((count, mod) => {
@@ -31,19 +29,33 @@ function getModsEnum(mods: Array<string>, derivativeModsWithOriginal?: boolean):
 }
 
 export async function getBeatmapTopScores({ beatmapId, isGlobal, mode, mods }: { beatmapId: number; isGlobal: boolean; mode: GameMode; mods: Array<string> | undefined }): Promise<Array<LeaderboardScore>> {
-    const scores = await v2.scores.list({
-        type: "leaderboard",
-        leaderboard_type: isGlobal ? "global" : "country",
-        beatmap_id: beatmapId,
-        mode: mode as Modes_names,
-        mods: mods?.map((mod) => mod.toUpperCase()),
-    });
+    const url = new URL(`https://osu.ppy.sh/api/v2/beatmaps/${beatmapId}/scores`);
+    url.searchParams.append("mode", mode);
+    url.searchParams.append("type", isGlobal ? "global" : "country");
 
-    if ("error" in scores || !Array.isArray(scores)) {
-        throw new Error(scores.error?.message ?? "Failed to fetch top scores");
+    if (mods && mods.length > 0) {
+        for (const mod of mods) {
+            url.searchParams.append("mods[]", mod.toUpperCase());
+        }
     }
 
-    return scores as Array<LeaderboardScore>;
+    const req = await fetch(url, {
+        headers: {
+            Authorization: `Bearer ${process.env.OSU_ACCESS_TOKEN}`,
+            Accept: "application/json",
+        },
+    });
+
+    const data = (await req.json()) as any;
+
+    if (!req.ok) {
+        throw new Error(data.error ?? "Failed to fetch top scores");
+    }
+
+    const scores = data.scores as Array<LeaderboardScore>;
+    scores.forEach((r: any, index: number) => (r.index = index));
+
+    return scores;
 }
 
 function isNewMods(mods: Array<Mod> | Array<string>): mods is Array<Mod> {
@@ -202,7 +214,7 @@ export async function downloadBeatmap(
                 });
                 response.on("end", async function () {
                     const data = Buffer.concat(chunks).toString();
-                    (await insertData({ table: Tables.MAP, id, data: [{ key: "data", value: data }] }));
+                    await insertData({ table: Tables.MAP, id, data: [{ key: "data", value: data }] });
                     resolve({ id, contents: data });
                 });
             })
@@ -369,7 +381,7 @@ export async function saveScoreDatas(scores: Array<Score>, mode: Mode, mapTemp?:
         if (score.passed) scoresList.push(saveScore(score, mode, mapTemp));
     }
 
-    if (scoresList.length > 0) (await bulkInsertData(scoresList));
+    if (scoresList.length > 0) await bulkInsertData(scoresList);
 }
 
 function saveScore(
@@ -428,7 +440,7 @@ function saveScore(
             },
             {
                 key: "score",
-                value: ("score" in play && play.score) ? play.score : (play.total_score ?? 0),
+                value: "score" in play && play.score ? play.score : (play.total_score ?? 0),
             },
             {
                 key: "accuracy",
@@ -516,5 +528,5 @@ export async function getBeatmapIdFromContext({ client, message, channelId }: { 
 }
 
 export function getRetryCount(beatmapIds: Array<number>, mapId: number): number {
-    return beatmapIds.filter(id => id === mapId).length;
+    return beatmapIds.filter((id) => id === mapId).length;
 }
