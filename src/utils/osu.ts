@@ -86,7 +86,17 @@ export async function getPerformanceResults({
     accuracy?: number;
     clockRate?: number;
     mapSettings?: { ar?: number; od?: number; cs?: number };
-    hitValues?: { count_100?: number; count_300?: number; count_50?: number; count_geki?: number | null; count_katu?: number | null; count_miss?: number };
+    hitValues?: { 
+        count_100?: number; 
+        count_300?: number; 
+        count_50?: number; 
+        count_geki?: number | null; 
+        count_katu?: number | null; 
+        count_miss?: number; 
+        large_tick_hit?: number; 
+        small_tick_hit?: number; 
+        slider_tail_hit?: number 
+    };
     mods: Array<string> | Array<Mod> | number;
     mapData?: string;
     objectsHit?: number;
@@ -140,7 +150,17 @@ export async function getPerformanceResults({
         clockRate,
     }).calculate(beatmap);
 
-    const { count_100: n100, count_300: n300, count_50: n50, count_geki: nGeki, count_katu: nKatu, count_miss: misses } = hitValues ?? {};
+    const { 
+        count_100: n100, 
+        count_300: n300, 
+        count_50: n50, 
+        count_geki: nGeki, 
+        count_katu: nKatu, 
+        count_miss: misses,
+        large_tick_hit: largeTickHits,
+        small_tick_hit: smallTickHits,
+        slider_tail_hit: sliderEndHits
+    } = hitValues ?? {};
 
     const current = new Performance(
         typeof accuracy === "undefined"
@@ -152,6 +172,9 @@ export async function getPerformanceResults({
                   nGeki: nGeki ?? undefined,
                   nKatu: nKatu ?? undefined,
                   misses,
+                  largeTickHits,
+                  smallTickHits,
+                  sliderEndHits,
                   combo: maxCombo ?? perfect.difficulty.maxCombo,
                   passedObjects: objectsHit,
                   clockRate,
@@ -160,6 +183,9 @@ export async function getPerformanceResults({
                   mods: modsInt,
                   accuracy,
                   misses,
+                  largeTickHits,
+                  smallTickHits,
+                  sliderEndHits,
                   combo: maxCombo ?? perfect.difficulty.maxCombo,
                   passedObjects: objectsHit,
                   clockRate,

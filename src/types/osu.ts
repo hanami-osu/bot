@@ -127,6 +127,7 @@ export interface ScoreStatistics {
     small_bonus?: number;
     small_tick_hit?: number;
     small_tick_miss?: number;
+    slider_tail_hit?: number;
 }
 
 export type ISOTimestamp = string;
