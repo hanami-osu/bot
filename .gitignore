@@ -9,3 +9,5 @@ package-lock.json
 bun.lockb
 command-ids.json
 osu-token.json
+/src/generated/prisma
+*.sql
