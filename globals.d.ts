@@ -12,8 +12,3 @@ declare module "bun" {
         DEV: string;
     }
 }
-
-declare module "@db" {
-    const db: import("bun:sqlite").Database;
-    export default db;
-}

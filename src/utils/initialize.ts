@@ -1,11 +1,9 @@
-import db from "@db" with { type: "sqlite" };
-import { removeEntry } from "@utils/database";
+import { prisma, removeEntry } from "@utils/database";
 import { guildPrefixesCache, commandsCache, slashCommandIdsCache, commandAliasesCache } from "@utils/cache";
 import { logger } from "@utils/logger";
 import { Tables } from "@type/database";
 import { auth } from "osu-api-extended";
 import { readdir } from "fs/promises";
-import type { Guild } from "@type/database";
 import type { CommandFileData } from "@type/commands";
 import { Client, ApplicationCommand } from "lilybird";
 
@@ -48,7 +46,7 @@ export async function loadCommands(lilyClient: Client): Promise<void> {
 
         // construct back the application data from `data` and push to array
         // only include commands that have application command support
-        if (typeof command.runApplication === "function") {
+        if (typeof command.runApplication === "function" || typeof command.run === "function") {
             const applicationData = {
                 ...(data.application || {}),
                 name: data.name,
@@ -68,115 +66,65 @@ export async function loadCommands(lilyClient: Client): Promise<void> {
     // overwrite application commands
     if (process.env.DEV === "true") {
         logger.info("Processing commands as Development.");
-        const guildCommandIds = await lilyClient.rest.bulkOverwriteGuildApplicationCommand(lilyClient.user.id, process.env.DEV_GUILD_ID, applicationCommands);
+        try {
+            // lilybird's bulkOverwriteGuildApplicationCommand mistakenly uses PATCH instead of PUT, causing a 405 error.
+            // We bypass it and make a direct PUT request.
+            const guildCommandIds = await lilyClient.rest.makeAPIRequest(
+                "PUT",
+                `applications/${lilyClient.user.id}/guilds/${process.env.DEV_GUILD_ID}/commands`,
+                applicationCommands
+            ) as Array<{ name: string; id: string }>;
 
-        for (const commandId of guildCommandIds) {
-            const { name, id } = commandId;
-            slashCommandIdsCache.set(name, `</${name}:${id}>`);
+            for (const commandId of guildCommandIds) {
+                const { name, id } = commandId;
+                slashCommandIdsCache.set(name, `</${name}:${id}>`);
+            }
+        } catch (error) {
+            logger.error(`Failed to overwrite commands for DEV_GUILD_ID (${process.env.DEV_GUILD_ID}). Make sure it's a valid Server ID, not your User ID!`, error as Error);
         }
     } else {
         logger.info("Processing commands as Production.");
-        const globalCommandIds = await lilyClient.rest.bulkOverwriteGlobalApplicationCommand(lilyClient.user.id, applicationCommands);
+        try {
+            const globalCommandIds = await lilyClient.rest.bulkOverwriteGlobalApplicationCommand(lilyClient.user.id, applicationCommands);
 
-        for (const commandId of globalCommandIds) {
-            const { name, id } = commandId;
-            slashCommandIdsCache.set(name, `</${name}:${id}>`);
+            for (const commandId of globalCommandIds) {
+                const { name, id } = commandId;
+                slashCommandIdsCache.set(name, `</${name}:${id}>`);
+            }
+        } catch (error) {
+            logger.error("Failed to overwrite global commands.", error as Error);
         }
     }
+
+    logger.info(`Loaded ${commandsCache.size} message commands and ${applicationCommands.length} application commands ✅`);
 }
 
-export function refreshGuildsDatabase(): void {
-    const nulledGuilds = db.query("SELECT * FROM guilds WHERE name IS NULL;").all() as Array<Guild>;
+export async function refreshGuildsDatabase(): Promise<void> {
+    const nulledGuilds = await prisma.guild.findMany({ where: { name: null } });
 
     if (nulledGuilds.length === 0) return;
 
     for (const guild of nulledGuilds) {
         logger.info(`Removed guild: ${guild.name} (${guild.id})`);
-        removeEntry(Tables.GUILD, guild.id);
+        await removeEntry(Tables.GUILD, guild.id);
     }
 }
 
-interface Columns {
-    cid: number;
-    name: string;
-    type: string;
-    notnull: number;
-    dflt_value: any;
-    pk: number;
-}
-
-export function initializeDatabase(): void {
-    const tables: Array<{ name: string; columns: Array<string> }> = [
-        { name: "users", columns: ["id TEXT PRIMARY KEY", "banchoId TEXT", "score_embeds INTEGER", "mode TEXT", "embed_type TEXT", "score_data INTEGER"] },
-        { name: "guilds", columns: ["id TEXT PRIMARY KEY", "name TEXT", "owner_id TEXT", "joined_at INTEGER", "prefixes TEXT"] },
-        { name: "maps", columns: ["id TEXT PRIMARY KEY", "data TEXT"] },
-        { name: "commands", columns: ["id TEXT PRIMARY KEY", "count INTEGER"] },
-        {
-            name: "osu_scores",
-            columns: [
-                "id INTEGER PRIMARY KEY",
-                "user_id INTEGER",
-                "map_id INTEGER",
-                "gamemode INTEGER",
-                "mods TEXT",
-                "score INTEGER",
-                "accuracy INTEGER",
-                "max_combo INTEGER",
-                "grade TEXT",
-                "count_50 INTEGER",
-                "count_100 INTEGER",
-                "count_300 INTEGER",
-                "count_miss INTEGER",
-                "count_geki INTEGER",
-                "count_katu INTEGER",
-                "map_state TEXT",
-                "ended_at TEXT",
-            ],
-        },
-        {
-            name: "osu_scores_pp",
-            columns: ["id INTEGER PRIMARY KEY", "pp INTEGER", "pp_fc INTEGER", "pp_perfect INTEGER"],
-        },
-    ];
-
-    for (const table of tables) {
-        const { columns } = table;
-
-        // Create the Databases if they don't exist
-        db.run(`CREATE TABLE IF NOT EXISTS ${table.name} (${columns.join(", ")});`);
-
-        //  Get all of the existing databases
-        const existingColumns = db.prepare(`PRAGMA table_info(${table.name});`).all() as Array<Columns>;
-
-        // Loop through Columns and add/remove them
-        for (const columnNameType of columns) {
-            const [columnName] = columnNameType.split(" ");
-
-            const columnExists = existingColumns.some((col) => col.name === columnName);
-
-            if (!columnExists) {
-                db.run(`ALTER TABLE ${table.name} ADD COLUMN ${columnNameType};`);
-                logger.info(`Added column ${columnName} in ${table.name} table`);
-            }
-        }
-
-        for (const column of existingColumns) {
-            const columnName = column.name;
-            const columnNotInTables = !columns.some((colType) => colType.startsWith(columnName));
-
-            if (columnNotInTables) {
-                db.run(`ALTER TABLE ${table.name} DROP COLUMN ${columnName};`);
-                logger.info(`Removed column ${columnName} from ${table.name}`);
-            }
-        }
+export async function initializeDatabase(): Promise<void> {
+    try {
+        await prisma.$connect();
+        logger.info("Database up and running!");
+    } catch (e) {
+        logger.error("Failed to connect to database", e as Error);
     }
-
-    logger.info("Database up and running!");
 }
 
 export async function loadGuildPrefixes(): Promise<void> {
     try {
-        const guilds = db.prepare("SELECT id, prefixes FROM guilds WHERE prefixes IS NOT NULL").all() as Array<{ id: string; prefixes: string }>;
+        const guilds = await prisma.guild.findMany({
+            where: { prefixes: { not: null } },
+            select: { id: true, prefixes: true }
+        });
 
         let loadedCount = 0;
         for (const guild of guilds) {
