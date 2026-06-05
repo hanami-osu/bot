@@ -13,35 +13,35 @@ describe("Database Utilities", () => {
     const TEST_USER_ID_2 = "test_user_999992";
     const TEST_GUILD_ID = "test_guild_888881";
 
-    beforeAll(() => {
+    beforeAll(async () => {
         // Ensure clean state before tests
-        removeEntry(Tables.USER, TEST_USER_ID_1);
-        removeEntry(Tables.USER, TEST_USER_ID_2);
-        removeEntry(Tables.GUILD, TEST_GUILD_ID);
+        (await removeEntry(Tables.USER, TEST_USER_ID_1));
+        (await removeEntry(Tables.USER, TEST_USER_ID_2));
+        (await removeEntry(Tables.GUILD, TEST_GUILD_ID));
     });
 
-    afterAll(() => {
+    afterAll(async () => {
         // Clean up test data after all tests
-        removeEntry(Tables.USER, TEST_USER_ID_1);
-        removeEntry(Tables.USER, TEST_USER_ID_2);
-        removeEntry(Tables.GUILD, TEST_GUILD_ID);
+        (await removeEntry(Tables.USER, TEST_USER_ID_1));
+        (await removeEntry(Tables.USER, TEST_USER_ID_2));
+        (await removeEntry(Tables.GUILD, TEST_GUILD_ID));
     });
 
     describe("Single entry operations", () => {
-        test("inserts and retrieves a user entry correctly", () => {
+        test("inserts and retrieves a user entry correctly", async () => {
             // Insert
-            insertData({
-                table: Tables.USER,
-                id: TEST_USER_ID_1,
-                data: [
-                    { key: "banchoId", value: "123456" },
-                    { key: "embed_type", value: EmbedScoreType.Hanami },
-                    { key: "mode", value: "osu" }
-                ]
-            });
+            (await insertData({
+                            table: Tables.USER,
+                            id: TEST_USER_ID_1,
+                            data: [
+                                { key: "banchoId", value: "123456" },
+                                { key: "embed_type", value: EmbedScoreType.Hanami },
+                                { key: "mode", value: "osu" }
+                            ]
+                        }));
 
             // Retrieve
-            const user = getEntry(Tables.USER, TEST_USER_ID_1);
+            const user = (await getEntry(Tables.USER, TEST_USER_ID_1));
             expect(user).not.toBeNull();
             expect(user?.id).toBe(TEST_USER_ID_1);
             expect(user?.banchoId).toBe("123456");
@@ -49,18 +49,18 @@ describe("Database Utilities", () => {
             expect(user?.mode).toBe("osu");
         });
 
-        test("updates an existing user entry correctly", () => {
+        test("updates an existing user entry correctly", async () => {
             // Update
-            insertData({
-                table: Tables.USER,
-                id: TEST_USER_ID_1,
-                data: [
-                    { key: "mode", value: "taiko" }
-                ]
-            });
+            (await insertData({
+                            table: Tables.USER,
+                            id: TEST_USER_ID_1,
+                            data: [
+                                { key: "mode", value: "taiko" }
+                            ]
+                        }));
 
             // Retrieve
-            const user = getEntry(Tables.USER, TEST_USER_ID_1);
+            const user = (await getEntry(Tables.USER, TEST_USER_ID_1));
             expect(user).not.toBeNull();
             expect(user?.banchoId).toBe("123456"); // Existing data should be preserved or overwritten depending on REPLACE logic
             // Note: SQLite REPLACE actually replaces the entire row, so banchoId might become null if not provided!
@@ -68,30 +68,30 @@ describe("Database Utilities", () => {
             expect(user?.mode).toBe("taiko");
         });
 
-        test("removes an entry correctly", () => {
-            removeEntry(Tables.USER, TEST_USER_ID_1);
+        test("removes an entry correctly", async () => {
+            (await removeEntry(Tables.USER, TEST_USER_ID_1));
             
-            const user = getEntry(Tables.USER, TEST_USER_ID_1);
+            const user = (await getEntry(Tables.USER, TEST_USER_ID_1));
             expect(user).toBeNull();
         });
     });
 
     describe("JSON parsing in getEntry", () => {
-        test("automatically parses JSON fields like guild prefixes", () => {
+        test("automatically parses JSON fields like guild prefixes", async () => {
             // Insert guild with stringified prefixes
-            insertData({
-                table: Tables.GUILD,
-                id: TEST_GUILD_ID,
-                data: [
-                    { key: "name", value: "Test Guild" },
-                    { key: "owner_id", value: "owner_123" },
-                    { key: "joined_at", value: new Date().toISOString() },
-                    { key: "prefixes", value: JSON.stringify(["!", "?"]) }
-                ]
-            });
+            (await insertData({
+                            table: Tables.GUILD,
+                            id: TEST_GUILD_ID,
+                            data: [
+                                { key: "name", value: "Test Guild" },
+                                { key: "owner_id", value: "owner_123" },
+                                { key: "joined_at", value: new Date().toISOString() },
+                                { key: "prefixes", value: JSON.stringify(["!", "?"]) }
+                            ]
+                        }));
 
             // Retrieve
-            const guild = getEntry(Tables.GUILD, TEST_GUILD_ID);
+            const guild = (await getEntry(Tables.GUILD, TEST_GUILD_ID));
             expect(guild).not.toBeNull();
             // It should be an array, parsed by getEntry
             expect(Array.isArray(guild?.prefixes)).toBe(true);
@@ -100,22 +100,22 @@ describe("Database Utilities", () => {
     });
 
     describe("Bulk operations", () => {
-        test("bulk inserts multiple entries correctly", () => {
-            bulkInsertData([
-                {
-                    table: Tables.USER,
-                    id: TEST_USER_ID_1,
-                    data: [{ key: "banchoId", value: "bulk_1" }]
-                },
-                {
-                    table: Tables.USER,
-                    id: TEST_USER_ID_2,
-                    data: [{ key: "banchoId", value: "bulk_2" }]
-                }
-            ]);
+        test("bulk inserts multiple entries correctly", async () => {
+            (await bulkInsertData([
+                            {
+                                table: Tables.USER,
+                                id: TEST_USER_ID_1,
+                                data: [{ key: "banchoId", value: "bulk_1" }]
+                            },
+                            {
+                                table: Tables.USER,
+                                id: TEST_USER_ID_2,
+                                data: [{ key: "banchoId", value: "bulk_2" }]
+                            }
+                        ]));
 
-            const user1 = getEntry(Tables.USER, TEST_USER_ID_1);
-            const user2 = getEntry(Tables.USER, TEST_USER_ID_2);
+            const user1 = (await getEntry(Tables.USER, TEST_USER_ID_1));
+            const user2 = (await getEntry(Tables.USER, TEST_USER_ID_2));
 
             expect(user1?.banchoId).toBe("bulk_1");
             expect(user2?.banchoId).toBe("bulk_2");
@@ -123,8 +123,8 @@ describe("Database Utilities", () => {
     });
 
     describe("Count operations", () => {
-        test("getRowCount returns a number", () => {
-            const count = getRowCount(Tables.USER);
+        test("getRowCount returns a number", async () => {
+            const count = (await getRowCount(Tables.USER));
             expect(typeof count).toBe("number");
             expect(count).toBeGreaterThanOrEqual(2); // Since we just inserted 2 test users
         });
