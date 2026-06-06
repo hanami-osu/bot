@@ -83,7 +83,6 @@ export async function getPerformanceResults({
     };
     mods: Array<string> | Array<Mod> | number;
     mapData?: string;
-    /** Whether the play was completed. When false, passedObjects is calculated from hitValues. */
     passed?: boolean;
     checksum?: string;
 }): Promise<PerformanceInfo | null> {
