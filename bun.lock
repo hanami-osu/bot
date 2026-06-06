@@ -12,7 +12,7 @@
         "lilybird": "^0.7.1",
         "osu-api-extended": "^3.1.12",
         "redis": "^5.7.0",
-        "rosu-pp-js": "3.1.0",
+        "rosu-pp-js": "4.0.1",
       },
       "devDependencies": {
         "@eslint/js": "^9.32.0",
@@ -333,7 +333,7 @@
 
     "reusify": ["reusify@1.1.0", "", {}, "sha512-g6QUff04oZpHs0eG5p83rFLhHeV00ug/Yf9nZM6fLeUrPguBTkTQOdpAWWspMh55TZfVQDPaN3NQJfbVRAxdIw=="],
 
-    "rosu-pp-js": ["rosu-pp-js@3.1.0", "", {}, "sha512-5YR/ar+XKLvAJAEvPhfEeBunDAY/qPFoey9b9ykvbNDR1K6FO77Mj7VblPpVs9O5TFRwecVSvOLFHMaY63l3YA=="],
+    "rosu-pp-js": ["rosu-pp-js@4.0.1", "", {}, "sha512-yEjhglfSrDVV3aBkd61RgaMqdKbLIX3225gkHS67+IboVZwC2PCmbDl7yaBDV4CSQTtkEEhWIpwdhHTJnoVOcQ=="],
 
     "run-parallel": ["run-parallel@1.2.0", "", { "dependencies": { "queue-microtask": "^1.2.2" } }, "sha512-5l4VyZR86LZ/lDxZTR6jqL8AFE2S0IFLMP26AbjsLVADxHdhB/c0GUsH+y39UfCi3dzz8OlQuPmnaJOMoDHQBA=="],
 

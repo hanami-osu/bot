@@ -127,6 +127,7 @@ export interface ScoreStatistics {
     small_bonus?: number;
     small_tick_hit?: number;
     small_tick_miss?: number;
+    slider_tail_hit?: number;
 }
 
 export type ISOTimestamp = string;
@@ -163,6 +164,7 @@ export type Score = {
     rank: Rank;
     score?: number;
     total_score?: number;
+    legacy_score_id?: number | null;
     statistics: ScoreStatistics;
     beatmap: Beatmap;
     beatmapset: Beatmapset;

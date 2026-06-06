@@ -29,7 +29,7 @@ export async function beatmapBuilder({ beatmapId, mods }: BeatmapBuilderOptions)
     const performancesAsync = [];
     const accuracyList = [98, 97, 95];
     for (const accuracy of accuracyList) {
-        const performance = getPerformanceResults({ beatmapId, setId: map.mode_int, mapData, accuracy, mods: mods ?? 0 });
+        const performance = getPerformanceResults({ beatmapId, setId: map.mode_int, mapData, accuracy, mods: mods ?? 0, checksum: map.checksum });
         performancesAsync.push(performance);
     }
     const performances = await Promise.all(performancesAsync);

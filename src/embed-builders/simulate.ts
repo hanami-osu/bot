@@ -38,6 +38,7 @@ export async function simulateBuilder({ beatmapId, mods, options }: SimulateBuil
         clockRate: clockRate ?? (bpm && map.bpm ? bpm / map.bpm : undefined),
         accuracy: acc,
         mods: mods ?? 0,
+        checksum: map.checksum,
     });
 
     if (performance === null) {

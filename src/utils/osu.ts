@@ -2,31 +2,14 @@ import { bulkInsertData, getEntry, insertData } from "@utils/database";
 import { Mode } from "@type/osu";
 import { Tables } from "@type/database";
 import { Beatmap, BeatmapAttributesBuilder, Performance } from "rosu-pp-js";
-import { enums } from "osu-api-extended";
 import { ChannelType } from "lilybird";
 import https from "https";
+import crypto from "crypto";
 import type { Score as ScoreDatabase } from "@type/database";
 import type { Message } from "@lilybird/transformers";
 import type { Mod } from "@type/mods";
 import type { PerformanceInfo, Score, LeaderboardScore, GameMode, Rank, ScoreStatistics, Beatmap as BeatmapWeb, LeaderboardScoresRaw } from "@type/osu";
 import type { Client, Embed } from "lilybird";
-
-function getModsEnum(mods: Array<string>, derivativeModsWithOriginal?: boolean): number {
-    return mods.reduce((count, mod) => {
-        if (
-            !["NF", "EZ", "TD", "HD", "HR", "SD", "DT", "RX", "HT", "NC", "FL", "AT", "SO", "AP", "PF", "4K", "5K", "6K", "7K", "8K", "FI", "RD", "CN", "TP", "K9", "KC", "1K", "2K", "3K", "SV2", "MR"].includes(
-                mod,
-            )
-        )
-            return count;
-
-        if (mod === "NC" && derivativeModsWithOriginal) return count + enums.ModsEnum.NC + enums.ModsEnum.DT;
-
-        if (mod === "PF" && derivativeModsWithOriginal) return count + enums.ModsEnum.PF + enums.ModsEnum.SD;
-
-        return count + enums.ModsEnum[mod as keyof typeof enums.ModsEnum];
-    }, 0);
-}
 
 export async function getBeatmapTopScores({ beatmapId, isGlobal, mode, mods }: { beatmapId: number; isGlobal: boolean; mode: GameMode; mods: Array<string> | undefined }): Promise<Array<LeaderboardScore>> {
     const url = new URL(`https://osu.ppy.sh/beatmaps/${beatmapId}/scores`);
@@ -77,7 +60,8 @@ export async function getPerformanceResults({
     hitValues,
     mods,
     mapData,
-    objectsHit,
+    passed,
+    checksum,
 }: {
     play?: Score | LeaderboardScore;
     setId?: number;
@@ -86,37 +70,78 @@ export async function getPerformanceResults({
     accuracy?: number;
     clockRate?: number;
     mapSettings?: { ar?: number; od?: number; cs?: number };
-    hitValues?: { count_100?: number; count_300?: number; count_50?: number; count_geki?: number | null; count_katu?: number | null; count_miss?: number };
+    hitValues?: {
+        count_100?: number;
+        count_300?: number;
+        count_50?: number;
+        count_geki?: number | null;
+        count_katu?: number | null;
+        count_miss?: number;
+        large_tick_hit?: number;
+        small_tick_hit?: number;
+        slider_tail_hit?: number;
+    };
     mods: Array<string> | Array<Mod> | number;
     mapData?: string;
-    objectsHit?: number;
+    passed?: boolean;
+    checksum?: string;
 }): Promise<PerformanceInfo | null> {
+    let isLazer = true;
+    if (play && play.legacy_score_id !== null && typeof play.legacy_score_id !== "undefined") {
+        isLazer = false;
+    }
+
     let rulesetId: number;
     if (typeof play !== "undefined" && "mode_int" in play) rulesetId = play.mode_int;
     else if (typeof play !== "undefined" && "mode" in play) rulesetId = play.ruleset_id;
     else rulesetId = setId!;
 
-    mapData ??= (await getEntry(Tables.MAP, beatmapId))?.data ?? (await downloadBeatmap(beatmapId)).contents;
+    checksum ??= play?.beatmap?.checksum;
+
+    if (mapData && checksum) {
+        const localHash = crypto.createHash("md5").update(mapData).digest("hex");
+        if (localHash !== checksum) {
+            mapData = undefined;
+        }
+    }
+
+    if (!mapData) {
+        const entry = await getEntry(Tables.MAP, beatmapId);
+        mapData = entry?.data;
+        if (mapData && checksum) {
+            const localHash = crypto.createHash("md5").update(mapData).digest("hex");
+            if (localHash !== checksum) {
+                mapData = undefined;
+            }
+        }
+    }
+
+    mapData ??= (await downloadBeatmap(beatmapId)).contents;
     if (!mapData) return null;
 
     let modsStringArray: Array<string> = [];
-    let modsInt: number;
-    if (typeof mods === "number") modsInt = mods;
-    else if (isNewMods(mods)) {
-        modsInt = getModsEnum(
-            mods.map((x) => x.acronym),
-            true,
-        );
+    let rosuMods: object | number;
+
+    if (typeof mods === "number") {
+        rosuMods = mods;
+    } else if (isNewMods(mods)) {
+        rosuMods = mods.map((mod) => {
+            if (mod.settings) {
+                return { acronym: mod.acronym, settings: mod.settings };
+            }
+            return { acronym: mod.acronym };
+        });
         for (const mod of mods) {
             if (mod.acronym === "DT" && mod.settings?.speed_change) {
                 clockRate = mod.settings.speed_change;
                 modsStringArray.push(`${mod.acronym}(${clockRate}x)`);
                 continue;
             }
+            if (mod.acronym === "CL") continue;
             modsStringArray.push(mod.acronym);
         }
     } else {
-        modsInt = getModsEnum(mods as Array<string>, true);
+        rosuMods = (mods as Array<string>).map((acronym) => ({ acronym }));
         modsStringArray = mods as Array<string>;
     }
 
@@ -128,40 +153,66 @@ export async function getPerformanceResults({
         ar: mapSettings?.ar,
         cs: mapSettings?.cs,
         od: mapSettings?.od,
-        mods: modsInt,
+        mods: rosuMods,
         clockRate,
     }).build();
 
     const perfect = new Performance({
+        lazer: isLazer,
         ar: mapSettings?.ar,
         cs: mapSettings?.cs,
         od: mapSettings?.od,
-        mods: modsInt,
+        mods: rosuMods,
         clockRate,
     }).calculate(beatmap);
 
-    const { count_100: n100, count_300: n300, count_50: n50, count_geki: nGeki, count_katu: nKatu, count_miss: misses } = hitValues ?? {};
+    const {
+        count_100: n100,
+        count_300: n300,
+        count_50: n50,
+        count_geki: nGeki,
+        count_katu: nKatu,
+        count_miss: misses,
+        large_tick_hit: largeTickHits,
+        small_tick_hit: smallTickHits,
+        slider_tail_hit: sliderEndHits,
+    } = hitValues ?? {};
+
+    // Only calculate passedObjects for failed/incomplete plays.
+    // For completed plays, rosu-pp determines object count from the beatmap.
+    let passedObjects: number | undefined;
+    if (passed === false && hitValues) {
+        passedObjects = (hitValues.count_300 ?? 0) + (hitValues.count_100 ?? 0) + (hitValues.count_50 ?? 0) + (hitValues.count_miss ?? 0);
+    }
 
     const current = new Performance(
         typeof accuracy === "undefined"
             ? {
-                  mods: modsInt,
+                  lazer: isLazer,
+                  mods: rosuMods,
                   n100,
                   n300,
                   n50,
                   nGeki: nGeki ?? undefined,
                   nKatu: nKatu ?? undefined,
                   misses,
+                  largeTickHits,
+                  smallTickHits,
+                  sliderEndHits,
                   combo: maxCombo ?? perfect.difficulty.maxCombo,
-                  passedObjects: objectsHit,
+                  passedObjects,
                   clockRate,
               }
             : {
-                  mods: modsInt,
+                  lazer: isLazer,
+                  mods: rosuMods,
                   accuracy,
                   misses,
+                  largeTickHits,
+                  smallTickHits,
+                  sliderEndHits,
                   combo: maxCombo ?? perfect.difficulty.maxCombo,
-                  passedObjects: objectsHit,
+                  passedObjects,
                   clockRate,
               },
     ).calculate(perfect);
@@ -169,7 +220,8 @@ export async function getPerformanceResults({
     const fc = new Performance(
         typeof accuracy === "undefined"
             ? {
-                  mods: modsInt,
+                  lazer: isLazer,
+                  mods: rosuMods,
                   n100,
                   n50,
                   nGeki: nGeki ?? undefined,
@@ -180,7 +232,8 @@ export async function getPerformanceResults({
                   clockRate,
               }
             : {
-                  mods: modsInt,
+                  lazer: isLazer,
+                  mods: rosuMods,
                   misses: 0,
                   accuracy,
                   combo: perfect.difficulty.maxCombo,
@@ -440,7 +493,7 @@ function saveScore(
             },
             {
                 key: "mods",
-                value: play.mods.map(m => typeof m === "object" && m !== null && "acronym" in m ? m.acronym : m).join(""),
+                value: play.mods.map((m) => (typeof m === "object" && m !== null && "acronym" in m ? m.acronym : m)).join(""),
             },
             {
                 key: "score",
