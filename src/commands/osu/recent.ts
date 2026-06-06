@@ -53,7 +53,7 @@ export async function run(ctx: CommandContext) {
         index = ctx.index ?? 0;
     }
 
-    const { user, mods } = (await parseCommandArgs(ctx, mode));
+    const { user, mods } = await parseCommandArgs(ctx, mode);
 
     if (user.type === UserType.FAIL) {
         await ctx.editReply(user.failMessage);
@@ -68,7 +68,7 @@ export async function run(ctx: CommandContext) {
     }
 }
 
-async function getEmbeds(user: SuccessUser, authorId: string, index: number, includeFails: boolean, mods: any): Promise<{ reply: MessageReplyOptions, embedOptions?: PlaysBuilderOptions }> {
+async function getEmbeds(user: SuccessUser, authorId: string, index: number, includeFails: boolean, mods: any): Promise<{ reply: MessageReplyOptions; embedOptions?: PlaysBuilderOptions }> {
     const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
     if (!osuUserRequest.success) {
         return {
@@ -80,7 +80,7 @@ async function getEmbeds(user: SuccessUser, authorId: string, index: number, inc
                         description: `It seems like the user **\`${user.banchoId}\`** doesn't exist! :(`,
                     },
                 ],
-            }
+            },
         };
     }
     const osuUser = osuUserRequest.data;
@@ -97,7 +97,7 @@ async function getEmbeds(user: SuccessUser, authorId: string, index: number, inc
                         description: `It seems like \`${osuUser.username}\` hasn't set any recent plays! :(`,
                     },
                 ],
-            }
+            },
         };
     }
 

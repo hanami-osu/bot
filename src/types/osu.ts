@@ -164,6 +164,7 @@ export type Score = {
     rank: Rank;
     score?: number;
     total_score?: number;
+    legacy_score_id?: number | null;
     statistics: ScoreStatistics;
     beatmap: Beatmap;
     beatmapset: Beatmapset;

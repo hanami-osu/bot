@@ -73,14 +73,16 @@ export async function getFormattedScore({
     };
 
     const objectsHit = (scoreStatistics.count_300 ?? 0) + (scoreStatistics.count_100 ?? 0) + (scoreStatistics.count_50 ?? 0) + (scoreStatistics.count_miss ?? 0) + (scoreStatistics.count_geki ?? 0) + (scoreStatistics.count_katu ?? 0);
+
     const performance = await getPerformanceResults({
         hitValues: scoreStatistics,
         beatmapId: beatmap.id,
         play: play as any,
         maxCombo: play.max_combo,
-        objectsHit,
+        passed: play.passed,
         mods: play.mods as any,
         mapData,
+        checksum: beatmap.checksum,
     });
 
     // throw an error if performance doesn't exist.
