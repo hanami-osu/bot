@@ -1,10 +1,17 @@
 import { CommandData } from "@type/commands";
 import { ApplicationCommandOptionType, type Embed } from "lilybird";
 import { getEntry, insertData } from "@utils/database";
-import { ScoreEmbed, Tables } from "@type/database";
+import { EmbedScoreType, ScoreData, ScoreEmbed, Tables } from "@type/database";
 import type { ApplicationCommandData, GuildInteraction } from "@lilybird/transformers";
 
 import { CommandContext } from "@utils/command-context";
+
+const configDefaults: Record<string, string> = {
+    score_embeds: "Maximized",
+    mode: "osu",
+    embed_type: "Hanami",
+    score_data: "Stable",
+};
 
 export async function run(ctx: CommandContext): Promise<void> {
     await ctx.defer();
@@ -25,8 +32,7 @@ export async function run(ctx: CommandContext): Promise<void> {
         return;
     }
 
-    const changes = [];
-    // insert mode data to db
+    const changes: Array<{ type: string; data: string }> = [];
     if (typeof modeData !== "undefined") {
         (await insertData({ table: Tables.USER, id: userId, data: [{ key: "mode", value: modeData }] }));
         changes.push({ type: "mode", data: modeData });
@@ -55,21 +61,14 @@ export async function run(ctx: CommandContext): Promise<void> {
     await interaction.editReply({
         embeds: [
             {
-                title: `Successfully changes configs for ${username}`,
-                description: `Changed configs:\n${changesText}`,
+                title: `Successfully changed config for ${username}`,
+                description: `Updated settings:\n${changesText}`,
             },
         ],
     });
 }
 
 async function list(interaction: GuildInteraction<ApplicationCommandData>, userId: string): Promise<void> {
-    const defaults: Record<string, string> = {
-        score_embeds: "Maximized",
-        mode: "None",
-        score_data: "Stable",
-        unknown: "unknown",
-    };
-
     let user = (await getEntry(Tables.USER, userId));
     if (!user) {
         (await insertData({ table: Tables.USER, id: userId, data: [{ key: "banchoId", value: null }] }));
@@ -84,24 +83,34 @@ async function list(interaction: GuildInteraction<ApplicationCommandData>, userI
             if (key === "id" || key === "banchoId") continue;
 
             if (value !== null) {
-                let displayValue: string;
-
-                if (key === "score_embeds" && typeof value === "number") {
-                    displayValue = ScoreEmbed[value];
-                } else if (key === "score_data" && typeof value === "number") {
-                    displayValue = value === 0 ? "Stable" : "Lazer";
-                } else {
-                    displayValue = typeof value === "number" ? value.toString() : value;
-                }
-
-                embeds.fields?.push({ name: key, value: displayValue });
+                embeds.fields?.push({ name: key, value: getConfigDisplayValue(key, value) });
             } else {
-                embeds.fields?.push({ name: key, value: defaults[key || "unknown"] });
+                embeds.fields?.push({ name: key, value: configDefaults[key] ?? "Unknown" });
             }
         }
     }
 
     await interaction.editReply({ embeds: [embeds] });
+}
+
+function getConfigDisplayValue(key: string, value: string | number): string {
+    if (key === "score_embeds" && typeof value === "number") {
+        return ScoreEmbed[value] ?? configDefaults.score_embeds;
+    }
+
+    if (key === "score_data" && typeof value === "number") {
+        return ScoreData[value] ?? configDefaults.score_data;
+    }
+
+    if (key === "embed_type" && typeof value === "string") {
+        return Object.values(EmbedScoreType).includes(value as EmbedScoreType) ? value : configDefaults.embed_type;
+    }
+
+    if (key === "mode" && typeof value === "string") {
+        return value || configDefaults.mode;
+    }
+
+    return value.toString();
 }
 
 export const data = {
@@ -123,9 +132,8 @@ export const data = {
             {
                 type: ApplicationCommandOptionType.STRING,
                 name: "mode",
-                description: "Specify an osu! mode (none defaults to osu)",
+                description: "Specify an osu! mode. osu!standard is the default.",
                 choices: [
-                    { name: "None", value: "osu" },
                     { name: "osu", value: "osu" },
                     { name: "mania", value: "mania" },
                     { name: "taiko", value: "taiko" },
