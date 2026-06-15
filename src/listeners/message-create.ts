@@ -84,6 +84,9 @@ async function run(message: Message): Promise<void> {
         return;
     }
 
+    // set cooldown before executing command
+    cooldownsCache.set(`${data.name}:${author.id}`, Date.now() + (data.message?.cooldown ?? 1000));
+
     // return simple deprecation notice only if explicitly requested
     if (!command.run && !command.runMessage && data.isDeprecatedPrefix) {
         const embed = deprecatedEmbed(data.name);
@@ -135,7 +138,4 @@ async function run(message: Message): Promise<void> {
             await logger.warn("Could not increment prefix command counter", { command: data.name, error: counterError });
         }
     }
-
-    // set cooldown
-    cooldownsCache.set(`${data.name}:${author.id}`, Date.now() + (data.message?.cooldown ?? 1000));
 }
