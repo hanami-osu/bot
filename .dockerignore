@@ -1,7 +1,14 @@
 node_modules
 .git
+.github
+.codex
+.agents
 .env*
 npm-debug.log
 *.db
 *.sqlite
 *.sqlite3
+tests
+logs
+coverage
+osu-token.json

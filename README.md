@@ -45,6 +45,15 @@ You can look at all of the libraries I use by going to `package.json` in the mai
 
 Read the [CONTRIBUTING.md](https://github.com/hanami-osu/bot/blob/main/CONTRIBUTING.md) file.
 
+## Docker rollback
+
+Production images are published with both `latest` and the immutable commit SHA. To roll back, deploy a known-good SHA tag instead of `latest`:
+
+```bash
+docker pull yorunoken/hanami-bot:<commit-sha>
+docker run --rm yorunoken/hanami-bot:<commit-sha>
+```
+
 ## Contact me
 
 If you have any questions or just want to have someone to talk to, add me on discord (@yorunoken), or message me on twitter (@\_yorunoken)
