@@ -25,7 +25,7 @@ Use `/help` to see all available commands.
 
 ## Invite the bot
 
-[Add Hanami to your server](https://discord.com/api/oauth2/authorize?client_id=995999045157916763&permissions=330752&scope=bot)
+[Add Hanami to your server](https://discord.com/oauth2/authorize?client_id=995999045157916763&permissions=347200&scope=bot%20applications.commands)
 
 ## Libraries
 
@@ -33,9 +33,13 @@ You can look at all of the libraries I use by going to `package.json` in the mai
 
 - [Lilybird](https://github.com/Didas-git/lilybird) to communicate with Discord's API.
 
-- [osu-web.js](https://github.com/L-Mario564/osu.js) to communicate with osu!'s servers.
+- [osu-api-extended](https://github.com/cyperdark/osu-api-extended) to communicate with osu!'s servers.
 
-- [rosu-pp's JavaScript bind](https://github.com/MaxOhn/rosu-pp-js) to calculate pp, bpm values, other technical stuff of osu!
+- [rosu-pp-js](https://github.com/MaxOhn/rosu-pp-js) for osu! performance and beatmap calculations.
+
+- [Prisma](https://www.prisma.io/) for database access.
+
+- [Redis](https://redis.io/) for short-lived bot state.
 
 ## Contributing
 
