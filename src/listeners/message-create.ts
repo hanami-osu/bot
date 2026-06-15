@@ -110,6 +110,13 @@ async function run(message: Message): Promise<void> {
             await command.runMessage({ client: client, message, args, prefix: chosenPrefix, index, commandName, channel });
         }
 
+        // Increment command count only if no errors were found
+        try {
+            await incrementCommandCount(`${data.name}:prefix`);
+        } catch (counterError) {
+            await logger.warn("Could not increment prefix command counter", { command: data.name, error: counterError });
+        }
+
         try {
             const guild = await client.rest.getGuild(guildId);
             await logger.info(`[${guild.name}] ${author.username} used prefix command \`${data.name}\``, {
@@ -131,11 +138,5 @@ async function run(message: Message): Promise<void> {
             content,
             prefix: chosenPrefix,
         });
-    } finally {
-        try {
-            await incrementCommandCount(`${data.name}:prefix`);
-        } catch (counterError) {
-            await logger.warn("Could not increment prefix command counter", { command: data.name, error: counterError });
-        }
     }
 }
