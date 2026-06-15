@@ -1,75 +1,95 @@
-import { expect, test, describe, beforeAll, mock, afterAll } from "bun:test";
-import { run } from "../../../src/commands/osu/top";
+import { describe, expect, mock, test } from "bun:test";
 import { CommandContext } from "../../../src/utils/command-context";
-import { initializeOsuApi } from "../../../src/utils/initialize";
-import { initializeRedis, closeRedis } from "../../../src/utils/cache";
+import { Tables } from "../../../src/types/database";
+import type { Client } from "lilybird";
+import type { Message } from "@lilybird/transformers";
+
+interface ReplyPayload {
+    embeds: Array<{ title?: string; description?: string }>;
+    components?: unknown;
+}
+
+function parseMockBigInt(value: string | number | bigint, fieldName = "value"): bigint {
+    if (typeof value === "bigint") return value;
+    if (typeof value === "number" && !Number.isSafeInteger(value)) throw new Error(`${fieldName} must be a safe integer or decimal string`);
+    if (typeof value === "string" && !/^-?\d+$/.test(value)) throw new Error(`${fieldName} must be a decimal integer string`);
+    return BigInt(value);
+}
+
+mock.module("@utils/database", () => ({
+    getEntry: mock((table: Tables, id: string) => Promise.resolve(table === Tables.USER && id === "123" ? { id, banchoId: null } : null)),
+    insertData: mock(() => Promise.resolve()),
+    bulkInsertData: mock(() => Promise.resolve()),
+    removeEntry: mock(() => Promise.resolve(true)),
+    getRowCount: mock(() => Promise.resolve(0)),
+    getRowSum: mock(() => Promise.resolve(0)),
+    parseBigIntValue: parseMockBigInt,
+    mapToPrismaValue: (key: string, value: unknown) => ["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value,
+    mapFromPrismaValue: (value: unknown) => value,
+    incrementCommandCount: mock(() => Promise.resolve()),
+}));
+
+mock.module("osu-api-extended", () => ({
+    v2: {
+        users: {
+            details: mock(({ user }: { user: string }) => user === "missing" ? Promise.resolve({ error: { message: "not found" } }) : Promise.resolve({ id: 1, username: user, statistics: {}, country: {}, cover: {} })),
+        },
+    },
+}));
+
+mock.module("@utils/score-api", () => ({
+    getUserScores: mock(() => Promise.resolve([{ id: 1, mods: [], statistics: {}, beatmap: { id: 1 }, beatmapset: {}, passed: true }])),
+}));
+
+mock.module("@builders", () => ({
+    playBuilder: mock(() => Promise.resolve([{ title: "top play", author: { name: "mrekk" } }])),
+    simulateBuilder: mock(() => Promise.resolve([{ title: "simulated" }])),
+}));
+
+const { run } = await import("../../../src/commands/osu/top");
 
 describe("top command", () => {
-    beforeAll(async () => {
-        await initializeOsuApi();
-        await initializeRedis();
-    });
-
-    afterAll(async () => {
-        await closeRedis();
-    });
-
-    test("runs and returns an embed for a valid user (mrekk)", async () => {
-        const mockClient = {
-            rest: {
-                getOriginalInteractionResponse: mock(() => Promise.resolve({ id: "test_msg_id" }))
-            }
-        } as any;
-
+    test("runs with mocked osu data and returns paginated embeds", async () => {
+        const mockClient = { rest: {} } as unknown as Client;
+        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
         const mockMessage = {
             author: { id: "123", username: "test_user" },
+            guildId: "guild",
             channelId: "channel123",
-            reply: mock(() => Promise.resolve({ edit: mock(() => Promise.resolve({ id: "test_msg_id" })) })),
-        } as any;
+            reply,
+        } as unknown as Message;
 
-        // Use a well-known user to ensure they have plays
         const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk"], "!", "top");
-        
         ctx.defer = mock(() => Promise.resolve());
-        
+
         await run(ctx);
 
         expect(ctx.defer).toHaveBeenCalled();
-        // For message commands without an initial reply, editReply falls back to reply()
-        expect(mockMessage.reply).toHaveBeenCalled();
-        const replyCall = mockMessage.reply.mock.calls[0][0];
-        
-        // Check that embeds were generated
-        expect(replyCall.embeds).toBeDefined();
-        expect(replyCall.embeds.length).toBeGreaterThan(0);
-        
-        // It should contain 'mrekk' in the author name
-        expect(replyCall.embeds[0].author.name).toContain("mrekk");
-        
-        // It should contain pagination components
+        expect(reply).toHaveBeenCalled();
+        const replyCall = reply.mock.calls[0]?.[0];
+        if (!replyCall) throw new Error("Expected reply payload");
+        expect(replyCall.embeds[0].title).toBe("top play");
         expect(replyCall.components).toBeDefined();
-    }, 15000); // 15 seconds timeout since we're hitting live APIs
+    });
 
-    test("runs and returns an error embed for a non-existent user", async () => {
-        const mockClient = {} as any;
-
+    test("returns a generic not found embed for a missing user", async () => {
+        const mockClient = { rest: {} } as unknown as Client;
+        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
         const mockMessage = {
             author: { id: "123", username: "test_user" },
+            guildId: "guild",
             channelId: "channel123",
-            reply: mock(() => Promise.resolve({ edit: mock(() => Promise.resolve({ id: "test_msg_id" })) })),
-        } as any;
+            reply,
+        } as unknown as Message;
 
-        const fakeUsername = "asdfghjklqwertyuiop123456789";
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, [fakeUsername], "!", "top");
-        
+        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["missing"], "!", "top");
         ctx.defer = mock(() => Promise.resolve());
-        
+
         await run(ctx);
 
-        const replyCall = mockMessage.reply.mock.calls[0][0];
-        
-        expect(replyCall.embeds).toBeDefined();
+        const replyCall = reply.mock.calls[0]?.[0];
+        if (!replyCall) throw new Error("Expected reply payload");
         expect(replyCall.embeds[0].title).toBe("Uh oh! :x:");
         expect(replyCall.embeds[0].description).toContain("doesn't exist");
-    }, 15000);
+    });
 });

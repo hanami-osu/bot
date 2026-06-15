@@ -4,9 +4,9 @@ import { Tables } from "../../../src/types/database";
 import type { Client } from "lilybird";
 import type { Message } from "@lilybird/transformers";
 
+const simulateBuilderMock = mock(() => Promise.resolve([{ title: "simulated" }]));
 interface ReplyPayload {
     embeds: Array<{ title?: string; description?: string }>;
-    components?: unknown;
 }
 
 function parseMockBigInt(value: string | number | bigint, fieldName = "value"): bigint {
@@ -29,27 +29,34 @@ mock.module("@utils/database", () => ({
     incrementCommandCount: mock(() => Promise.resolve()),
 }));
 
-mock.module("osu-api-extended", () => ({
-    v2: {
-        users: {
-            details: mock(({ user }: { user: string }) => user === "missing" ? Promise.resolve({ error: { message: "not found" } }) : Promise.resolve({ id: 1, username: user, statistics: {}, country: {}, cover: {} })),
-        },
-    },
-}));
-
-mock.module("@utils/score-api", () => ({
-    getUserScores: mock(() => Promise.resolve([{ id: 1, mods: [], statistics: {}, beatmap: { id: 1 }, beatmapset: {}, passed: true }])),
-}));
-
 mock.module("@builders", () => ({
-    playBuilder: mock(() => Promise.resolve([{ title: "recent play", author: { name: "mrekk" } }])),
-    simulateBuilder: mock(() => Promise.resolve([{ title: "simulated" }])),
+    simulateBuilder: simulateBuilderMock,
+}));
+mock.module("../../../src/embed-builders/index.ts", () => ({
+    simulateBuilder: simulateBuilderMock,
+}));
+mock.module("../../../src/embed-builders/simulate.ts", () => ({
+    simulateBuilder: simulateBuilderMock,
 }));
 
-const { run } = await import("../../../src/commands/osu/recent");
+mock.module("@utils/osu", () => ({
+    getBeatmapIdFromContext: mock(() => Promise.resolve(72727)),
+    accuracyCalculator: mock(() => 100),
+    downloadBeatmap: mock(() => Promise.resolve({ id: 72727, contents: "osu file format v14\n[Metadata]\n[HitObjects]" })),
+    formatDuration: mock(() => "1:00"),
+    getPerformanceResults: mock(() => Promise.resolve(null)),
+    gradeCalculator: mock(() => "SS"),
+    hitValueCalculator: mock(() => "1/0/0/0"),
+    getBeatmapTopScores: mock(() => Promise.resolve([])),
+    getRetryCount: mock(() => 1),
+    saveScoreDatas: mock(() => Promise.resolve()),
+    isPlausibleBeatmap: mock(() => true),
+}));
 
-describe("recent command", () => {
-    test("runs with mocked osu data and returns paginated embeds", async () => {
+const { run } = await import("../../../src/commands/osu/simulate");
+
+describe("simulate command", () => {
+    test("passes validated prefix inputs through the builder contract", async () => {
         const mockClient = { rest: {} } as unknown as Client;
         const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
         const mockMessage = {
@@ -58,21 +65,21 @@ describe("recent command", () => {
             channelId: "channel123",
             reply,
         } as unknown as Message;
-
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk"], "!", "recent");
+        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["https://osu.ppy.sh/b/72727", "+HDHR", "combo=1234", "acc=98.5"], "!", "simulate");
         ctx.defer = mock(() => Promise.resolve());
 
         await run(ctx);
 
-        expect(ctx.defer).toHaveBeenCalled();
-        expect(reply).toHaveBeenCalled();
-        const replyCall = reply.mock.calls[0]?.[0];
-        if (!replyCall) throw new Error("Expected reply payload");
-        expect(replyCall.embeds[0].title).toBe("recent play");
-        expect(replyCall.components).toBeDefined();
+        expect(simulateBuilderMock).toHaveBeenCalledWith({
+            type: "simulateBuilder",
+            initiatorId: "123",
+            beatmapId: 72727,
+            mods: ["HD", "HR"],
+            options: { combo: 1234, acc: 98.5, clock_rate: undefined, bpm: undefined },
+        });
     });
 
-    test("returns a not found embed for a missing user", async () => {
+    test("returns a validation error for invalid numeric input", async () => {
         const mockClient = { rest: {} } as unknown as Client;
         const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
         const mockMessage = {
@@ -81,15 +88,14 @@ describe("recent command", () => {
             channelId: "channel123",
             reply,
         } as unknown as Message;
-
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["missing"], "!", "recent");
+        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["combo=1.5"], "!", "simulate");
         ctx.defer = mock(() => Promise.resolve());
 
         await run(ctx);
 
         const replyCall = reply.mock.calls[0]?.[0];
         if (!replyCall) throw new Error("Expected reply payload");
-        expect(replyCall.embeds[0].title).toBe("Uh oh! :x:");
-        expect(replyCall.embeds[0].description).toContain("doesn't exist");
+        expect(replyCall.embeds[0].title).toBe("Invalid simulation input");
+        expect(replyCall.embeds[0].description).toContain("combo");
     });
 });

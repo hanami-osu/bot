@@ -271,6 +271,16 @@ export async function downloadBeatmap(
                 });
                 response.on("end", async function () {
                     const data = Buffer.concat(chunks).toString();
+                    if (!response.statusCode || response.statusCode < 200 || response.statusCode >= 300) {
+                        reject(new Error(`Beatmap download failed with HTTP ${response.statusCode ?? "unknown"}`));
+                        return;
+                    }
+
+                    if (!isPlausibleBeatmap(data)) {
+                        reject(new Error("Beatmap download returned invalid .osu content"));
+                        return;
+                    }
+
                     await insertData({ table: Tables.MAP, id, data: [{ key: "data", value: data }] });
                     resolve({ id, contents: data });
                 });
@@ -284,6 +294,27 @@ export async function downloadBeatmap(
 
         req.end();
     });
+}
+
+export function isPlausibleBeatmap(contents: string): boolean {
+    const trimmed = contents.trim();
+    return trimmed.startsWith("osu file format v") && trimmed.includes("[HitObjects]") && trimmed.includes("[Metadata]") && !/^<!doctype html/i.test(trimmed) && !/^<html/i.test(trimmed);
+}
+
+export function formatDuration(totalSeconds: number): string {
+    if (!Number.isFinite(totalSeconds) || totalSeconds <= 0) return "0:00";
+
+    const roundedSeconds = Math.round(totalSeconds);
+    const seconds = roundedSeconds % 60;
+    const totalMinutes = Math.floor(roundedSeconds / 60);
+    const minutes = totalMinutes % 60;
+    const hours = Math.floor(totalMinutes / 60);
+
+    if (hours > 0) {
+        return `${hours}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+    }
+
+    return `${minutes}:${seconds.toString().padStart(2, "0")}`;
 }
 
 export function accuracyCalculator(
@@ -315,14 +346,14 @@ export function accuracyCalculator(
             acc = (2 * count300 + count100) / (2 * (count300 + count100 + countMiss));
             break;
         case Mode.FRUITS:
-            acc = count300 + count100 + count50 + countKatu + countMiss;
+            acc = (count300 + count100 + count50) / (count300 + count100 + count50 + countKatu + countMiss);
             break;
         case Mode.MANIA:
             acc = (6 * countGeki + 6 * count300 + 4 * countKatu + 2 * count100 + count50) / (6 * (count50 + count100 + count300 + countMiss + countGeki + countKatu));
             break;
     }
 
-    return 100 * acc;
+    return Number.isFinite(acc) ? 100 * acc : 100;
 }
 
 export function gradeCalculator(
@@ -359,6 +390,7 @@ export function gradeCalculator(
         case Mode.OSU:
         case Mode.TAIKO:
             total = n300 + n100 + n50 + nMiss;
+            if (total === 0) return silver ? "SSH" : "SS";
 
             r300 = n300 / total;
             r50 = n50 / total;
@@ -446,7 +478,7 @@ function saveScore(
     mode: Mode,
     mapTemp?: BeatmapWeb,
 ): {
-    id: number;
+    id: string;
     table: Tables;
     data: Array<{
         key: keyof ScoreDatabase;
@@ -476,16 +508,16 @@ function saveScore(
     }
 
     return {
-        id: play.id,
+        id: play.id.toString(),
         table: Tables.SCORE,
         data: [
             {
                 key: "user_id",
-                value: play.user_id,
+                value: play.user_id.toString(),
             },
             {
                 key: "map_id",
-                value: beatmap.id,
+                value: beatmap.id.toString(),
             },
             {
                 key: "gamemode",
@@ -497,7 +529,7 @@ function saveScore(
             },
             {
                 key: "score",
-                value: "score" in play && play.score ? play.score : (play.total_score ?? 0),
+                value: ("score" in play && play.score ? play.score : (play.total_score ?? 0)).toString(),
             },
             {
                 key: "accuracy",
@@ -549,7 +581,10 @@ function saveScore(
 
 function findId(embed: Embed.Structure): number | null {
     const urlToCheck = embed.url ?? embed.author?.url;
-    return urlToCheck && !/\/(user|u)/.test(urlToCheck) ? Number(/\d+/.exec(urlToCheck)?.[0]) : null;
+    if (!urlToCheck || /\/(user|u)/.test(urlToCheck)) return null;
+
+    const beatmapMatch = /osu\.ppy\.sh\/(?:b|beatmaps)\/(\d+)/.exec(urlToCheck);
+    return beatmapMatch ? Number(beatmapMatch[1]) : null;
 }
 
 function getEmbedFromReply(message: Message): number | null {
@@ -559,7 +594,7 @@ function getEmbedFromReply(message: Message): number | null {
     }
 
     const foundId = findId(referencedMessage.embeds[0]);
-    return Number(foundId) || null;
+    return foundId;
 }
 
 async function cycleThroughEmbeds({ client, message, channelId }: { message?: Message; channelId?: string; client: Client }): Promise<number | null> {
@@ -568,7 +603,7 @@ async function cycleThroughEmbeds({ client, message, channelId }: { message?: Me
         return null;
     }
 
-    const messages = await client.rest.getChannelMessages(channel.id, { limit: 100 });
+    const messages = await client.rest.getChannelMessages(channel.id, { limit: 10 });
 
     let beatmapId = null;
     for (const message of messages) {

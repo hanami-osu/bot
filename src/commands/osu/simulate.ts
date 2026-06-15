@@ -3,15 +3,35 @@ import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
 import { CommandData } from "@type/commands";
 import { Mode } from "@type/osu";
-import { parseCommandArgs } from "@utils/args";
+import { CommandValidationError, parseCommandArgs } from "@utils/args";
 import { getBeatmapIdFromContext } from "@utils/osu";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
 
 import { CommandContext } from "@utils/command-context";
+import type { DifficultyOptions } from "@type/command-args";
+import type { Mod } from "@type/mods";
+
+interface SimulationOptions {
+    mods: Array<string> | Array<Mod> | null;
+    options: DifficultyOptions;
+}
 
 export async function run(ctx: CommandContext) {
     await ctx.defer();
-    const { user, mods, flags } = (await parseCommandArgs(ctx, Mode.OSU));
+    let parsedArgs: Awaited<ReturnType<typeof parseCommandArgs>>;
+    try {
+        parsedArgs = await parseCommandArgs(ctx, Mode.OSU);
+    } catch (error) {
+        if (error instanceof CommandValidationError) {
+            await ctx.editReply({
+                embeds: [{ type: EmbedType.Rich, title: "Invalid simulation input", description: error.message }],
+            });
+            return;
+        }
+        throw error;
+    }
+
+    const { user, mods, flags } = parsedArgs;
 
     const context = ctx.isInteraction 
         ? { channelId: ctx.channelId, client: ctx.client }
@@ -31,30 +51,81 @@ export async function run(ctx: CommandContext) {
         return;
     }
 
-    const simulationOptions = ctx.isInteraction ? {
-        mods: ctx.interaction!.data.getString("mods"),
-        combo: ctx.interaction!.data.getNumber("combo") || undefined,
-        accuracy: ctx.interaction!.data.getNumber("acc") || undefined,
-        clockRate: ctx.interaction!.data.getNumber("clock_rate") || undefined,
-        bpm: ctx.interaction!.data.getNumber("bpm") || undefined,
-    } : {
-        mods: mods.name,
-        combo: Number(flags.combo) || undefined,
-        accuracy: Number(flags.acc || flags.accuracy) || undefined,
-        clockRate: Number(flags.clock_rate || flags.clockrate) || undefined,
-        bpm: Number(flags.bpm) || undefined,
-    };
+    let simulationOptions: SimulationOptions;
+    try {
+        simulationOptions = ctx.isInteraction && ctx.interaction
+            ? {
+                  mods: splitMods(ctx.interaction.data.getString("mods")),
+                  options: {
+                      combo: optionalInteger(ctx.interaction.data.getNumber("combo"), "combo"),
+                      acc: optionalRange(ctx.interaction.data.getNumber("acc"), "accuracy", 0, 100),
+                      clock_rate: optionalPositiveNumber(ctx.interaction.data.getNumber("clock_rate"), "clock rate"),
+                      bpm: optionalPositiveNumber(ctx.interaction.data.getNumber("bpm"), "BPM"),
+                  },
+              }
+            : {
+                  mods: splitMods(typeof mods.name === "string" ? mods.name : null),
+                  options: {
+                      combo: optionalInteger(flags.combo, "combo"),
+                      acc: optionalRange(flags.acc ?? flags.accuracy, "accuracy", 0, 100),
+                      clock_rate: optionalPositiveNumber(flags.clock_rate ?? flags.clockrate, "clock rate"),
+                      bpm: optionalPositiveNumber(flags.bpm, "BPM"),
+                  },
+              };
+    } catch (error) {
+        if (error instanceof CommandValidationError) {
+            await ctx.editReply({
+                embeds: [{ type: EmbedType.Rich, title: "Invalid simulation input", description: error.message }],
+            });
+            return;
+        }
+        throw error;
+    }
 
     const reply = await getEmbeds(String(beatmapId), ctx.user.id, simulationOptions);
     await ctx.editReply(reply);
 }
 
-async function getEmbeds(beatmapId: string, authorId: string, simulationOptions: any): Promise<MessageReplyOptions> {
+function optionalNumber(value: number | string | null | undefined, label: string): number | undefined {
+    if (value === null || typeof value === "undefined" || value === "") return undefined;
+    const number = typeof value === "number" ? value : Number(value);
+    if (!Number.isFinite(number)) throw new CommandValidationError(`${label} must be a finite number.`);
+    return number;
+}
+
+function optionalPositiveNumber(value: number | string | null | undefined, label: string): number | undefined {
+    const number = optionalNumber(value, label);
+    if (typeof number === "undefined") return undefined;
+    if (number <= 0) throw new CommandValidationError(`${label} must be greater than zero.`);
+    return number;
+}
+
+function optionalRange(value: number | string | null | undefined, label: string, min: number, max: number): number | undefined {
+    const number = optionalNumber(value, label);
+    if (typeof number === "undefined") return undefined;
+    if (number < min || number > max) throw new CommandValidationError(`${label} must be between ${min} and ${max}.`);
+    return number;
+}
+
+function optionalInteger(value: number | string | null | undefined, label: string): number | undefined {
+    const number = optionalNumber(value, label);
+    if (typeof number === "undefined") return undefined;
+    if (!Number.isInteger(number) || number < 0) throw new CommandValidationError(`${label} must be a non-negative integer.`);
+    return number;
+}
+
+function splitMods(mods: string | null | undefined): Array<string> | null {
+    if (!mods || mods.toUpperCase() === "NM") return null;
+    return mods.toUpperCase().match(/.{1,2}/g) ?? null;
+}
+
+async function getEmbeds(beatmapId: string, authorId: string, simulationOptions: SimulationOptions): Promise<MessageReplyOptions> {
     const embeds = await simulateBuilder({
         type: EmbedBuilderType.SIMULATE,
         initiatorId: authorId,
         beatmapId: Number(beatmapId),
-        ...simulationOptions,
+        mods: simulationOptions.mods,
+        options: simulationOptions.options,
     });
 
     return { embeds };
@@ -81,6 +152,12 @@ export const data = {
                 type: ApplicationCommandOptionType.STRING,
                 name: "mode",
                 description: "Specify a gamemode.",
+                choices: [
+                    { name: "osu", value: "osu" },
+                    { name: "mania", value: "mania" },
+                    { name: "taiko", value: "taiko" },
+                    { name: "ctb", value: "fruits" },
+                ],
             },
             {
                 type: ApplicationCommandOptionType.NUMBER,

@@ -1,4 +1,4 @@
-import { accuracyCalculator, getPerformanceResults, getRetryCount, hitValueCalculator } from "@utils/osu";
+import { accuracyCalculator, formatDuration, getPerformanceResults, getRetryCount, hitValueCalculator } from "@utils/osu";
 import { grades, rulesets } from "@utils/constants";
 import { insertData } from "@utils/database";
 import { Tables } from "@type/database";
@@ -33,7 +33,17 @@ export async function getFormattedScore({
 
     let totalScore: number;
     let createdAt: ISOTimestamp;
-    let scoreStatistics: ScoreStatistics;
+    const scoreStatistics: ScoreStatistics = {
+        count_300: play.statistics.count_300 ?? play.statistics.great ?? 0,
+        count_100: play.statistics.count_100 ?? play.statistics.ok ?? 0,
+        count_50: play.statistics.count_50 ?? play.statistics.meh ?? 0,
+        count_geki: play.statistics.count_geki ?? play.statistics.perfect ?? 0,
+        count_katu: play.statistics.count_katu ?? play.statistics.good ?? 0,
+        count_miss: play.statistics.count_miss ?? play.statistics.miss ?? 0,
+        large_tick_hit: play.statistics.large_tick_hit ?? 0,
+        small_tick_hit: play.statistics.small_tick_hit ?? 0,
+        slider_tail_hit: play.statistics.slider_tail_hit ?? 0,
+    };
     let user: string | undefined;
     let userId: number | undefined;
     let retries: number | undefined;
@@ -59,18 +69,6 @@ export async function getFormattedScore({
         totalScore = play.total_score ?? 0;
         createdAt = play.ended_at ?? "";
     }
-
-    scoreStatistics = {
-        count_300: play.statistics.count_300 ?? play.statistics.great ?? 0,
-        count_100: play.statistics.count_100 ?? play.statistics.ok ?? 0,
-        count_50: play.statistics.count_50 ?? play.statistics.meh ?? 0,
-        count_geki: play.statistics.count_geki ?? play.statistics.perfect ?? 0,
-        count_katu: play.statistics.count_katu ?? play.statistics.good ?? 0,
-        count_miss: play.statistics.count_miss ?? play.statistics.miss ?? 0,
-        large_tick_hit: play.statistics.large_tick_hit ?? 0,
-        small_tick_hit: play.statistics.small_tick_hit ?? 0,
-        slider_tail_hit: play.statistics.slider_tail_hit ?? 0,
-    };
 
     const objectsHit = (scoreStatistics.count_300 ?? 0) + (scoreStatistics.count_100 ?? 0) + (scoreStatistics.count_50 ?? 0) + (scoreStatistics.count_miss ?? 0) + (scoreStatistics.count_geki ?? 0) + (scoreStatistics.count_katu ?? 0);
 
@@ -154,12 +152,7 @@ export async function getFormattedScore({
     const fcHitValues = hitValueCalculator(mode, fcStatistics);
 
     // get beatmap's drain length
-    const drainLengthInSeconds = beatmap.total_length / difficultyAttrs.clockRate;
-    const drainMinutes = Math.floor(drainLengthInSeconds / 60);
-
-    // I thought Math.ceil would do a better job here since if the seconds is gonna be like, 40.88,
-    // instead of rounding it down to 40, it would make more sense to round it to 41.
-    const drainSeconds = Math.ceil(drainLengthInSeconds % 60);
+    const drainLength = formatDuration(beatmap.total_length / difficultyAttrs.clockRate);
 
     const objects = mapValues.nObjects;
 
@@ -190,7 +183,7 @@ export async function getFormattedScore({
         mods: performance.mods,
         mapAuthor: beatmapset.creator,
         mapStatus: beatmapStatus.charAt(0).toUpperCase() + beatmapStatus.slice(1),
-        drainLength: `${drainMinutes}:${drainSeconds < 10 ? `0${drainSeconds}` : drainSeconds}`,
+        drainLength,
         stars: `${current.difficulty.stars.toFixed(2).toLocaleString()}★`,
         rulesetEmote: rulesets[mode],
         pp: current.pp,

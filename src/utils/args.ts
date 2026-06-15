@@ -5,7 +5,6 @@ import { Tables } from "@type/database";
 import { enums } from "osu-api-extended";
 import type { SlashCommandArgs, DifficultyOptions, Mods, PrefixCommandArgs, User, CommandArgs } from "@type/command-args";
 import type { CommandContext } from "./command-context";
-import type { Mod } from "@type/mods";
 import type { ApplicationCommandData, GuildInteraction, Message } from "@lilybird/transformers";
 import { slashCommandIdsCache } from "./cache";
 
@@ -21,52 +20,128 @@ interface BeatMapURL {
     id: string;
 }
 
-const init = "https://osu.ppy.sh/";
-const index = init.length;
-const name = "beatmapsets";
-const nameLength = name.length;
+const allowedModAcronyms = new Set(Object.keys(enums.ModsEnum));
+const equivalentMods = [
+    ["DT", "NC"],
+    ["SD", "PF"],
+    ["HT", "DC"],
+] as const;
 
-function parseURL(url: string): BeatMapSetURL | BeatMapURL | null {
-    if (!url.startsWith(init)) return null;
-    if (url[index] !== "b") return null;
+export class CommandValidationError extends Error {
+    constructor(message: string) {
+        super(message);
+        this.name = "CommandValidationError";
+    }
+}
 
-    if (url[index + 1] === "/") {
-        return {
-            url,
-            id: url.substring(index + 2),
-        };
+function isDecimalInteger(value: string): boolean {
+    return /^\d+$/.test(value);
+}
+
+export function parseBeatmapUrl(url: string): BeatMapSetURL | BeatMapURL | null {
+    let parsed: URL;
+    try {
+        parsed = new URL(url);
+    } catch {
+        return null;
     }
 
-    if (!url.startsWith(name, index)) return null;
-    const subUrl = url.substring(index + nameLength + 1);
+    if (parsed.protocol !== "https:" || parsed.hostname !== "osu.ppy.sh") return null;
 
-    const slash = subUrl.indexOf("/");
-    const hash = subUrl.indexOf("#");
+    const path = parsed.pathname.replace(/\/+$/, "");
+    const legacyBeatmap = /^\/b\/(\d+)$/.exec(path);
+    if (legacyBeatmap) return { url, id: legacyBeatmap[1] };
 
-    if (slash === -1) {
-        if (hash === -1) {
-            return {
-                url,
-                setId: subUrl,
-                gameMode: null,
-                difficultyId: null,
-            };
+    const beatmap = /^\/beatmaps\/(\d+)$/.exec(path);
+    if (beatmap) return { url, id: beatmap[1] };
+
+    const beatmapset = /^\/beatmapsets\/(\d+)$/.exec(path);
+    if (!beatmapset) return null;
+
+    const hash = parsed.hash.startsWith("#") ? parsed.hash.slice(1) : "";
+    if (!hash) {
+        return { url, setId: beatmapset[1], gameMode: null, difficultyId: null };
+    }
+
+    const [gameMode, difficultyId] = hash.split("/");
+    if (!gameMode || !difficultyId || !isDecimalInteger(difficultyId)) return null;
+
+    return { url, setId: beatmapset[1], gameMode, difficultyId };
+}
+
+function parseModsString(modsValue: string | null | undefined): string | null {
+    if (!modsValue) return null;
+
+    const normalized = modsValue.toUpperCase();
+    if (normalized === "NM") return null;
+    if (!/^[A-Z0-9]+$/.test(normalized) || normalized.length % 2 !== 0) {
+        throw new CommandValidationError("The mods value must be a valid two-letter mod combination.");
+    }
+
+    const sections: Array<string> = normalized.match(/.{1,2}/g) ?? [];
+    if (!sections.every((selectedMod) => allowedModAcronyms.has(selectedMod))) {
+        throw new CommandValidationError("The mods value contains an unknown mod.");
+    }
+
+    if (new Set(sections).size !== sections.length) {
+        throw new CommandValidationError("The mods value contains duplicate mods.");
+    }
+
+    for (const [first, second] of equivalentMods) {
+        if (sections.includes(first) && sections.includes(second)) {
+            throw new CommandValidationError(`${first} and ${second} cannot be used together.`);
         }
-
-        return {
-            url,
-            setId: subUrl.substring(0, hash),
-            gameMode: subUrl.substring(hash + 1),
-            difficultyId: null,
-        };
     }
 
-    return {
-        url,
-        setId: subUrl.substring(0, hash),
-        gameMode: subUrl.substring(hash + 1, slash),
-        difficultyId: subUrl.substring(slash + 1),
+    return normalized;
+}
+
+function buildMods(name: string | null, action?: string | null): Mods {
+    const mods: Mods = {
+        exclude: null,
+        include: null,
+        forceInclude: null,
+        name,
     };
+
+    if (!name) return mods;
+
+    switch (action ?? "include") {
+        case "include":
+            mods.include = true;
+            break;
+        case "force_include":
+            mods.forceInclude = true;
+            break;
+        case "exclude":
+            mods.exclude = true;
+            break;
+        default:
+            throw new CommandValidationError("The mods action is invalid.");
+    }
+
+    return mods;
+}
+
+function getBeatmapId(urlMatch: BeatMapSetURL | BeatMapURL | null): string | null {
+    if (!urlMatch) return null;
+    return "id" in urlMatch ? urlMatch.id : urlMatch.difficultyId;
+}
+
+type SlashOptionValue = string | number | boolean;
+interface SlashOption {
+    name: string;
+    value?: SlashOptionValue | null;
+}
+
+interface SlashDataWithOptions {
+    options?: Array<SlashOption>;
+}
+
+function getSlashOptions(data: ApplicationCommandData): Array<SlashOption> {
+    if (!("options" in data)) return [];
+    const { options } = data as ApplicationCommandData & SlashDataWithOptions;
+    return Array.isArray(options) ? options : [];
 }
 
 export async function getCommandArgs(interaction: GuildInteraction<ApplicationCommandData>, getAttributes?: boolean): Promise<SlashCommandArgs> {
@@ -79,7 +154,8 @@ export async function getCommandArgs(interaction: GuildInteraction<ApplicationCo
         difficultySettings = {} as DifficultyOptions;
 
         for (const attribute of attributes) {
-            difficultySettings[attribute] = data.getNumber(attribute);
+            const value = data.getNumber(attribute);
+            if (value !== null && value !== undefined) difficultySettings[attribute] = value;
         }
     }
 
@@ -89,28 +165,11 @@ export async function getCommandArgs(interaction: GuildInteraction<ApplicationCo
     const discordUser = (await getEntry(Tables.USER, discordUserId ?? ""));
     const mode = (data.getString("mode") as Mode | undefined) ?? Mode.OSU;
 
-    let mods: Mods = {
-        exclude: null,
-        include: null,
-        forceInclude: null,
-        name: null,
-    };
-
     const modsValue = data.getString("mods");
-    const modSections = modsValue?.toUpperCase().match(/.{1,2}/g);
-    if (modSections && modSections.every((selectedMod) => selectedMod in enums.ModsEnum || modsValue === "NM")) {
-        mods = {
-            exclude: data.getBoolean("exclude") ?? null,
-            include: data.getBoolean("include") ?? null,
-            forceInclude: data.getBoolean("force_include") ?? null,
-            name: (modsValue as Mod | undefined) ?? null,
-        };
-    }
+    const modsAction = data.getString("mods_action") ?? (data.getBoolean("force_include") ? "force_include" : data.getBoolean("exclude") ? "exclude" : data.getBoolean("include") ? "include" : null);
+    const mods = buildMods(parseModsString(modsValue), modsAction);
 
-    const urlMatch = parseURL(data.getString("map") ?? "");
-    let beatmapId: string | null = null;
-    if (urlMatch && "id" in urlMatch) beatmapId = urlMatch.id;
-    else if (urlMatch && "setId" in urlMatch) beatmapId = urlMatch.difficultyId;
+    const beatmapId = getBeatmapId(parseBeatmapUrl(data.getString("map") ?? ""));
 
     const user: User = discordUserId
         ? discordUser?.banchoId
@@ -150,7 +209,7 @@ export async function parseOsuArguments(message: Message, args: Array<string>, m
 
     const mapLinkMatches: Array<BeatMapSetURL | BeatMapURL> = [];
     for (const arg of args) {
-        const parsedUrl = parseURL(arg);
+        const parsedUrl = parseBeatmapUrl(arg);
         if (parsedUrl !== null) mapLinkMatches.push(parsedUrl);
     }
 
@@ -159,8 +218,7 @@ export async function parseOsuArguments(message: Message, args: Array<string>, m
         const [firstMatch] = mapLinkMatches;
 
         // Extract beatmap ID from link
-        const beatmapId = "id" in firstMatch ? firstMatch.id : firstMatch.difficultyId;
-        result.user.beatmapId = beatmapId;
+        result.user.beatmapId = getBeatmapId(firstMatch);
 
         // Remove the map link from args array
         const indexToRemove = args.findIndex((link) => link === firstMatch.url);
@@ -175,19 +233,16 @@ export async function parseOsuArguments(message: Message, args: Array<string>, m
         }
 
         const [key, value] = arg.split("=");
-        const [, modType, mod, force] = /^([+-])([A-Za-z]+)(!)?$/.exec(arg) ?? [];
+        const [, modType, mod, force] = /^([+-])([A-Za-z0-9]+)(!)?$/.exec(arg) ?? [];
 
         if (mod) {
-            const modSections = /.{1,2}/g.exec(mod);
-
-            // Make sure `mod` is an actual mod in osu!
-            if (modSections && !modSections.every((selectedMod) => selectedMod.toUpperCase() in enums.ModsEnum || mod.toUpperCase() === "NM")) continue;
+            const parsedMods = parseModsString(mod);
 
             result.mods.include = modType !== "-";
             result.mods.exclude = modType === "-" && typeof force !== "undefined";
             result.mods.forceInclude = modType === "+" && typeof force !== "undefined";
             if (result.mods.include || result.mods.exclude || result.mods.forceInclude) {
-                result.mods.name = mod.replaceAll(/\+|!|-/g, "").toUpperCase();
+                result.mods.name = parsedMods;
                 continue;
             }
         }
@@ -242,10 +297,11 @@ export async function parseOsuArguments(message: Message, args: Array<string>, m
 
 export async function parseCommandArgs(ctx: CommandContext, mode: Mode = Mode.OSU, getAttributes?: boolean): Promise<CommandArgs> {
     if (ctx.isInteraction) {
-        const slashArgs = (await getCommandArgs(ctx.interaction!, getAttributes));
+        if (!ctx.interaction) throw new Error("Interaction command context is missing interaction data");
+        const slashArgs = (await getCommandArgs(ctx.interaction, getAttributes));
         const flags: Record<string, string | undefined> = {};
-        
-        const options = (ctx.interaction!.data as any).options ?? [];
+
+        const options = getSlashOptions(ctx.interaction.data);
         for (const opt of options) {
             if (opt.value !== undefined && opt.value !== null) {
                 flags[opt.name] = String(opt.value);
@@ -254,11 +310,11 @@ export async function parseCommandArgs(ctx: CommandContext, mode: Mode = Mode.OS
         
         // Emulate some flags like `-p` for interactions
         if (flags["page"]) flags["p"] = flags["page"];
-        
-        // Also map mods_action to specific flag behavior if necessary, but mods are handled in slashArgs.mods
+
         return { ...slashArgs, flags };
     } else {
-        const prefixArgs = (await parseOsuArguments(ctx.message!, ctx.args, mode));
+        if (!ctx.message) throw new Error("Message command context is missing message data");
+        const prefixArgs = (await parseOsuArguments(ctx.message, ctx.args, mode));
         return { ...prefixArgs };
     }
 }

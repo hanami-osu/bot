@@ -1,6 +1,6 @@
 import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
-import { accuracyCalculator, downloadBeatmap, getPerformanceResults, gradeCalculator, hitValueCalculator } from "@utils/osu";
+import { accuracyCalculator, downloadBeatmap, formatDuration, getPerformanceResults, gradeCalculator, hitValueCalculator } from "@utils/osu";
 import { getEntry } from "@utils/database";
 import { grades, rulesets, SPACE } from "@utils/constants";
 import { Tables } from "@type/database";
@@ -69,16 +69,14 @@ export async function simulateBuilder({ beatmapId, mods, options }: SimulateBuil
 
     const accuracy = accuracyCalculator(map.mode as Mode, hitValues);
 
-    const drainLengthInSeconds = map.total_length / difficultyAttrs.clockRate;
-    const drainMinutes = Math.floor(drainLengthInSeconds / 60);
-    const drainSeconds = Math.ceil(drainLengthInSeconds % 60);
+    const drainLength = formatDuration(map.total_length / difficultyAttrs.clockRate);
 
     const objects = map.count_circles + map.count_sliders + map.count_spinners;
 
     const newBpm = difficultyAttrs.clockRate * mapValues.bpm;
     const statsField = [
         `**Stars:** **\`${current.difficulty.stars.toFixed(2)}\`** **Mods:** \`+${mods ? mods.join("") : "NM"}\` **BPM:** \`${newBpm.toFixed(0)}\``,
-        `**Length:** \`${drainMinutes}:${drainSeconds < 10 ? `0${drainSeconds}` : drainSeconds}\` **Max Combo:** \`${current.difficulty.maxCombo}\` **Objects:** \`${objects.toLocaleString()}\``,
+        `**Length:** \`${drainLength}\` **Max Combo:** \`${current.difficulty.maxCombo}\` **Objects:** \`${objects.toLocaleString()}\``,
         `**AR:** \`${difficultyAttrs.ar.toFixed(1)}\` **OD:** \`${difficultyAttrs.od.toFixed(1)}\` **CS:** \`${difficultyAttrs.cs.toFixed(1)}\` **HP:** \`${difficultyAttrs.hp.toFixed(1)}\``,
     ];
 

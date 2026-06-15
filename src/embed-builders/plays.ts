@@ -9,7 +9,7 @@ import type { PlaysBuilderOptions } from "@type/builders";
 import type { Embed } from "lilybird";
 
 export async function playBuilder({ plays, user, mode, index, mods, isMultiple, page, authorDb, sortByDate }: PlaysBuilderOptions): Promise<Array<Embed.Structure>> {
-    saveScoreDatas(plays, mode);
+    await saveScoreDatas(plays, mode);
 
     if (typeof page === "undefined" && typeof index === "undefined") {
         if (isMultiple) page = 0;
@@ -20,18 +20,19 @@ export async function playBuilder({ plays, user, mode, index, mods, isMultiple, 
 
     if (mods?.name) {
         const { exclude, forceInclude, include, name } = mods;
-        const filteredPlays = [];
+        const filteredPlays: typeof plays = [];
         for (const play of plays) {
-            const modsStr = play.mods.map((mod) => typeof mod === "string" ? mod : mod.acronym).join("");
+            const playMods = play.mods.map((mod) => (typeof mod === "string" ? mod : mod.acronym).toUpperCase());
             const modName = typeof name === "string" ? name : name?.acronym;
+            const requestedMods = typeof modName === "string" ? (modName.toUpperCase().match(/.{1,2}/g) ?? []) : [];
 
             if (modName) {
                 if (exclude) {
-                    if (!modsStr.includes(modName.toUpperCase())) filteredPlays.push(play);
+                    if (!requestedMods.every((requestedMod) => playMods.includes(requestedMod))) filteredPlays.push(play);
                 } else if (forceInclude) {
-                    if (modsStr === modName.toUpperCase()) filteredPlays.push(play);
+                    if (playMods.length === requestedMods.length && requestedMods.every((requestedMod) => playMods.includes(requestedMod))) filteredPlays.push(play);
                 } else if (include) {
-                    if (modsStr.includes(modName.toUpperCase())) filteredPlays.push(play);
+                    if (requestedMods.every((requestedMod) => playMods.includes(requestedMod))) filteredPlays.push(play);
                 }
             } else filteredPlays.push(play);
         }
@@ -40,18 +41,38 @@ export async function playBuilder({ plays, user, mode, index, mods, isMultiple, 
     }
 
     if (sortByDate)
-        plays = plays.sort((a: any, b: any) => {
-            const dateA = "created_at" in a ? a.created_at : a.ended_at;
-            const dateB = "created_at" in b ? b.created_at : b.ended_at;
+        plays = [...plays].sort((a, b) => {
+            const dateA = ("created_at" in a ? a.created_at : a.ended_at) ?? "";
+            const dateB = ("created_at" in b ? b.created_at : b.ended_at) ?? "";
             return new Date(dateB).getTime() - new Date(dateA).getTime();
         });
 
-    if (index && index >= plays.length) {
+    if (plays.length === 0) {
         return [
             {
                 type: EmbedType.Rich,
                 title: "Uh oh! :x:",
-                description: `It seems like \`${profile.username}\` hasn't had any recent plays in the last 24 hours with those filters!`,
+                description: `No plays matched those filters for \`${profile.username}\`.`,
+            },
+        ] satisfies Array<Embed.Structure>;
+    }
+
+    if (typeof index !== "undefined" && (index < 0 || index >= plays.length)) {
+        return [
+            {
+                type: EmbedType.Rich,
+                title: "Uh oh! :x:",
+                description: `That play index is out of range for \`${profile.username}\`.`,
+            },
+        ] satisfies Array<Embed.Structure>;
+    }
+
+    if (typeof page !== "undefined" && (page < 0 || page * 5 >= plays.length)) {
+        return [
+            {
+                type: EmbedType.Rich,
+                title: "Uh oh! :x:",
+                description: `That page is out of range for \`${profile.username}\`.`,
             },
         ] satisfies Array<Embed.Structure>;
     }

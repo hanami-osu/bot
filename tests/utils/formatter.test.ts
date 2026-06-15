@@ -1,7 +1,37 @@
-import { expect, test, describe } from "bun:test";
-import { getFormattedProfile } from "../../src/utils/formatter";
+import { expect, test, describe, mock } from "bun:test";
 import { Mode } from "../../src/types/osu";
 
+function parseMockBigInt(value: string | number | bigint, fieldName = "value"): bigint {
+    if (typeof value === "bigint") return value;
+    if (typeof value === "number" && !Number.isSafeInteger(value)) throw new Error(`${fieldName} must be a safe integer or decimal string`);
+    if (typeof value === "string" && !/^-?\d+$/.test(value)) throw new Error(`${fieldName} must be a decimal integer string`);
+    return BigInt(value);
+}
+
+function mapMockFromPrisma(value: unknown): unknown {
+    if (typeof value !== "object" || value === null) return value;
+    const mapped = { ...(value as Record<string, unknown>) };
+    for (const key of Object.keys(mapped)) if (typeof mapped[key] === "bigint") mapped[key] = mapped[key].toString();
+    if (typeof mapped.prefixes === "string") {
+        const prefixes = JSON.parse(mapped.prefixes);
+        if (!Array.isArray(prefixes) || !prefixes.every((prefix) => typeof prefix === "string")) throw new Error("guild prefixes must be a JSON array of strings");
+        mapped.prefixes = prefixes;
+    }
+    return mapped;
+}
+
+mock.module("@utils/database", () => ({
+    getEntry: mock(() => Promise.resolve(null)),
+    insertData: mock(() => Promise.resolve()),
+    bulkInsertData: mock(() => Promise.resolve()),
+    removeEntry: mock(() => Promise.resolve(true)),
+    getRowCount: mock(() => Promise.resolve(0)),
+    getRowSum: mock(() => Promise.resolve(0)),
+    parseBigIntValue: parseMockBigInt,
+    mapToPrismaValue: (key: string, value: unknown) => ["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value,
+    mapFromPrismaValue: mapMockFromPrisma,
+    incrementCommandCount: mock(() => Promise.resolve()),
+}));
 
 describe("formatter", () => {
     describe("getFormattedProfile", () => {
@@ -74,7 +104,8 @@ describe("formatter", () => {
             unranked_beatmapset_count: 0,
         };
 
-        test("formats profile data correctly", () => {
+        test("formats profile data correctly", async () => {
+            const { getFormattedProfile } = await import("../../src/utils/formatter");
             const result = getFormattedProfile(mockUser, Mode.OSU);
 
             expect(result.username).toBe("peppy");
