@@ -7,63 +7,61 @@ import { createPaginationActionRow } from "@utils/pagination";
 import { PaginationManager } from "@utils/pagination";
 import { leaderboardBuilder, playBuilder, compareBuilder } from "@builders";
 import type { Interaction, InteractionReplyOptions } from "@lilybird/transformers";
-import type { Event } from "@lilybird/handlers";
 import { handleCommandError } from "@utils/error";
 import { CommandContext } from "@utils/command-context";
+import { $listener } from "@utils/lilybird-handler";
 
-export default {
+$listener({
     event: "interactionCreate",
-    run,
-} satisfies Event<"interactionCreate">;
+    handle: async (interaction) => {
+        await handleButton(interaction);
 
-async function run(interaction: Interaction): Promise<void> {
-    await handleButton(interaction);
+        if (interaction.isApplicationCommandInteraction() && interaction.inGuild()) {
+            const { user } = interaction.member;
 
-    if (interaction.isApplicationCommandInteraction() && interaction.inGuild()) {
-        const { user } = interaction.member;
-
-        const command = commandsCache.get(interaction.data.name);
-        if (!command) return;
-
-        try {
-            if (command.run) {
-                const ctx = new CommandContext(interaction.client, interaction, undefined, [], undefined, command.data.name);
-                await command.run(ctx);
-            } else if (command.runApplication) {
-                await command.runApplication({ interaction });
-            } else {
-                return; // Command has no valid execution function
-            }
+            const command = commandsCache.get(interaction.data.name);
+            if (!command) return;
 
             try {
-                const guild = await interaction.client.rest.getGuild(interaction.guildId);
-                await logger.info(`[${guild.name}] ${user.username} used slash command \`${command.data.name}\`${interaction.data.subCommand ? ` -> \`${interaction.data.subCommand}\`` : ""}`, {
-                    guildId: interaction.guildId,
-                    guildName: guild.name,
-                    userId: user.id,
-                    username: user.username,
-                    command: command.data.name,
+                if (command.run) {
+                    const ctx = new CommandContext(interaction.client, interaction, undefined, [], undefined, command.data.name);
+                    await command.run(ctx);
+                } else if (command.runApplication) {
+                    await command.runApplication({ interaction });
+                } else {
+                    return; // Command has no valid execution function
+                }
+
+                try {
+                    const guild = await interaction.client.rest.getGuild(interaction.guildId);
+                    await logger.info(`[${guild.name}] ${user.username} used slash command \`${command.data.name}\`${interaction.data.subCommand ? ` -> \`${interaction.data.subCommand}\`` : ""}`, {
+                        guildId: interaction.guildId,
+                        guildName: guild.name,
+                        userId: user.id,
+                        username: user.username,
+                        command: command.data.name,
+                        subCommand: interaction.data.subCommand,
+                    });
+                } catch (logError) {
+                    await logger.warn("Could not write slash command usage log", { command: command.data.name, userId: user.id, error: logError });
+                }
+            } catch (error) {
+                await handleCommandError(error as Error, {
+                    client: interaction.client,
+                    interaction,
+                    commandName: command.data.name,
                     subCommand: interaction.data.subCommand,
                 });
-            } catch (logError) {
-                await logger.warn("Could not write slash command usage log", { command: command.data.name, userId: user.id, error: logError });
-            }
-        } catch (error) {
-            await handleCommandError(error as Error, {
-                client: interaction.client,
-                interaction,
-                commandName: command.data.name,
-                subCommand: interaction.data.subCommand,
-            });
-        } finally {
-            try {
-                await incrementCommandCount(`${command.data.name}:slash`);
-            } catch (counterError) {
-                await logger.warn("Could not increment slash command counter", { command: command.data.name, error: counterError });
+            } finally {
+                try {
+                    await incrementCommandCount(`${command.data.name}:slash`);
+                } catch (counterError) {
+                    await logger.warn("Could not increment slash command counter", { command: command.data.name, error: counterError });
+                }
             }
         }
-    }
-}
+    },
+});
 
 async function handleButton(interaction: Interaction): Promise<void> {
     if (!interaction.isMessageComponentInteraction() || !interaction.data.isButton()) return;
@@ -86,7 +84,7 @@ async function handleButton(interaction: Interaction): Promise<void> {
         ...row,
         components: row.components.map((btn: any) => ({ ...btn, disabled: true })),
     }));
-    
+
     await interaction.updateComponents({ components: disabledComponents });
 
     if (interaction.data.id === "wildcard-page" || interaction.data.id === "wildcard-index") {
