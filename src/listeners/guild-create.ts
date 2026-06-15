@@ -4,7 +4,6 @@ import { Tables } from "@type/database";
 import type { Guild } from "@type/database";
 import { guildPrefixesCache } from "@utils/cache";
 import { $listener } from "@utils/lilybird-handler";
-
 import type { ClientListeners } from "lilybird";
 import type { DefaultTransformers } from "@lilybird/transformers";
 
