@@ -1,15 +1,13 @@
-import { getEntry, insertData } from "@utils/database";
+import { incrementCommandCount } from "@utils/database";
 import { commandsCache } from "@utils/cache";
 import { logger } from "@utils/logger";
 import { ButtonStateCache } from "@utils/cache";
 import { EmbedBuilderType } from "@type/builders";
 import { createPaginationActionRow } from "@utils/pagination";
 import { PaginationManager } from "@utils/pagination";
-import { Tables } from "@type/database";
 import { leaderboardBuilder, playBuilder, compareBuilder } from "@builders";
 import type { Interaction, InteractionReplyOptions } from "@lilybird/transformers";
 import type { Event } from "@lilybird/handlers";
-import type { EmbedBuilderOptions } from "@type/builders";
 import { handleCommandError } from "@utils/error";
 import { CommandContext } from "@utils/command-context";
 
@@ -37,15 +35,19 @@ async function run(interaction: Interaction): Promise<void> {
                 return; // Command has no valid execution function
             }
 
-            const guild = await interaction.client.rest.getGuild(interaction.guildId);
-            await logger.info(`[${guild.name}] ${user.username} used slash command \`${command.data.name}\`${interaction.data.subCommand ? ` -> \`${interaction.data.subCommand}\`` : ""}`, {
-                guildId: interaction.guildId,
-                guildName: guild.name,
-                userId: user.id,
-                username: user.username,
-                command: command.data.name,
-                subCommand: interaction.data.subCommand,
-            });
+            try {
+                const guild = await interaction.client.rest.getGuild(interaction.guildId);
+                await logger.info(`[${guild.name}] ${user.username} used slash command \`${command.data.name}\`${interaction.data.subCommand ? ` -> \`${interaction.data.subCommand}\`` : ""}`, {
+                    guildId: interaction.guildId,
+                    guildName: guild.name,
+                    userId: user.id,
+                    username: user.username,
+                    command: command.data.name,
+                    subCommand: interaction.data.subCommand,
+                });
+            } catch (logError) {
+                await logger.warn("Could not write slash command usage log", { command: command.data.name, userId: user.id, error: logError });
+            }
         } catch (error) {
             await handleCommandError(error as Error, {
                 client: interaction.client,
@@ -54,10 +56,11 @@ async function run(interaction: Interaction): Promise<void> {
                 subCommand: interaction.data.subCommand,
             });
         } finally {
-            const id = `${command.data.name}:slash`;
-            const docs = (await getEntry(Tables.COMMAND, id));
-            if (docs === null) (await insertData({ table: Tables.COMMAND, data: [{ key: "count", value: 1 }], id }));
-            else (await insertData({ table: Tables.COMMAND, data: [{ key: "count", value: Number(docs.count ?? 0) + 1 }], id: docs.id }));
+            try {
+                await incrementCommandCount(`${command.data.name}:slash`);
+            } catch (counterError) {
+                await logger.warn("Could not increment slash command counter", { command: command.data.name, error: counterError });
+            }
         }
     }
 }
@@ -66,7 +69,7 @@ async function handleButton(interaction: Interaction): Promise<void> {
     if (!interaction.isMessageComponentInteraction() || !interaction.data.isButton()) return;
     if (!interaction.inGuild()) return;
 
-    const builderOptions = await ButtonStateCache.get<EmbedBuilderOptions>(interaction.message.id);
+    const builderOptions = await ButtonStateCache.get(interaction.message.id);
     if (builderOptions === null || builderOptions === undefined) {
         await interaction.reply({ ephemeral: true, content: "This button will not work because the message was created before a bot restart, so its data has been lost." });
         return;

@@ -115,7 +115,8 @@ export async function initializeDatabase(): Promise<void> {
         await prisma.$connect();
         logger.info("Database up and running!");
     } catch (e) {
-        logger.error("Failed to connect to database", e as Error);
+        await logger.error("Failed to connect to database", e as Error);
+        throw e;
     }
 }
 

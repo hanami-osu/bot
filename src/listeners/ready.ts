@@ -1,5 +1,6 @@
 import { loadCommands, refreshGuildsDatabase, loadGuildPrefixes } from "@utils/initialize";
 import { logger } from "@utils/logger";
+import { markReady } from "@utils/readiness";
 import type { Event } from "@lilybird/handlers";
 
 export default {
@@ -11,5 +12,6 @@ export default {
         (await refreshGuildsDatabase());
         logger.info("Refreshed servers database ✅");
         await loadGuildPrefixes();
+        await markReady();
     },
 } satisfies Event<"ready">;

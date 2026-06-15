@@ -28,7 +28,7 @@ export interface Guild {
     id: string;
     name: string;
     owner_id: string;
-    joined_at: number | null;
+    joined_at: string | null;
     prefixes: Array<string> | null;
 }
 
@@ -43,12 +43,12 @@ export interface Command {
 }
 
 export interface Score {
-    id: number;
-    user_id: number;
-    map_id: number;
+    id: string;
+    user_id: string;
+    map_id: string;
     gamemode: Mode;
     mods: string;
-    score: number;
+    score: string;
     accuracy: number;
     max_combo: number;
     grade: string;
@@ -63,7 +63,7 @@ export interface Score {
 }
 
 export interface ScorePp {
-    id: number;
+    id: string;
     pp: number;
     pp_fc: number;
     pp_perfect: number;

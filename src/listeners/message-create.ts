@@ -1,8 +1,7 @@
 import { DEFAULT_PREFIX, wysiEmoji } from "@utils/constants";
 import { commandAliasesCache, commandsCache } from "@utils/cache";
 import { logger } from "@utils/logger";
-import { getEntry, insertData } from "@utils/database";
-import { Tables } from "@type/database";
+import { incrementCommandCount } from "@utils/database";
 import type { Message } from "@lilybird/transformers";
 import type { Event } from "@lilybird/handlers";
 import { guildPrefixesCache, cooldownsCache } from "@utils/cache";
@@ -50,11 +49,11 @@ async function run(message: Message): Promise<void> {
     if (typeof commandName === "undefined") return;
 
     let index: number | undefined;
-    const match = /(\D+)(\d+)/.exec(commandName);
+    const match = /^(\D+)(\d+)$/.exec(commandName);
     if (match) {
         const [, extractedCommandName, extractedNumber] = match;
         commandName = extractedCommandName;
-        index = parseInt(extractedNumber) - 1;
+        index = Number.parseInt(extractedNumber, 10) - 1;
     }
 
     const alias = commandAliasesCache.get(commandName);
@@ -108,15 +107,19 @@ async function run(message: Message): Promise<void> {
             await command.runMessage({ client: client, message, args, prefix: chosenPrefix, index, commandName, channel });
         }
 
-        const guild = await client.rest.getGuild(guildId);
-        await logger.info(`[${guild.name}] ${author.username} used prefix command \`${data.name}\``, {
-            guildId,
-            guildName: guild.name,
-            userId: author.id,
-            username: author.username,
-            command: data.name,
-            prefix: chosenPrefix,
-        });
+        try {
+            const guild = await client.rest.getGuild(guildId);
+            await logger.info(`[${guild.name}] ${author.username} used prefix command \`${data.name}\``, {
+                guildId,
+                guildName: guild.name,
+                userId: author.id,
+                username: author.username,
+                command: data.name,
+                prefix: chosenPrefix,
+            });
+        } catch (logError) {
+            await logger.warn("Could not write prefix command usage log", { command: data.name, userId: author.id, error: logError });
+        }
     } catch (error) {
         await handleCommandError(error as Error, {
             client,
@@ -126,10 +129,11 @@ async function run(message: Message): Promise<void> {
             prefix: chosenPrefix,
         });
     } finally {
-        const id = `${data.name}:prefix`;
-        const docs = (await getEntry(Tables.COMMAND, id));
-        if (docs === null) (await insertData({ table: Tables.COMMAND, data: [{ key: "count", value: 1 }], id }));
-        else (await insertData({ table: Tables.COMMAND, data: [{ key: "count", value: Number(docs.count ?? 0) + 1 }], id: docs.id }));
+        try {
+            await incrementCommandCount(`${data.name}:prefix`);
+        } catch (counterError) {
+            await logger.warn("Could not increment prefix command counter", { command: data.name, error: counterError });
+        }
     }
 
     // set cooldown

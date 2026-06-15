@@ -1,5 +1,12 @@
 import { Client } from "lilybird";
-import { GuildInteraction, Message, ApplicationCommandData, GuildTextChannel, User } from "@lilybird/transformers";
+import { GuildInteraction, Message, ApplicationCommandData, GuildTextChannel, User, MessageReplyOptions, InteractionReplyOptions } from "@lilybird/transformers";
+import type { EmbedBuilderOptions } from "@type/builders";
+
+type ReplyOptions = string | MessageReplyOptions | InteractionReplyOptions;
+interface SentMessage {
+    id?: string;
+    edit(options: ReplyOptions): Promise<unknown>;
+}
 
 export class CommandContext {
     public readonly isInteraction: boolean;
@@ -20,67 +27,74 @@ export class CommandContext {
     }
 
     get user(): User {
-        if (this.isInteraction) return this.interaction!.member.user;
-        return this.message!.author;
+        if (this.interaction) return this.interaction.member.user;
+        if (this.message) return this.message.author;
+        throw new Error("Command context does not include a Discord user");
     }
 
     get guildId(): string | undefined {
-        if (this.isInteraction) return this.interaction!.guildId;
-        return this.message!.guildId;
+        if (this.interaction) return this.interaction.guildId;
+        return this.message?.guildId;
     }
 
     get channelId(): string {
-        if (this.isInteraction) return this.interaction!.channelId;
-        return this.message!.channelId;
+        const channelId = this.interaction?.channelId ?? this.message?.channelId;
+        if (!channelId) throw new Error("Command context does not include a channel id");
+        return channelId;
     }
 
-    private sentMessage?: any;
+    private sentMessage?: SentMessage;
 
     async defer(): Promise<void> {
-        if (this.isInteraction) {
-            await this.interaction!.deferReply();
+        if (this.interaction) {
+            await this.interaction.deferReply();
         } else if (this.channelId) {
             await this.client.rest.triggerTypingIndicator(this.channelId);
         }
     }
 
-    async reply(options: any): Promise<any> {
-        if (this.isInteraction) {
-            this.sentMessage = await this.interaction!.reply(options as any);
+    async reply(options: ReplyOptions): Promise<unknown> {
+        if (this.interaction) {
+            if (typeof options === "string") await this.interaction.reply(options);
+            else await this.interaction.reply(options as InteractionReplyOptions);
+            this.sentMessage = undefined;
             return this.sentMessage;
-        } else {
-            this.sentMessage = await this.message!.reply(options as any);
+        } else if (this.message) {
+            this.sentMessage = (typeof options === "string" ? await this.message.reply(options) : await this.message.reply(options as MessageReplyOptions)) as unknown as SentMessage;
             return this.sentMessage;
         }
+        throw new Error("Command context cannot reply without interaction or message data");
     }
 
-    async editReply(options: any): Promise<any> {
-        if (this.isInteraction) {
-            return await this.interaction!.editReply(options as any);
+    async editReply(options: ReplyOptions): Promise<unknown> {
+        if (this.interaction) {
+            return typeof options === "string" ? await this.interaction.editReply(options) : await this.interaction.editReply(options as InteractionReplyOptions);
         } else {
             if (this.sentMessage) {
-                return await this.sentMessage.edit(options as any);
+                return await this.sentMessage.edit(options);
             } else {
                 return await this.reply(options);
             }
         }
     }
 
-    async sendWithPagination(options: any, embedOptions: any): Promise<void> {
+    async sendWithPagination(options: ReplyOptions, embedOptions: EmbedBuilderOptions): Promise<void> {
         const { ButtonStateCache } = await import("./cache");
         const sentMessage = await this.editReply(options);
         
-        if (this.isMessage && sentMessage && sentMessage.id) {
+        if (this.isMessage && typeof sentMessage === "object" && sentMessage !== null && "id" in sentMessage && typeof sentMessage.id === "string") {
             await ButtonStateCache.set(sentMessage.id, embedOptions);
-        } else if (this.isInteraction) {
+        } else if (this.interaction) {
             setTimeout(async () => {
                 try {
-                    const message = await this.client.rest.getOriginalInteractionResponse(this.interaction!.applicationId, this.interaction!.token);
+                    if (!this.interaction) return;
+                    const message = await this.client.rest.getOriginalInteractionResponse(this.interaction.applicationId, this.interaction.token);
                     if (message && message.id) {
                         await ButtonStateCache.set(message.id, embedOptions);
                     }
-                } catch {
-                    // Ignore errors if the message couldn't be fetched or cached
+                } catch (error) {
+                    const { logger } = await import("./logger");
+                    await logger.warn("Could not cache interaction pagination state", { error });
                 }
             }, 100);
         }

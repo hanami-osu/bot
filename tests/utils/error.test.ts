@@ -69,8 +69,8 @@ describe("handleCommandError", () => {
         // Verifies interaction reply
         expect(mockInteraction.reply).toHaveBeenCalled();
         const replyCall = mockInteraction.reply.mock.calls[0][0];
-        expect(replyCall).toContain("Oops, you came across an error!");
-        expect(replyCall).toContain("Test interaction error");
+        expect(replyCall.content).toContain("Something went wrong");
+        expect(replyCall.content).not.toContain("Test interaction error");
 
         // Verifies discord channel logging
         expect(mockClient.rest.createMessage).toHaveBeenCalled();
@@ -98,8 +98,8 @@ describe("handleCommandError", () => {
         // Verifies message reply
         expect(mockMessage.reply).toHaveBeenCalled();
         const replyCall = mockMessage.reply.mock.calls[0][0];
-        expect(replyCall).toContain("Oops, you came across an error!");
-        expect(replyCall).not.toContain("Test message error"); // Message commands don't leak stack to users
+        expect(replyCall.content).toContain("Something went wrong");
+        expect(replyCall.content).not.toContain("Test message error");
 
         // Verifies discord channel logging
         expect(mockClient.rest.createMessage).toHaveBeenCalled();

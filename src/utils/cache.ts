@@ -1,6 +1,7 @@
 import { createClient, RedisClientType } from "redis";
 import { logger } from "@utils/logger";
 import { CommandFileData } from "@type/commands";
+import type { EmbedBuilderOptions } from "@type/builders";
 
 // Map caches
 export const commandsCache = new Map<string, CommandFileData>();
@@ -76,6 +77,39 @@ const CacheTTL = {
     STATE_DISCORD: 600, // 10 minutes
 } as const;
 
+const BUTTON_STATE_VERSION = 1;
+
+function stringifyForCache(value: unknown): string {
+    return JSON.stringify(value, (_key, nestedValue: unknown) => (typeof nestedValue === "bigint" ? nestedValue.toString() : nestedValue));
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+    return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
+export function encodeButtonState(state: EmbedBuilderOptions): string {
+    return stringifyForCache({ version: BUTTON_STATE_VERSION, state });
+}
+
+export function decodeButtonState(serialized: string): EmbedBuilderOptions | null {
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(serialized);
+    } catch {
+        return null;
+    }
+
+    if (!isRecord(parsed) || parsed.version !== BUTTON_STATE_VERSION || !isRecord(parsed.state)) {
+        return null;
+    }
+
+    if (typeof parsed.state.type !== "string" || typeof parsed.state.initiatorId !== "string") {
+        return null;
+    }
+
+    return parsed.state as unknown as EmbedBuilderOptions;
+}
+
 class RedisCache {
     static async get<T>(key: string): Promise<T | null> {
         if (!isRedisAvailable()) {
@@ -97,7 +131,7 @@ class RedisCache {
         }
 
         try {
-            const serialized = JSON.stringify(value);
+            const serialized = stringifyForCache(value);
             if (ttl) {
                 await redisClient.setEx(key, ttl, serialized);
             } else {
@@ -141,12 +175,22 @@ class RedisCache {
 
 // Specialized cache classes for different data types
 export class ButtonStateCache {
-    static async get<T>(messageId: string): Promise<T | null> {
-        return RedisCache.get<T>(CacheKeys.BUTTON_STATE(messageId));
+    static async get(messageId: string): Promise<EmbedBuilderOptions | null> {
+        if (!isRedisAvailable()) {
+            throw new Error(`Redis is not available for GET operation on key: ${CacheKeys.BUTTON_STATE(messageId)}`);
+        }
+
+        const data = await redisClient.get(CacheKeys.BUTTON_STATE(messageId));
+        return data ? decodeButtonState(data) : null;
     }
 
-    static async set<T>(messageId: string, value: T): Promise<boolean> {
-        return RedisCache.set(CacheKeys.BUTTON_STATE(messageId), value, CacheTTL.BUTTON_STATE);
+    static async set(messageId: string, value: EmbedBuilderOptions): Promise<boolean> {
+        if (!isRedisAvailable()) {
+            throw new Error(`Redis is not available for SET operation on key: ${CacheKeys.BUTTON_STATE(messageId)}`);
+        }
+
+        await redisClient.setEx(CacheKeys.BUTTON_STATE(messageId), CacheTTL.BUTTON_STATE, encodeButtonState(value));
+        return true;
     }
 }
 

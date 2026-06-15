@@ -13,7 +13,7 @@ interface LogEntry {
     timestamp: string;
     level: LogLevel;
     message: string;
-    context?: Record<string, any>;
+    context?: Record<string, unknown>;
     error?: Error;
 }
 
@@ -28,14 +28,35 @@ interface LoggerConfig {
 
 const DEFAULT_CONFIG: LoggerConfig = {
     level: LogLevel.INFO,
-    logDir: "./logs",
+    logDir: process.env.LOG_DIR ?? "./logs",
     maxFiles: 30,
     dateFormat: "YYYY-MM-DD",
     enableConsole: true,
     enableFile: true,
 };
 
-class Logger {
+const SENSITIVE_KEY_PATTERN = /(token|authorization|cookie|password|secret|database_url|session)/i;
+const SENSITIVE_VALUE_PATTERN = /(Bearer\s+[A-Za-z0-9._-]+|mysql:\/\/\S+|postgres(?:ql)?:\/\/\S+|redis:\/\/\S+|[A-Za-z0-9_-]{24,}\.[A-Za-z0-9_-]{6,}\.[A-Za-z0-9_-]{20,})/gi;
+
+function redactString(value: string): string {
+    return value.replace(SENSITIVE_VALUE_PATTERN, "[REDACTED]");
+}
+
+export function safeSerialize(value: unknown): string {
+    const seen = new WeakSet<object>();
+    return JSON.stringify(value, (key, nestedValue: unknown) => {
+        if (SENSITIVE_KEY_PATTERN.test(key)) return "[REDACTED]";
+        if (typeof nestedValue === "bigint") return nestedValue.toString();
+        if (typeof nestedValue === "string") return redactString(nestedValue);
+        if (typeof nestedValue === "object" && nestedValue !== null) {
+            if (seen.has(nestedValue)) return "[Circular]";
+            seen.add(nestedValue);
+        }
+        return nestedValue;
+    });
+}
+
+export class Logger {
     private config: LoggerConfig;
     private currentLogFile: string | null = null;
     private writeQueue: Array<string> = [];
@@ -60,7 +81,7 @@ class Logger {
     }
 
     private formatMessage(entry: LogEntry): string {
-        const contextStr = entry.context ? ` | Context: ${JSON.stringify(entry.context)}` : "";
+        const contextStr = entry.context ? ` | Context: ${safeSerialize(entry.context)}` : "";
         const errorStr = entry.error ? ` | Error: ${entry.error.stack || entry.error.message}` : "";
         return `[${entry.timestamp}] [${this.getLevelName(entry.level)}] ${entry.message}${contextStr}${errorStr}`;
     }
@@ -69,7 +90,7 @@ class Logger {
         const colorCode = this.getColorCode(entry.level);
         const resetCode = "\x1b[0m";
         const levelName = this.getLevelName(entry.level).padEnd(5);
-        const contextStr = entry.context ? ` | ${JSON.stringify(entry.context)}` : "";
+        const contextStr = entry.context ? ` | ${safeSerialize(entry.context)}` : "";
         const errorStr = entry.error ? ` | ${entry.error.message}` : "";
 
         return `${colorCode}[${entry.timestamp}] [${levelName}]${resetCode} ${entry.message}${contextStr}${errorStr}`;
@@ -83,6 +104,7 @@ class Logger {
 
         if (this.currentLogFile !== filePath) {
             await this.ensureLogDirectory();
+            await this.cleanOldLogs();
             this.currentLogFile = filePath;
         }
 
@@ -114,8 +136,8 @@ class Logger {
                     await unlink(file.path);
                 }
             }
-        } catch {
-            // Nothing here :)
+        } catch (error) {
+            console.error("Failed to clean old log files:", error);
         }
     }
 
@@ -126,9 +148,9 @@ class Logger {
 
         this.isWriting = true;
         const entries = this.writeQueue.splice(0);
-        const logFile = await this.getCurrentLogFile();
 
         try {
+            const logFile = await this.getCurrentLogFile();
             const content = entries.join("\n") + "\n";
             await appendFile(logFile, content, "utf8");
         } catch (error) {
@@ -143,7 +165,7 @@ class Logger {
         }
     }
 
-    private async log(level: LogLevel, message: string, context?: Record<string, any>, error?: Error): Promise<void> {
+    private async log(level: LogLevel, message: string, context?: Record<string, unknown>, error?: Error): Promise<void> {
         if (level < this.config.level) {
             return;
         }
@@ -174,23 +196,23 @@ class Logger {
         }
     }
 
-    debug(message: string, context?: Record<string, any>): Promise<void> {
+    debug(message: string, context?: Record<string, unknown>): Promise<void> {
         return this.log(LogLevel.DEBUG, message, context);
     }
 
-    info(message: string, context?: Record<string, any>): Promise<void> {
+    info(message: string, context?: Record<string, unknown>): Promise<void> {
         return this.log(LogLevel.INFO, message, context);
     }
 
-    warn(message: string, context?: Record<string, any>): Promise<void> {
+    warn(message: string, context?: Record<string, unknown>): Promise<void> {
         return this.log(LogLevel.WARN, message, context);
     }
 
-    error(message: string, error?: Error, context?: Record<string, any>): Promise<void> {
+    error(message: string, error?: Error, context?: Record<string, unknown>): Promise<void> {
         return this.log(LogLevel.ERROR, message, context, error);
     }
 
-    fatal(message: string, error?: Error, context?: Record<string, any>): Promise<void> {
+    fatal(message: string, error?: Error, context?: Record<string, unknown>): Promise<void> {
         return this.log(LogLevel.FATAL, message, context, error);
     }
 
