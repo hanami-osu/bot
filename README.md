@@ -25,7 +25,7 @@ Use `/help` to see all available commands.
 
 ## Invite the bot
 
-[Add Hanami to your server](https://discord.com/api/oauth2/authorize?client_id=995999045157916763&permissions=330752&scope=bot)
+[Add Hanami to your server](https://discord.com/oauth2/authorize?client_id=995999045157916763&permissions=347200&scope=bot%20applications.commands)
 
 ## Libraries
 

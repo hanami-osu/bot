@@ -3,6 +3,12 @@ export const MAX_AMOUNT_OF_PREFIXES = 10;
 export const SPACE = "\0";
 export const wysiEmoji = "wysia:1240624238189088869";
 
+export const BOT_CLIENT_ID = "995999045157916763";
+export const BOT_INVITE_PERMISSIONS = "347200";
+export const BOT_INVITE_URL = `https://discord.com/oauth2/authorize?client_id=${BOT_CLIENT_ID}&permissions=${BOT_INVITE_PERMISSIONS}&scope=bot%20applications.commands`;
+export const HANAMI_WEBSITE_URL = "https://hanami.yorunoken.com";
+export const BOT_VOTE_URL = `https://top.gg/bot/${BOT_CLIENT_ID}`;
+
 export const grades = {
     SSH: "<:XH_:1057763296717045891>",
     XH: "<:XH_:1057763296717045891>",

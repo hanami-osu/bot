@@ -1,6 +1,7 @@
 import { Tables } from "@type/database";
 import { getRowCount, getRowSum } from "@utils/database";
 import { commandsCache, commandAliasesCache } from "@utils/cache";
+import { BOT_INVITE_URL, BOT_VOTE_URL, HANAMI_WEBSITE_URL } from "@utils/constants";
 import type { Embed } from "lilybird";
 
 export async function helpBuilder(commandName?: string, preferSlash?: boolean): Promise<Array<Embed.Structure>> {
@@ -57,8 +58,7 @@ function displayCommandInfo(name: string, preferSlash?: boolean): Array<Embed.St
         ];
     }
 
-    // message commands
-    const cooldownSecond = data.message?.cooldown ?? 1000 / 1000;
+    const cooldown = formatCooldown(data.message?.cooldown);
     return [
         {
             title: `${data.name}`,
@@ -71,7 +71,7 @@ function displayCommandInfo(name: string, preferSlash?: boolean): Array<Embed.St
                 },
                 {
                     name: "Cooldown",
-                    value: `${cooldownSecond} second${cooldownSecond > 1 ? "s" : ""}`,
+                    value: cooldown,
                     inline: true,
                 },
                 {
@@ -91,6 +91,11 @@ function displayCommandInfo(name: string, preferSlash?: boolean): Array<Embed.St
             ],
         },
     ];
+}
+
+export function formatCooldown(cooldownMs?: number): string {
+    const cooldownSeconds = (cooldownMs ?? 1000) / 1000;
+    return `${cooldownSeconds} second${cooldownSeconds === 1 ? "" : "s"}`;
 }
 
 async function displayAllCommands(): Promise<Array<Embed.Structure>> {
@@ -188,13 +193,9 @@ async function displayAllCommands(): Promise<Array<Embed.Structure>> {
         inline: false,
     });
 
-    const hanamiWebsite = "https://hanami.yorunoken.com";
-    const inviteLink = "https://discord.com/oauth2/authorize?client_id=995999045157916763&permissions=346176&scope=bot";
-    const voteLink = "https://top.gg/bot/995999045157916763";
-
     fields.push({
         name: "Links",
-        value: `[Website](${hanamiWebsite}) • [Invite](${inviteLink}) • [Vote](${voteLink})`,
+        value: `[Website](${HANAMI_WEBSITE_URL}) • [Invite](${BOT_INVITE_URL}) • [Vote](${BOT_VOTE_URL})`,
         inline: false,
     });
 
