@@ -2,7 +2,6 @@ import { expect, test, describe, mock, beforeEach, afterEach } from "bun:test";
 import { handleCommandError } from "../../src/utils/error";
 import { logger } from "../../src/utils/logger";
 
-
 // Mock logger
 mock.module("../../src/utils/logger", () => {
     return {
@@ -18,7 +17,7 @@ describe("handleCommandError", () => {
     let mockClient: any;
     let mockInteraction: any;
     let mockMessage: any;
-    
+
     beforeEach(() => {
         process.env.ERROR_CHANNEL_ID = "123456789";
         process.env.OWNER_ID = "987654321";
@@ -45,7 +44,7 @@ describe("handleCommandError", () => {
             channelId: "channel456",
             author: { id: "user456", username: "testuser2" },
         };
-        
+
         // Reset the mock implementations between tests
         (logger.error as ReturnType<typeof mock>).mockClear();
     });
@@ -58,7 +57,7 @@ describe("handleCommandError", () => {
     test("handles interaction error and sends log", async () => {
         const error = new Error("Test interaction error");
         error.stack = "Error: Test interaction error\n    at trace1";
-        
+
         await handleCommandError(error, {
             client: mockClient,
             interaction: mockInteraction,
@@ -86,7 +85,7 @@ describe("handleCommandError", () => {
     test("handles message command error and sends log", async () => {
         const error = new Error("Test message error");
         error.stack = "Error: Test message error\n    at trace2";
-        
+
         await handleCommandError(error, {
             client: mockClient,
             message: mockMessage,
@@ -115,7 +114,7 @@ describe("handleCommandError", () => {
     test("handles getGuild throwing gracefully", async () => {
         const error = new Error("Test error");
         mockClient.rest.getGuild = mock(() => Promise.reject(new Error("Guild fetch failed")));
-        
+
         await handleCommandError(error, {
             client: mockClient,
             interaction: mockInteraction,

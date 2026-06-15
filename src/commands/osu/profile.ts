@@ -17,7 +17,7 @@ export async function run(ctx: CommandContext) {
     let commandName = ctx.commandName;
     if (commandName === "profile") commandName = Mode.OSU;
 
-    const { user } = (await parseCommandArgs(ctx, (commandName as Mode) ?? Mode.OSU));
+    const { user } = await parseCommandArgs(ctx, (commandName as Mode) ?? Mode.OSU);
     if (user.type === UserType.FAIL) {
         await ctx.editReply(user.failMessage);
         return;

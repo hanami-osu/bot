@@ -29,7 +29,7 @@ import { CommandContext } from "@utils/command-context";
 export async function run(ctx: CommandContext) {
     await ctx.defer();
     const mode = modeAliases[ctx.commandName ?? "compare"]?.mode ?? Mode.OSU;
-    const { user, mods } = (await parseCommandArgs(ctx, mode));
+    const { user, mods } = await parseCommandArgs(ctx, mode);
 
     if (user.type === UserType.FAIL) {
         await ctx.editReply(user.failMessage);
@@ -44,7 +44,7 @@ export async function run(ctx: CommandContext) {
     }
 }
 
-async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context: CommandContext): Promise<{ reply: MessageReplyOptions, embedOptions?: any }> {
+async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context: CommandContext): Promise<{ reply: MessageReplyOptions; embedOptions?: any }> {
     const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
     if (!osuUserRequest.success) {
         return {
@@ -56,7 +56,7 @@ async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context
                         description: `It seems like the user **\`${user.banchoId}\`** doesn't exist! :(`,
                     },
                 ],
-            }
+            },
         };
     }
     const osuUser = osuUserRequest.data;
@@ -72,11 +72,11 @@ async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context
                         description: "It seems like the beatmap ID couldn't be found :(\n",
                     },
                 ],
-            }
+            },
         };
     }
 
-    const beatmapRequest = await safeParse(v2.beatmaps.details({ type: 'difficulty', id: Number(beatmapId) }));
+    const beatmapRequest = await safeParse(v2.beatmaps.details({ type: "difficulty", id: Number(beatmapId) }));
     if (!beatmapRequest.success) {
         return {
             reply: {
@@ -87,7 +87,7 @@ async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context
                         description: "It seems like this beatmap doesn't exist! :(",
                     },
                 ],
-            }
+            },
         };
     }
     const beatmap = beatmapRequest.data;
@@ -102,7 +102,7 @@ async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context
                         description: "It seems like this beatmap's leaderboard doesn't exist! :(",
                     },
                 ],
-            }
+            },
         };
     }
 
@@ -118,7 +118,7 @@ async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context
                         description: `It seems like \`${osuUser.username}\` has no plays on that beatmap!`,
                     },
                 ],
-            }
+            },
         };
     }
 

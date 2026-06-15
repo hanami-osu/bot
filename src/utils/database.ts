@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient } from "@prisma/client";
 import { logger } from "./logger";
 import type { Tables, TableToArgument, TableToType } from "@type/database";
 
@@ -14,14 +14,21 @@ interface PrismaModel {
 }
 
 function getPrismaModel(table: string): PrismaModel {
-    switch(table) {
-        case "users": return prisma.user as unknown as PrismaModel;
-        case "guilds": return prisma.guild as unknown as PrismaModel;
-        case "maps": return prisma.map as unknown as PrismaModel;
-        case "commands": return prisma.command as unknown as PrismaModel;
-        case "osu_scores": return prisma.score as unknown as PrismaModel;
-        case "osu_scores_pp": return prisma.scorePp as unknown as PrismaModel;
-        default: throw new Error(`Unknown table ${table}`);
+    switch (table) {
+        case "users":
+            return prisma.user as unknown as PrismaModel;
+        case "guilds":
+            return prisma.guild as unknown as PrismaModel;
+        case "maps":
+            return prisma.map as unknown as PrismaModel;
+        case "commands":
+            return prisma.command as unknown as PrismaModel;
+        case "osu_scores":
+            return prisma.score as unknown as PrismaModel;
+        case "osu_scores_pp":
+            return prisma.scorePp as unknown as PrismaModel;
+        default:
+            throw new Error(`Unknown table ${table}`);
     }
 }
 
@@ -105,7 +112,6 @@ async function withPerfMonitoring<T>(operation: string, fn: () => Promise<T>): P
     return result;
 }
 
-
 export async function getEntry<T extends Tables>(table: T, id: string | number): Promise<TableToType<T> | null> {
     return withPerfMonitoring(`getEntry: ${table}`, async () => {
         const model = getPrismaModel(table);
@@ -138,7 +144,7 @@ export async function getRowSum(table: Tables): Promise<number> {
     // Only used for commands count right now
     if (table === "commands") {
         const aggr = await prisma.command.aggregate({
-            _sum: { count: true }
+            _sum: { count: true },
         });
         return aggr._sum.count ?? 0;
     }
@@ -159,22 +165,22 @@ export async function insertData<T extends Tables>(
 ): Promise<void> {
     const model = getPrismaModel(table);
     const prismaId = getPrismaId(table, id);
-    
+
     const obj: Record<string, unknown> = {};
     for (const item of data) {
         obj[item.key as string] = mapToPrismaValue(item.key as string, item.value);
     }
-    
+
     if (ignore) {
         await model.createMany({
             data: { id: prismaId, ...obj },
-            skipDuplicates: true
+            skipDuplicates: true,
         });
     } else {
         await model.upsert({
             where: { id: prismaId },
             create: { id: prismaId, ...obj },
-            update: obj
+            update: obj,
         });
     }
 }
@@ -189,29 +195,33 @@ export async function bulkInsertData<T extends Tables>(
 ): Promise<void> {
     // We execute these sequentially in a transaction to avoid race conditions
     // Prisma doesn't support bulk upsert directly in createMany for MySQL, so we use transaction array
-    const transactions = entries.map(entry => {
+    const transactions = entries.map((entry) => {
         const model = getPrismaModel(entry.table);
         const prismaId = getPrismaId(entry.table, entry.id);
-        
+
         const obj: Record<string, unknown> = {};
         for (const item of entry.data) {
             obj[item.key as string] = mapToPrismaValue(item.key as string, item.value);
         }
-        
+
         if (entry.ignore) {
-            return Promise.resolve(model.createMany({
-                data: { id: prismaId, ...obj },
-                skipDuplicates: true
-            }));
+            return Promise.resolve(
+                model.createMany({
+                    data: { id: prismaId, ...obj },
+                    skipDuplicates: true,
+                }),
+            );
         } else {
-            return Promise.resolve(model.upsert({
-                where: { id: prismaId },
-                create: { id: prismaId, ...obj },
-                update: obj
-            }));
+            return Promise.resolve(
+                model.upsert({
+                    where: { id: prismaId },
+                    create: { id: prismaId, ...obj },
+                    update: obj,
+                }),
+            );
         }
     });
-    
+
     await Promise.all(transactions);
 }
 

@@ -70,7 +70,13 @@ export async function getFormattedScore({
         createdAt = play.ended_at ?? "";
     }
 
-    const objectsHit = (scoreStatistics.count_300 ?? 0) + (scoreStatistics.count_100 ?? 0) + (scoreStatistics.count_50 ?? 0) + (scoreStatistics.count_miss ?? 0) + (scoreStatistics.count_geki ?? 0) + (scoreStatistics.count_katu ?? 0);
+    const objectsHit =
+        (scoreStatistics.count_300 ?? 0) +
+        (scoreStatistics.count_100 ?? 0) +
+        (scoreStatistics.count_50 ?? 0) +
+        (scoreStatistics.count_miss ?? 0) +
+        (scoreStatistics.count_geki ?? 0) +
+        (scoreStatistics.count_katu ?? 0);
 
     const performance = await getPerformanceResults({
         hitValues: scoreStatistics,
@@ -89,27 +95,27 @@ export async function getFormattedScore({
     const { fc, current, difficultyAttrs, perfect, mapValues } = performance;
 
     if (play.passed && "score" in play) {
-        (await insertData(
+        await insertData(
+            {
+                table: Tables.PP,
+                id: play.id,
+                data: [
                     {
-                        table: Tables.PP,
-                        id: play.id,
-                        data: [
-                            {
-                                key: "pp",
-                                value: current.pp,
-                            },
-                            {
-                                key: "pp_fc",
-                                value: fc.pp,
-                            },
-                            {
-                                key: "pp_perfect",
-                                value: perfect.pp,
-                            },
-                        ],
+                        key: "pp",
+                        value: current.pp,
                     },
-                    true,
-                ));
+                    {
+                        key: "pp_fc",
+                        value: fc.pp,
+                    },
+                    {
+                        key: "pp_perfect",
+                        value: perfect.pp,
+                    },
+                ],
+            },
+            true,
+        );
     }
 
     const hitValues = hitValueCalculator(mode, scoreStatistics);

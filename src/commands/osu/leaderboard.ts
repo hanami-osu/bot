@@ -36,7 +36,7 @@ export async function run(ctx: CommandContext) {
         isGlobal = modeAliases[ctx.commandName ?? "leaderboard"]?.isGlobal ?? true;
     }
 
-    const { user, mods, flags } = (await parseCommandArgs(ctx, Mode.OSU));
+    const { user, mods, flags } = await parseCommandArgs(ctx, Mode.OSU);
     if (!ctx.isInteraction) {
         page = Number(flags.p ?? flags.page ?? 1) - 1;
     }
@@ -49,7 +49,14 @@ export async function run(ctx: CommandContext) {
     }
 }
 
-async function getEmbeds(beatmapId: string | undefined, authorId: string, mods: any, isGlobal: boolean, page: number, context: CommandContext): Promise<{ reply: MessageReplyOptions, embedOptions?: LeaderboardBuilderOptions }> {
+async function getEmbeds(
+    beatmapId: string | undefined,
+    authorId: string,
+    mods: any,
+    isGlobal: boolean,
+    page: number,
+    context: CommandContext,
+): Promise<{ reply: MessageReplyOptions; embedOptions?: LeaderboardBuilderOptions }> {
     const resolvedBeatmapId = beatmapId ?? (await getBeatmapIdFromContext(context));
     if (typeof resolvedBeatmapId === "undefined" || resolvedBeatmapId === null) {
         return {
@@ -61,11 +68,11 @@ async function getEmbeds(beatmapId: string | undefined, authorId: string, mods: 
                         description: "It seems like the beatmap ID couldn't be found :(\n",
                     },
                 ],
-            }
+            },
         };
     }
 
-    const beatmapRequest = await safeParse(v2.beatmaps.details({ type: 'difficulty', id: Number(resolvedBeatmapId) }));
+    const beatmapRequest = await safeParse(v2.beatmaps.details({ type: "difficulty", id: Number(resolvedBeatmapId) }));
     if (!beatmapRequest.success) {
         return {
             reply: {
@@ -76,7 +83,7 @@ async function getEmbeds(beatmapId: string | undefined, authorId: string, mods: 
                         description: "It seems like this beatmap doesn't exist! :(",
                     },
                 ],
-            }
+            },
         };
     }
     const beatmap = beatmapRequest.data;
@@ -91,16 +98,18 @@ async function getEmbeds(beatmapId: string | undefined, authorId: string, mods: 
                         description: "It seems like this beatmap's leaderboard doesn't exist! :(",
                     },
                 ],
-            }
+            },
         };
     }
 
-    const scoresRequest = await safeParse(getBeatmapTopScores({
-        beatmapId: Number(resolvedBeatmapId),
-        mode: beatmap.mode as GameMode,
-        isGlobal,
-        mods: mods.name ? ((typeof mods.name === "string" ? mods.name : mods.name.acronym).match(/.{1,2}/g) as Array<string>) : undefined,
-    }));
+    const scoresRequest = await safeParse(
+        getBeatmapTopScores({
+            beatmapId: Number(resolvedBeatmapId),
+            mode: beatmap.mode as GameMode,
+            isGlobal,
+            mods: mods.name ? ((typeof mods.name === "string" ? mods.name : mods.name.acronym).match(/.{1,2}/g) as Array<string>) : undefined,
+        }),
+    );
 
     if (!scoresRequest.success) {
         return {
@@ -112,7 +121,7 @@ async function getEmbeds(beatmapId: string | undefined, authorId: string, mods: 
                         description: "Failed to fetch top scores! If you were using mods or a country leaderboard, maybe my osu! supporter ran out? Support me at https://yorunoken.com#support :3",
                     },
                 ],
-            }
+            },
         };
     }
 
@@ -128,7 +137,7 @@ async function getEmbeds(beatmapId: string | undefined, authorId: string, mods: 
                         description: "It seems like this beatmap's leaderboard doesn't exist! :(",
                     },
                 ],
-            }
+            },
         };
     }
 

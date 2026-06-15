@@ -20,7 +20,7 @@ export class CommandContext {
         public readonly prefix?: string,
         public readonly commandName?: string,
         public readonly channel?: GuildTextChannel,
-        public readonly index?: number
+        public readonly index?: number,
     ) {
         this.isInteraction = !!interaction;
         this.isMessage = !!message;
@@ -81,7 +81,7 @@ export class CommandContext {
     async sendWithPagination(options: ReplyOptions, embedOptions: EmbedBuilderOptions): Promise<void> {
         const { ButtonStateCache } = await import("./cache");
         const sentMessage = await this.editReply(options);
-        
+
         if (this.isMessage && typeof sentMessage === "object" && sentMessage !== null && "id" in sentMessage && typeof sentMessage.id === "string") {
             await ButtonStateCache.set(sentMessage.id, embedOptions);
         } else if (this.interaction) {

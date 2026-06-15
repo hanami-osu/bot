@@ -54,7 +54,7 @@ describe("PaginationManager", () => {
         test("updates options for PAGE type", () => {
             const options: any = { plays: new Array(20), page: 1, isPage: true };
             const updated = PaginationManager.updateBuilderOptions(options, PaginationAction.NEXT, PaginationType.PAGE);
-            
+
             expect((updated as any).page).toBe(2);
             expect((updated as any).isPage).toBe(true);
         });
@@ -62,7 +62,7 @@ describe("PaginationManager", () => {
         test("updates options for INDEX type", () => {
             const options: any = { scores: new Array(20), index: 5, isPage: false };
             const updated = PaginationManager.updateBuilderOptions(options, PaginationAction.PREV, PaginationType.INDEX);
-            
+
             expect((updated as any).index).toBe(4);
             expect((updated as any).isPage).toBe(false);
         });
@@ -90,7 +90,7 @@ describe("PaginationManager", () => {
             const config = {
                 type: PaginationType.PAGE,
                 totalItems: 20,
-                currentValue: 0
+                currentValue: 0,
             };
             const row = PaginationManager.createActionRow(config);
             const components = (row[0] as any).components;
@@ -104,7 +104,7 @@ describe("PaginationManager", () => {
             const config = {
                 type: PaginationType.PAGE,
                 totalItems: 20,
-                currentValue: 3 // Max page for 20 items / 5
+                currentValue: 3, // Max page for 20 items / 5
             };
             const row = PaginationManager.createActionRow(config);
             const components = (row[0] as any).components;

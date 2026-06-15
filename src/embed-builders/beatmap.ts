@@ -10,7 +10,7 @@ import type { BeatmapBuilderOptions } from "@type/builders";
 import type { Embed } from "lilybird";
 
 export async function beatmapBuilder({ beatmapId, mods }: BeatmapBuilderOptions): Promise<Array<Embed.Structure>> {
-    const beatmapRequest = await safeParse(v2.beatmaps.details({ type: 'difficulty', id: Number(beatmapId) }));
+    const beatmapRequest = await safeParse(v2.beatmaps.details({ type: "difficulty", id: Number(beatmapId) }));
     if (!beatmapRequest.success) {
         return [
             {

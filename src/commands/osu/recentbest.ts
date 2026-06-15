@@ -29,7 +29,7 @@ export async function run(ctx: CommandContext) {
     await ctx.defer();
 
     const mode = modeAliases[ctx.commandName ?? "recentbest"]?.mode ?? Mode.OSU;
-    const { user, mods, flags } = (await parseCommandArgs(ctx, mode));
+    const { user, mods, flags } = await parseCommandArgs(ctx, mode);
 
     if (user.type === UserType.FAIL) {
         await ctx.editReply(user.failMessage);
@@ -37,7 +37,7 @@ export async function run(ctx: CommandContext) {
     }
 
     let index = ctx.isInteraction ? ctx.interaction!.data.getInteger("index") : ctx.index;
-    let page = ctx.isInteraction ? ctx.interaction!.data.getInteger("page") : (Number(flags.p ?? flags.page) || undefined);
+    let page = ctx.isInteraction ? ctx.interaction!.data.getInteger("page") : Number(flags.p ?? flags.page) || undefined;
 
     if (typeof page === "undefined" && typeof index === "undefined") {
         page = ctx.isMessage ? 0 : 1;
@@ -49,7 +49,7 @@ export async function run(ctx: CommandContext) {
     if (ctx.isMessage && typeof flags.p !== "undefined") page = Number(flags.p) - 1;
     if (ctx.isMessage && typeof flags.page !== "undefined") page = Number(flags.page) - 1;
     if (index && ctx.isInteraction) index -= 1;
-    
+
     // For prefix, if neither page nor index is set, it defaults to page=0.
     // For interaction, if neither is set, it defaults to page=1 -> 0.
 
@@ -64,7 +64,14 @@ export async function run(ctx: CommandContext) {
     }
 }
 
-async function getEmbeds(user: SuccessUser, authorId: string, index: number | undefined, page: number | undefined, isPage: boolean, mods: any): Promise<{ reply: MessageReplyOptions, embedOptions?: PlaysBuilderOptions }> {
+async function getEmbeds(
+    user: SuccessUser,
+    authorId: string,
+    index: number | undefined,
+    page: number | undefined,
+    isPage: boolean,
+    mods: any,
+): Promise<{ reply: MessageReplyOptions; embedOptions?: PlaysBuilderOptions }> {
     const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
     if (!osuUserRequest.success) {
         return {
@@ -76,7 +83,7 @@ async function getEmbeds(user: SuccessUser, authorId: string, index: number | un
                         description: `It seems like the user **\`${user.banchoId}\`** doesn't exist! :(`,
                     },
                 ],
-            }
+            },
         };
     }
     const osuUser = osuUserRequest.data;
@@ -93,7 +100,7 @@ async function getEmbeds(user: SuccessUser, authorId: string, index: number | un
                         description: `It seems like \`${osuUser.username}\` doesn't have any plays, maybe they should go set some :)`,
                     },
                 ],
-            }
+            },
         };
     }
 

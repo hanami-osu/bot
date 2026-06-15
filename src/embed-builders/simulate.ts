@@ -10,7 +10,7 @@ import type { SimulateBuilderOptions } from "@type/builders";
 import type { Embed } from "lilybird";
 
 export async function simulateBuilder({ beatmapId, mods, options }: SimulateBuilderOptions): Promise<Array<Embed.Structure>> {
-    const beatmapRequest = await safeParse(v2.beatmaps.details({ type: 'difficulty', id: beatmapId }));
+    const beatmapRequest = await safeParse(v2.beatmaps.details({ type: "difficulty", id: beatmapId }));
     if (!beatmapRequest.success) {
         return [
             {
@@ -59,7 +59,7 @@ export async function simulateBuilder({ beatmapId, mods, options }: SimulateBuil
         count_geki: current.state?.nGeki,
         count_katu: current.state?.nKatu,
     };
-    const grade = grades[gradeCalculator(map.mode as Mode, hitValues, mods?.map(m => typeof m === "string" ? m : m.acronym) ?? [""])];
+    const grade = grades[gradeCalculator(map.mode as Mode, hitValues, mods?.map((m) => (typeof m === "string" ? m : m.acronym)) ?? [""])];
 
     const hitValuesString = hitValueCalculator(map.mode as Mode, hitValues);
 

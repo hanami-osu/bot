@@ -34,22 +34,22 @@ export async function run(ctx: CommandContext): Promise<void> {
 
     const changes: Array<{ type: string; data: string }> = [];
     if (typeof modeData !== "undefined") {
-        (await insertData({ table: Tables.USER, id: userId, data: [{ key: "mode", value: modeData }] }));
+        await insertData({ table: Tables.USER, id: userId, data: [{ key: "mode", value: modeData }] });
         changes.push({ type: "mode", data: modeData });
     }
 
     if (typeof scoreEmbedData !== "undefined") {
-        (await insertData({ table: Tables.USER, id: userId, data: [{ key: "score_embeds", value: scoreEmbedData }] }));
+        await insertData({ table: Tables.USER, id: userId, data: [{ key: "score_embeds", value: scoreEmbedData }] });
         changes.push({ type: "score_embeds", data: ScoreEmbed[scoreEmbedData] });
     }
 
     if (typeof embedTypeData !== "undefined") {
-        (await insertData({ table: Tables.USER, id: userId, data: [{ key: "embed_type", value: embedTypeData }] }));
+        await insertData({ table: Tables.USER, id: userId, data: [{ key: "embed_type", value: embedTypeData }] });
         changes.push({ type: "embed_type", data: embedTypeData });
     }
 
     if (typeof scoreDataValue !== "undefined") {
-        (await insertData({ table: Tables.USER, id: userId, data: [{ key: "score_data", value: scoreDataValue }] }));
+        await insertData({ table: Tables.USER, id: userId, data: [{ key: "score_data", value: scoreDataValue }] });
         changes.push({ type: "score_data", data: scoreDataValue === 0 ? "Stable" : "Lazer" });
     }
 
@@ -69,9 +69,9 @@ export async function run(ctx: CommandContext): Promise<void> {
 }
 
 async function list(interaction: GuildInteraction<ApplicationCommandData>, userId: string): Promise<void> {
-    let user = (await getEntry(Tables.USER, userId));
+    let user = await getEntry(Tables.USER, userId);
     if (!user) {
-        (await insertData({ table: Tables.USER, id: userId, data: [{ key: "banchoId", value: null }] }));
+        await insertData({ table: Tables.USER, id: userId, data: [{ key: "banchoId", value: null }] });
         user = { banchoId: null, mode: null, score_embeds: null, embed_type: null, score_data: null, id: userId };
     }
 
