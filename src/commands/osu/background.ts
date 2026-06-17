@@ -14,11 +14,7 @@ export async function run(ctx: CommandContext) {
     await ctx.defer();
     const { user } = (await parseCommandArgs(ctx, Mode.OSU));
 
-    const beatmapId = user.beatmapId ?? (await getBeatmapIdFromContext({ 
-        message: ctx.message, 
-        channelId: ctx.channelId, 
-        client: ctx.client 
-    }));
+    const beatmapId = user.beatmapId ?? (await getBeatmapIdFromContext(ctx.beatmapLookupContext));
     
     const embeds = await getEmbed(beatmapId, ctx.user.id);
     await ctx.editReply({ embeds });

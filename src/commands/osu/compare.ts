@@ -61,7 +61,7 @@ async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context
     }
     const osuUser = osuUserRequest.data;
 
-    const beatmapId = user.beatmapId ?? (await getBeatmapIdFromContext(context));
+    const beatmapId = user.beatmapId ?? (await getBeatmapIdFromContext(context.beatmapLookupContext));
     if (typeof beatmapId === "undefined" || beatmapId === null) {
         return {
             reply: {

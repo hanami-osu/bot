@@ -50,7 +50,7 @@ export async function run(ctx: CommandContext) {
 }
 
 async function getEmbeds(beatmapId: string | undefined, authorId: string, mods: any, isGlobal: boolean, page: number, context: CommandContext): Promise<{ reply: MessageReplyOptions, embedOptions?: LeaderboardBuilderOptions }> {
-    const resolvedBeatmapId = beatmapId ?? (await getBeatmapIdFromContext(context));
+    const resolvedBeatmapId = beatmapId ?? (await getBeatmapIdFromContext(context.beatmapLookupContext));
     if (typeof resolvedBeatmapId === "undefined" || resolvedBeatmapId === null) {
         return {
             reply: {
