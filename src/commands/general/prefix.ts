@@ -26,7 +26,7 @@ import { CommandContext } from "@utils/command-context";
 
 export async function run(ctx: CommandContext) {
     await ctx.defer();
-    if (!await ctx.ensureGuild("Prefixes can only be configured in servers.")) return;
+    if (!(await ctx.ensureGuild("Prefixes can only be configured in servers."))) return;
 
     const { interaction } = ctx;
     if (!interaction?.inGuild()) return;
