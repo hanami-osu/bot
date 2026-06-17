@@ -1,6 +1,6 @@
 import type { ApplicationCommandData, GuildInteraction, GuildTextChannel, Message } from "@lilybird/transformers";
 import type { Client, ApplicationCommand as LilybirdApplicationCommand } from "lilybird";
-import type { CommandContext } from "@utils/command-context";
+import type { CommandContext, CommandIntegrationType, CommandInteractionContext } from "@utils/command-context";
 
 type Awaitable<T> = Promise<T> | T;
 
@@ -12,13 +12,25 @@ interface MessageData {
     flags?: string;
 }
 
+export interface CommandAvailability {
+    integrationTypes?: Array<CommandIntegrationType>;
+    contexts?: Array<CommandInteractionContext>;
+    unavailableMessage?: string;
+}
+
+export type ApplicationCommandRegistrationData = Omit<LilybirdApplicationCommand.Create.ApplicationCommandJSONParams, "name" | "description"> & {
+    integration_types?: Array<CommandIntegrationType>;
+    contexts?: Array<CommandInteractionContext>;
+};
+
 export interface CommandData {
     name: string;
     description: string;
     hasPrefixVariant: boolean;
     isDeprecatedPrefix?: boolean;
     message?: MessageData;
-    application?: Omit<LilybirdApplicationCommand.Create.ApplicationCommandJSONParams, "name" | "description">;
+    application?: ApplicationCommandRegistrationData;
+    availability?: CommandAvailability;
 }
 
 export interface MessageCommand {

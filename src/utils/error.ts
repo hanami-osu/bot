@@ -1,10 +1,10 @@
 import { EmbedType, Client } from "lilybird";
 import { logger } from "@utils/logger";
-import { GuildInteraction, Message, ApplicationCommandData } from "@lilybird/transformers";
+import { Interaction, Message, ApplicationCommandData, GuildInteraction, DMInteraction } from "@lilybird/transformers";
 
 interface CommandErrorContext {
     client: Client;
-    interaction?: GuildInteraction<ApplicationCommandData>;
+    interaction?: Interaction<ApplicationCommandData>;
     message?: Message;
     commandName: string;
     subCommand?: string;
@@ -13,6 +13,14 @@ interface CommandErrorContext {
 }
 
 const GENERIC_COMMAND_ERROR = "Something went wrong while running that command. The error has been logged, so please try again later.";
+
+function isGuildInteraction(interaction: Interaction<ApplicationCommandData>): interaction is GuildInteraction<ApplicationCommandData> {
+    return typeof interaction.inGuild === "function" ? interaction.inGuild() : "member" in interaction;
+}
+
+function isDMInteraction(interaction: Interaction<ApplicationCommandData>): interaction is DMInteraction<ApplicationCommandData> {
+    return typeof interaction.inDM === "function" ? interaction.inDM() : "user" in interaction;
+}
 
 export async function handleCommandError(error: Error, ctx: CommandErrorContext): Promise<void> {
     const { client, interaction, message, commandName, subCommand, content, prefix } = ctx;
@@ -37,9 +45,11 @@ export async function handleCommandError(error: Error, ctx: CommandErrorContext)
         return;
     }
 
-    const guildId = interaction?.guildId ?? message?.guildId;
-    const channelId = interaction?.channelId ?? message?.channelId;
-    const user = interaction?.member.user ?? message?.author;
+    const guildInteraction = interaction && isGuildInteraction(interaction) ? interaction : undefined;
+    const dmInteraction = interaction && isDMInteraction(interaction) ? interaction : undefined;
+    const guildId = guildInteraction?.guildId ?? message?.guildId;
+    const channelId = guildInteraction?.channelId ?? message?.channelId;
+    const user = guildInteraction?.member.user ?? dmInteraction?.user ?? message?.author;
     if (!user) {
         await logger.error(`Command error without user context for ${commandName}`, error);
         return;
@@ -58,7 +68,7 @@ export async function handleCommandError(error: Error, ctx: CommandErrorContext)
     // Build fields
     const fields = [
         { name: "User", value: `<@${user.id}> (${user.username})` },
-        { name: "Guild", value: `[${guildName}](https://discord.com/channels/${guildId}/${channelId})` },
+        { name: "Guild", value: guildId && channelId ? `[${guildName}](https://discord.com/channels/${guildId}/${channelId})` : guildName },
     ];
 
     if (!isInteraction && content) {

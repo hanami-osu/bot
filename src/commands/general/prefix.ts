@@ -5,6 +5,7 @@ import { Tables } from "@type/database";
 import type { ApplicationCommandData, GuildInteraction } from "@lilybird/transformers";
 import { CommandData } from "@type/commands";
 import { ApplicationCommandOptionType, PermissionFlags, EmbedType } from "lilybird";
+import { CommandInteractionContext, CommandIntegrationType } from "@utils/command-context";
 
 const commands: Record<string, ({ prefix, interaction, guildId }: { prefix?: string; interaction: GuildInteraction<ApplicationCommandData>; guildId: string }) => Promise<void>> = {
     add,
@@ -25,9 +26,10 @@ import { CommandContext } from "@utils/command-context";
 
 export async function run(ctx: CommandContext) {
     await ctx.defer();
+    if (!await ctx.ensureGuild("Prefixes can only be configured in servers.")) return;
 
     const { interaction } = ctx;
-    if (!interaction) return;
+    if (!interaction?.inGuild()) return;
 
     const subcommand = interaction.data.subCommand ?? "list";
     const prefix = interaction.data.getString("prefix");
@@ -143,5 +145,10 @@ export const data = {
                 description: "Get a list of the current prefixes",
             },
         ],
+    },
+    availability: {
+        integrationTypes: [CommandIntegrationType.GuildInstall],
+        contexts: [CommandInteractionContext.Guild],
+        unavailableMessage: "Prefixes can only be configured in servers.",
     },
 } satisfies CommandData;

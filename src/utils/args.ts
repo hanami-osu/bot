@@ -5,7 +5,7 @@ import { Tables } from "@type/database";
 import { enums } from "osu-api-extended";
 import type { SlashCommandArgs, DifficultyOptions, Mods, PrefixCommandArgs, User, CommandArgs } from "@type/command-args";
 import type { CommandContext } from "./command-context";
-import type { ApplicationCommandData, GuildInteraction, Message } from "@lilybird/transformers";
+import type { ApplicationCommandData, DMInteraction, GuildInteraction, Interaction, Message } from "@lilybird/transformers";
 import { slashCommandIdsCache } from "./cache";
 
 interface BeatMapSetURL {
@@ -144,8 +144,22 @@ function getSlashOptions(data: ApplicationCommandData): Array<SlashOption> {
     return Array.isArray(options) ? options : [];
 }
 
-export async function getCommandArgs(interaction: GuildInteraction<ApplicationCommandData>, getAttributes?: boolean): Promise<SlashCommandArgs> {
-    const { data, member } = interaction;
+function isGuildInteraction(interaction: Interaction<ApplicationCommandData>): interaction is GuildInteraction<ApplicationCommandData> {
+    return typeof interaction.inGuild === "function" ? interaction.inGuild() : "member" in interaction;
+}
+
+function isDMInteraction(interaction: Interaction<ApplicationCommandData>): interaction is DMInteraction<ApplicationCommandData> {
+    return typeof interaction.inDM === "function" ? interaction.inDM() : "user" in interaction;
+}
+
+function getInteractionUserId(interaction: Interaction<ApplicationCommandData>): string {
+    if (isGuildInteraction(interaction)) return interaction.member.user.id;
+    if (isDMInteraction(interaction)) return interaction.user.id;
+    throw new Error("Interaction command context is missing user data");
+}
+
+export async function getCommandArgs(interaction: Interaction<ApplicationCommandData>, getAttributes?: boolean): Promise<SlashCommandArgs> {
+    const { data } = interaction;
 
     // This is so fucking annoying holy shit I can't get it right
     let difficultySettings: DifficultyOptions | undefined;
@@ -160,7 +174,7 @@ export async function getCommandArgs(interaction: GuildInteraction<ApplicationCo
     }
 
     const userArg = data.getString("username");
-    const userAuthor = (await getEntry(Tables.USER, member.user.id));
+    const userAuthor = (await getEntry(Tables.USER, getInteractionUserId(interaction)));
     const discordUserId = data.getUser("discord");
     const discordUser = (await getEntry(Tables.USER, discordUserId ?? ""));
     const mode = (data.getString("mode") as Mode | undefined) ?? Mode.OSU;

@@ -2,7 +2,6 @@ import { CommandData } from "@type/commands";
 import { ApplicationCommandOptionType, type Embed } from "lilybird";
 import { getEntry, insertData } from "@utils/database";
 import { EmbedScoreType, ScoreData, ScoreEmbed, Tables } from "@type/database";
-import type { ApplicationCommandData, GuildInteraction } from "@lilybird/transformers";
 
 import { CommandContext } from "@utils/command-context";
 
@@ -20,7 +19,7 @@ export async function run(ctx: CommandContext): Promise<void> {
     if (!interaction) return;
 
     const { data } = interaction;
-    const { id: userId, username } = interaction.member.user;
+    const { id: userId, username } = ctx.user;
 
     const scoreEmbedData = data.getNumber("score_embeds");
     const modeData = data.getString("mode");
@@ -28,7 +27,7 @@ export async function run(ctx: CommandContext): Promise<void> {
     const scoreDataValue = data.getNumber("score_data");
 
     if (typeof modeData === "undefined" && typeof scoreEmbedData === "undefined" && typeof embedTypeData === "undefined" && typeof scoreDataValue === "undefined") {
-        await list(interaction, userId);
+        await list(ctx, userId);
         return;
     }
 
@@ -68,14 +67,14 @@ export async function run(ctx: CommandContext): Promise<void> {
     });
 }
 
-async function list(interaction: GuildInteraction<ApplicationCommandData>, userId: string): Promise<void> {
+async function list(ctx: CommandContext, userId: string): Promise<void> {
     let user = (await getEntry(Tables.USER, userId));
     if (!user) {
         (await insertData({ table: Tables.USER, id: userId, data: [{ key: "banchoId", value: null }] }));
         user = { banchoId: null, mode: null, score_embeds: null, embed_type: null, score_data: null, id: userId };
     }
 
-    const embeds: Embed.Structure = { fields: [], title: `Config settings of ${interaction.member.user.username}` };
+    const embeds: Embed.Structure = { fields: [], title: `Config settings of ${ctx.user.username}` };
 
     if (user) {
         for (const [key, v] of Object.entries(user)) {
@@ -90,7 +89,7 @@ async function list(interaction: GuildInteraction<ApplicationCommandData>, userI
         }
     }
 
-    await interaction.editReply({ embeds: [embeds] });
+    await ctx.editReply({ embeds: [embeds] });
 }
 
 function getConfigDisplayValue(key: string, value: string | number): string {
