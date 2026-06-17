@@ -24,22 +24,22 @@ describe("ping command", () => {
         } as any;
 
         const ctx = new CommandContext(mockClient, undefined, mockMessage, [], "!", "ping");
-        
+
         // Mock the defer function to avoid throwing errors during tests
         ctx.defer = mock(() => Promise.resolve());
-        
+
         await run(ctx);
 
         expect(ctx.defer).toHaveBeenCalled();
         expect(mockMessage.reply).toHaveBeenCalled();
-        
+
         const replyCall = mockMessage.reply.mock.calls[0][0];
         expect(replyCall.content).toContain("🏓...");
 
         // After osu API resolves, we expect an edit on the sent message
         const sentMessage = await mockMessage.reply.mock.results[0].value;
         expect(sentMessage.edit).toHaveBeenCalled();
-        
+
         const editCall = sentMessage.edit.mock.calls[0][0];
         expect(editCall.content).toContain("WebSocket: `42ms`");
         expect(editCall.content).toContain("Rest: `50ms`");
@@ -59,12 +59,12 @@ describe("ping command", () => {
         } as any;
 
         const ctx = new CommandContext(mockClient, mockInteraction, undefined, [], undefined, "ping");
-        
+
         await run(ctx);
 
         expect(mockInteraction.deferReply).toHaveBeenCalled();
         expect(mockInteraction.editReply).toHaveBeenCalled();
-        
+
         const editCall = mockInteraction.editReply.mock.calls[0][0];
         expect(editCall.content).toContain("WebSocket: `10ms`");
         expect(editCall.content).toContain("Rest: `15ms`");

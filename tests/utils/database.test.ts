@@ -17,7 +17,7 @@ describe("database conversion helpers", () => {
     });
 
     test("parses deterministic prefix arrays and rejects malformed prefix JSON", () => {
-        expect(mapFromPrismaValue({ id: "guild", prefixes: "[\"!\",\"?\"]" })).toEqual({ id: "guild", prefixes: ["!", "?"] });
-        expect(() => mapFromPrismaValue({ id: "guild", prefixes: "{\"bad\":true}" })).toThrow("JSON array of strings");
+        expect(mapFromPrismaValue({ id: "guild", prefixes: '["!","?"]' })).toEqual({ id: "guild", prefixes: ["!", "?"] });
+        expect(() => mapFromPrismaValue({ id: "guild", prefixes: '{"bad":true}' })).toThrow("JSON array of strings");
     });
 });

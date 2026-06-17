@@ -99,10 +99,10 @@ export function formatCooldown(cooldownMs?: number): string {
 }
 
 async function displayAllCommands(): Promise<Array<Embed.Structure>> {
-    const joinedServers = (await getRowCount(Tables.GUILD));
-    const linkedUsers = (await getRowCount(Tables.USER));
-    const downloadedMaps = (await getRowCount(Tables.MAP));
-    const usedCommands = (await getRowSum(Tables.COMMAND));
+    const joinedServers = await getRowCount(Tables.GUILD);
+    const linkedUsers = await getRowCount(Tables.USER);
+    const downloadedMaps = await getRowCount(Tables.MAP);
+    const usedCommands = await getRowSum(Tables.COMMAND);
 
     const allCommands = Array.from(commandsCache.keys()).sort();
 

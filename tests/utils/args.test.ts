@@ -4,9 +4,7 @@ import { UserType } from "../../src/types/command-args";
 import { Tables } from "../../src/types/database";
 import type { ApplicationCommandData, GuildInteraction, Message } from "@lilybird/transformers";
 
-const linkedUsers = new Map<string, { id: string; banchoId: string | null }>([
-    ["123456789012345678", { id: "123456789012345678", banchoId: "yorunoken" }],
-]);
+const linkedUsers = new Map<string, { id: string; banchoId: string | null }>([["123456789012345678", { id: "123456789012345678", banchoId: "yorunoken" }]]);
 
 function parseMockBigInt(value: string | number | bigint, fieldName = "value"): bigint {
     if (typeof value === "bigint") return value;
@@ -38,7 +36,7 @@ mock.module("@utils/database", () => ({
     getRowCount: mock(() => Promise.resolve(0)),
     getRowSum: mock(() => Promise.resolve(0)),
     parseBigIntValue: parseMockBigInt,
-    mapToPrismaValue: (key: string, value: unknown) => ["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value,
+    mapToPrismaValue: (key: string, value: unknown) => (["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value),
     mapFromPrismaValue: mapMockFromPrisma,
     incrementCommandCount: mock(() => Promise.resolve()),
 }));
@@ -56,11 +54,7 @@ describe("args parser", () => {
             expect(parsed && ("id" in parsed ? parsed.id : parsed.difficultyId)).toBe(expected);
         });
 
-        test.each([
-            "https://example.com/b/72727",
-            "https://osu.ppy.sh/users/72727",
-            "https://osu.ppy.sh/beatmapsets/123456#osu/not-a-number",
-        ])("rejects unrelated URL %s", (url) => {
+        test.each(["https://example.com/b/72727", "https://osu.ppy.sh/users/72727", "https://osu.ppy.sh/beatmapsets/123456#osu/not-a-number"])("rejects unrelated URL %s", (url) => {
             expect(parseBeatmapUrl(url)).toBeNull();
         });
     });

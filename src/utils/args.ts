@@ -174,9 +174,9 @@ export async function getCommandArgs(interaction: Interaction<ApplicationCommand
     }
 
     const userArg = data.getString("username");
-    const userAuthor = (await getEntry(Tables.USER, getInteractionUserId(interaction)));
+    const userAuthor = await getEntry(Tables.USER, getInteractionUserId(interaction));
     const discordUserId = data.getUser("discord");
-    const discordUser = (await getEntry(Tables.USER, discordUserId ?? ""));
+    const discordUser = await getEntry(Tables.USER, discordUserId ?? "");
     const mode = (data.getString("mode") as Mode | undefined) ?? Mode.OSU;
 
     const modsValue = data.getString("mods");
@@ -271,7 +271,7 @@ export async function parseOsuArguments(message: Message, args: Array<string>, m
         if (key && value) result.flags[key] = value;
     }
 
-    const userAuthor = (await getEntry(Tables.USER, message.author.id));
+    const userAuthor = await getEntry(Tables.USER, message.author.id);
 
     if (!result.tempUser && userAuthor?.banchoId) {
         result.user = {
@@ -285,7 +285,7 @@ export async function parseOsuArguments(message: Message, args: Array<string>, m
         const [userArg] = result.tempUser;
 
         const discordUserId = /<@(\d+)>/.exec(userArg)?.[1];
-        const discordUser = discordUserId ? (await getEntry(Tables.USER, discordUserId)) : null;
+        const discordUser = discordUserId ? await getEntry(Tables.USER, discordUserId) : null;
         const discordId = discordUserId ? discordUser?.banchoId : null;
 
         if (discordUserId && !discordId) {
@@ -312,7 +312,7 @@ export async function parseOsuArguments(message: Message, args: Array<string>, m
 export async function parseCommandArgs(ctx: CommandContext, mode: Mode = Mode.OSU, getAttributes?: boolean): Promise<CommandArgs> {
     if (ctx.isInteraction) {
         if (!ctx.interaction) throw new Error("Interaction command context is missing interaction data");
-        const slashArgs = (await getCommandArgs(ctx.interaction, getAttributes));
+        const slashArgs = await getCommandArgs(ctx.interaction, getAttributes);
         const flags: Record<string, string | undefined> = {};
 
         const options = getSlashOptions(ctx.interaction.data);
@@ -321,14 +321,14 @@ export async function parseCommandArgs(ctx: CommandContext, mode: Mode = Mode.OS
                 flags[opt.name] = String(opt.value);
             }
         }
-        
+
         // Emulate some flags like `-p` for interactions
         if (flags["page"]) flags["p"] = flags["page"];
 
         return { ...slashArgs, flags };
     } else {
         if (!ctx.message) throw new Error("Message command context is missing message data");
-        const prefixArgs = (await parseOsuArguments(ctx.message, ctx.args, mode));
+        const prefixArgs = await parseOsuArguments(ctx.message, ctx.args, mode);
         return { ...prefixArgs };
     }
 }

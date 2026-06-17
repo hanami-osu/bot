@@ -1,20 +1,23 @@
-import { getEntry, insertData, removeEntry } from "@utils/database";
+import { getEntry, insertData } from "@utils/database";
 import { logger } from "@utils/logger";
 import { Tables } from "@type/database";
 import type { Guild } from "@type/database";
-import type { Event } from "@lilybird/handlers";
 import { guildPrefixesCache } from "@utils/cache";
+import { $listener } from "@utils/lilybird-handler";
+import type { ClientListeners } from "lilybird";
+import type { DefaultTransformers } from "@lilybird/transformers";
 
-export default {
+type GuildCreatePayload = Parameters<NonNullable<ClientListeners<DefaultTransformers>["guildCreate"]>>[0];
+
+$listener({
     event: "guildCreate",
-    run: async (guild) => {
-        // Remove guild from database if it's unavailable.
+    handle: async (guild: GuildCreatePayload) => {
+        // build temporarily unavailable, return.
         if (!("name" in guild)) {
-            (await removeEntry(Tables.GUILD, guild.id));
             return;
         }
 
-        const document = (await getEntry(Tables.GUILD, guild.id));
+        const document = await getEntry(Tables.GUILD, guild.id);
 
         const data: Array<{ key: keyof Guild; value: string | number | null }> = [
             { key: "name", value: guild.name },
@@ -24,11 +27,11 @@ export default {
 
         if (document === null) data.push({ key: "prefixes", value: null });
 
-        (await insertData({
-                    table: Tables.GUILD,
-                    id: guild.id,
-                    data,
-                }));
+        await insertData({
+            table: Tables.GUILD,
+            id: guild.id,
+            data,
+        });
 
         if (document !== null && document.prefixes !== null) {
             try {
@@ -38,4 +41,4 @@ export default {
             }
         }
     },
-} satisfies Event<"guildCreate">;
+});

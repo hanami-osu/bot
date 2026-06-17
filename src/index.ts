@@ -3,9 +3,9 @@ import { logger } from "@utils/logger";
 import { initializeRedis, closeRedis } from "@utils/cache";
 import { prisma } from "@utils/database";
 import { clearReady } from "@utils/readiness";
-import { createHandler } from "@lilybird/handlers/simple";
 import { CachingDelegationType, createClient, Intents, type Client } from "lilybird";
-import { Channel, Guild, GuildVoiceChannel } from "@lilybird/transformers";
+import { cacheKeys, Channel, defaultTransformers, Guild, GuildVoiceChannel } from "@lilybird/transformers";
+import { handler } from "@utils/lilybird-handler";
 
 const SHUTDOWN_TIMEOUT_MS = 8_000;
 
@@ -76,22 +76,27 @@ async function main(): Promise<void> {
         await initializeRedis();
         await initializeDatabase();
 
-        const listeners = await createHandler({
-            dirs: {
-                listeners: `${import.meta.dir}/listeners`,
-            },
-        });
-
+        await handler.scanDir(`${import.meta.dir}/listeners`);
         discordClient = await createClient({
             token: process.env.DISCORD_BOT_TOKEN,
+            transformers: defaultTransformers,
+            customCacheKeys: cacheKeys,
+
             caching: {
-                transformerTypes: { channel: Channel, guild: Guild, voiceState: GuildVoiceChannel },
+                transformerTypes: {
+                    channel: Channel,
+                    guild: Guild,
+                    voiceState: GuildVoiceChannel,
+                },
                 delegate: CachingDelegationType.DEFAULT,
                 applyTransformers: true,
-                enabled: { channel: true },
+                enabled: {
+                    channel: true,
+                },
             },
+
             intents: [Intents.GUILDS, Intents.GUILD_MESSAGES, Intents.MESSAGE_CONTENT],
-            ...listeners,
+            listeners: handler.getListenersObject(false),
         });
     } catch (error) {
         await logger.fatal("Startup failed", asError(error));

@@ -111,7 +111,7 @@ export interface ScoreStatistics {
     count_miss?: number;
     count_geki?: number | null;
     count_katu?: number | null;
-    
+
     // v2 naming mappings
     perfect?: number | null;
     great?: number | null;
@@ -134,9 +134,18 @@ export type ISOTimestamp = string;
 export type Rank = "XH" | "X" | "SH" | "S" | "A" | "B" | "C" | "D" | "F" | "SSH" | "SS";
 export type GameMode = "osu" | "taiko" | "fruits" | "mania" | string;
 
-export interface Country { code: string; name: string }
-export interface UserStatistics { grade_counts: Record<string, number>; }
-export interface Cover { custom_url: string; url: string; id?: string }
+export interface Country {
+    code: string;
+    name: string;
+}
+export interface UserStatistics {
+    grade_counts: Record<string, number>;
+}
+export interface Cover {
+    custom_url: string;
+    url: string;
+    id?: string;
+}
 
 // Re-use osu-api-extended's exact user details interface
 export type UserExtended = v2_users_details.UsersDetailsResponse;

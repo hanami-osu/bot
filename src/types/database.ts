@@ -89,9 +89,9 @@ export type TableToArgument<T extends Tables> = T extends "users"
           ? keyof Command
           : T extends "osu_scores"
             ? keyof Score
-              : T extends "osu_scores_pp"
-                ? keyof ScorePp
-                : never;
+            : T extends "osu_scores_pp"
+              ? keyof ScorePp
+              : never;
 
 export type TableToType<T extends Tables> = T extends "users"
     ? User
@@ -103,6 +103,6 @@ export type TableToType<T extends Tables> = T extends "users"
           ? Command
           : T extends "osu_scores"
             ? Score
-              : T extends "osu_scores_pp"
-                ? ScorePp
-                : never;
+            : T extends "osu_scores_pp"
+              ? ScorePp
+              : never;

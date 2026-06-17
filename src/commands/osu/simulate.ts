@@ -49,25 +49,26 @@ export async function run(ctx: CommandContext) {
 
     let simulationOptions: SimulationOptions;
     try {
-        simulationOptions = ctx.isInteraction && ctx.interaction
-            ? {
-                  mods: splitMods(ctx.interaction.data.getString("mods")),
-                  options: {
-                      combo: optionalInteger(ctx.interaction.data.getNumber("combo"), "combo"),
-                      acc: optionalRange(ctx.interaction.data.getNumber("acc"), "accuracy", 0, 100),
-                      clock_rate: optionalPositiveNumber(ctx.interaction.data.getNumber("clock_rate"), "clock rate"),
-                      bpm: optionalPositiveNumber(ctx.interaction.data.getNumber("bpm"), "BPM"),
-                  },
-              }
-            : {
-                  mods: splitMods(typeof mods.name === "string" ? mods.name : null),
-                  options: {
-                      combo: optionalInteger(flags.combo, "combo"),
-                      acc: optionalRange(flags.acc ?? flags.accuracy, "accuracy", 0, 100),
-                      clock_rate: optionalPositiveNumber(flags.clock_rate ?? flags.clockrate, "clock rate"),
-                      bpm: optionalPositiveNumber(flags.bpm, "BPM"),
-                  },
-              };
+        simulationOptions =
+            ctx.isInteraction && ctx.interaction
+                ? {
+                      mods: splitMods(ctx.interaction.data.getString("mods")),
+                      options: {
+                          combo: optionalInteger(ctx.interaction.data.getNumber("combo"), "combo"),
+                          acc: optionalRange(ctx.interaction.data.getNumber("acc"), "accuracy", 0, 100),
+                          clock_rate: optionalPositiveNumber(ctx.interaction.data.getNumber("clock_rate"), "clock rate"),
+                          bpm: optionalPositiveNumber(ctx.interaction.data.getNumber("bpm"), "BPM"),
+                      },
+                  }
+                : {
+                      mods: splitMods(typeof mods.name === "string" ? mods.name : null),
+                      options: {
+                          combo: optionalInteger(flags.combo, "combo"),
+                          acc: optionalRange(flags.acc ?? flags.accuracy, "accuracy", 0, 100),
+                          clock_rate: optionalPositiveNumber(flags.clock_rate ?? flags.clockrate, "clock rate"),
+                          bpm: optionalPositiveNumber(flags.bpm, "BPM"),
+                      },
+                  };
     } catch (error) {
         if (error instanceof CommandValidationError) {
             await ctx.editReply({

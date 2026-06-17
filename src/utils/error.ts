@@ -54,7 +54,7 @@ export async function handleCommandError(error: Error, ctx: CommandErrorContext)
         await logger.error(`Command error without user context for ${commandName}`, error);
         return;
     }
-    
+
     let guildName = "Unknown Guild";
     try {
         if (guildId) {
@@ -88,7 +88,7 @@ export async function handleCommandError(error: Error, ctx: CommandErrorContext)
             embeds: [
                 {
                     type: EmbedType.Rich,
-                    title: `Runtime error on command${interaction ? ' (slash)' : ''}: ${cmdDisplayName}`,
+                    title: `Runtime error on command${interaction ? " (slash)" : ""}: ${cmdDisplayName}`,
                     fields,
                 },
             ],
@@ -97,7 +97,7 @@ export async function handleCommandError(error: Error, ctx: CommandErrorContext)
         logger.error("Failed to send error to log channel", logChannelError as Error);
     }
 
-    const logPrefix = `[${guildName}] ${user.username} had an error in ${interaction ? 'slash' : 'prefix'} command \`${cmdDisplayName}\``;
+    const logPrefix = `[${guildName}] ${user.username} had an error in ${interaction ? "slash" : "prefix"} command \`${cmdDisplayName}\``;
     await logger.error(logPrefix, error, {
         guildId,
         guildName,

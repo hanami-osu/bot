@@ -75,11 +75,10 @@ export async function loadCommands(lilyClient: Client): Promise<void> {
         try {
             // lilybird's bulkOverwriteGuildApplicationCommand mistakenly uses PATCH instead of PUT, causing a 405 error.
             // We bypass it and make a direct PUT request.
-            const guildCommandIds = await lilyClient.rest.makeAPIRequest(
-                "PUT",
-                `applications/${lilyClient.user.id}/guilds/${process.env.DEV_GUILD_ID}/commands`,
-                applicationCommands
-            ) as Array<{ name: string; id: string }>;
+            const guildCommandIds = (await lilyClient.rest.makeAPIRequest("PUT", `applications/${lilyClient.user.id}/guilds/${process.env.DEV_GUILD_ID}/commands`, applicationCommands)) as Array<{
+                name: string;
+                id: string;
+            }>;
 
             for (const commandId of guildCommandIds) {
                 const { name, id } = commandId;
@@ -130,7 +129,7 @@ export async function loadGuildPrefixes(): Promise<void> {
     try {
         const guilds = await prisma.guild.findMany({
             where: { prefixes: { not: null } },
-            select: { id: true, prefixes: true }
+            select: { id: true, prefixes: true },
         });
 
         let loadedCount = 0;

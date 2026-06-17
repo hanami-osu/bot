@@ -1,17 +1,17 @@
+import { $listener } from "@lilybird/handlers/advanced";
 import { loadCommands, refreshGuildsDatabase, loadGuildPrefixes } from "@utils/initialize";
 import { logger } from "@utils/logger";
 import { markReady } from "@utils/readiness";
-import type { Event } from "@lilybird/handlers";
 
-export default {
+$listener({
     event: "ready",
-    run: async (client) => {
+    handle: async (client) => {
         logger.info(`Successfully logged in as ${client.user.username} ✅`);
         await loadCommands(client);
         logger.info("Loaded commands ✅");
-        (await refreshGuildsDatabase());
+        await refreshGuildsDatabase();
         logger.info("Refreshed servers database ✅");
         await loadGuildPrefixes();
         await markReady();
     },
-} satisfies Event<"ready">;
+});
