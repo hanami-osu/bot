@@ -6,6 +6,10 @@ import { auth } from "osu-api-extended";
 import { readdir } from "fs/promises";
 import type { CommandFileData } from "@type/commands";
 import { Client, ApplicationCommand } from "lilybird";
+import { CommandIntegrationType, CommandInteractionContext } from "./command-context";
+
+const DEFAULT_APPLICATION_INTEGRATION_TYPES = [CommandIntegrationType.GuildInstall, CommandIntegrationType.UserInstall];
+const DEFAULT_APPLICATION_CONTEXTS = [CommandInteractionContext.Guild, CommandInteractionContext.BotDM, CommandInteractionContext.PrivateChannel];
 
 export async function initializeOsuApi(): Promise<void> {
     await auth.login({
@@ -51,6 +55,8 @@ export async function loadCommands(lilyClient: Client): Promise<void> {
                 ...(data.application || {}),
                 name: data.name,
                 description: data.description,
+                integration_types: data.availability?.integrationTypes ?? data.application?.integration_types ?? DEFAULT_APPLICATION_INTEGRATION_TYPES,
+                contexts: data.availability?.contexts ?? data.application?.contexts ?? DEFAULT_APPLICATION_CONTEXTS,
             };
             applicationCommands.push(applicationData);
         }

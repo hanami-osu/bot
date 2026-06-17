@@ -12,7 +12,7 @@ export async function run(ctx: CommandContext) {
 
     const linkCommandId = slashCommandIdsCache.get("link");
     const linkCommand = linkCommandId ?? "/link";
-    const userId = interaction!.member.user.id;
+    const userId = ctx.user.id;
     const user = await getEntry(Tables.USER, userId);
     if (!user?.banchoId) {
         await interaction!.editReply(`You are not linked to the bot! You can link your account by using ${linkCommand} to visit Hanami Web.`);

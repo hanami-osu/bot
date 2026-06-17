@@ -33,9 +33,7 @@ export async function run(ctx: CommandContext) {
 
     const { user, mods, flags } = parsedArgs;
 
-    const context = ctx.isInteraction ? { channelId: ctx.channelId, client: ctx.client } : { message: ctx.message, client: ctx.client };
-
-    const beatmapId = user.beatmapId ?? (await getBeatmapIdFromContext(context));
+    const beatmapId = user.beatmapId ?? (await getBeatmapIdFromContext(ctx.beatmapLookupContext));
     if (!beatmapId) {
         await ctx.editReply({
             embeds: [

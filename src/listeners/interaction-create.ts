@@ -16,27 +16,33 @@ $listener({
     handle: async (interaction) => {
         await handleButton(interaction);
 
-        if (interaction.isApplicationCommandInteraction() && interaction.inGuild()) {
-            const { user } = interaction.member;
-
+        if (interaction.isApplicationCommandInteraction()) {
             const command = commandsCache.get(interaction.data.name);
             if (!command) return;
 
+            const ctx = new CommandContext(interaction.client, interaction, undefined, [], undefined, command.data.name);
+            const { user } = ctx;
+
             try {
                 if (command.run) {
-                    const ctx = new CommandContext(interaction.client, interaction, undefined, [], undefined, command.data.name);
                     await command.run(ctx);
-                } else if (command.runApplication) {
+                } else if (command.runApplication && interaction.inGuild()) {
                     await command.runApplication({ interaction });
                 } else {
+                    await ctx.respondUnavailable(command.data.availability?.unavailableMessage ?? "This command is not available in this context.");
                     return; // Command has no valid execution function
                 }
 
                 try {
-                    const guild = await interaction.client.rest.getGuild(interaction.guildId);
-                    await logger.info(`[${guild.name}] ${user.username} used slash command \`${command.data.name}\`${interaction.data.subCommand ? ` -> \`${interaction.data.subCommand}\`` : ""}`, {
-                        guildId: interaction.guildId,
-                        guildName: guild.name,
+                    let guildName = "Direct Message";
+                    if (ctx.guildId) {
+                        const guild = await interaction.client.rest.getGuild(ctx.guildId);
+                        guildName = guild.name;
+                    }
+
+                    await logger.info(`[${guildName}] ${user.username} used slash command \`${command.data.name}\`${interaction.data.subCommand ? ` -> \`${interaction.data.subCommand}\`` : ""}`, {
+                        guildId: ctx.guildId,
+                        guildName,
                         userId: user.id,
                         username: user.username,
                         command: command.data.name,
@@ -65,7 +71,6 @@ $listener({
 
 async function handleButton(interaction: Interaction): Promise<void> {
     if (!interaction.isMessageComponentInteraction() || !interaction.data.isButton()) return;
-    if (!interaction.inGuild()) return;
 
     const builderOptions = await ButtonStateCache.get(interaction.message.id);
     if (builderOptions === null || builderOptions === undefined) {
@@ -73,8 +78,11 @@ async function handleButton(interaction: Interaction): Promise<void> {
         return;
     }
 
-    if (builderOptions.initiatorId !== interaction.member.user.id) {
-        await interaction.reply({ ephemeral: true, content: "You need to be the person who initialized the command to be able to click the buttons." });
+    const user = interaction.inGuild() ? interaction.member.user : interaction.inDM() ? interaction.user : undefined;
+    if (!user) return;
+
+    if (builderOptions.initiatorId !== user.id) {
+        await interaction.reply({ ephemeral: true, content: "You need to be the person who initialized the command to be able to interact with this." });
         return;
     }
 

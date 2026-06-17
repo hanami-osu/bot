@@ -57,7 +57,7 @@ async function getEmbeds(
     page: number,
     context: CommandContext,
 ): Promise<{ reply: MessageReplyOptions; embedOptions?: LeaderboardBuilderOptions }> {
-    const resolvedBeatmapId = beatmapId ?? (await getBeatmapIdFromContext(context));
+    const resolvedBeatmapId = beatmapId ?? (await getBeatmapIdFromContext(context.beatmapLookupContext));
     if (typeof resolvedBeatmapId === "undefined" || resolvedBeatmapId === null) {
         return {
             reply: {

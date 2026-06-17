@@ -598,7 +598,10 @@ function getEmbedFromReply(message: Message): number | null {
 }
 
 async function cycleThroughEmbeds({ client, message, channelId }: { message?: Message; channelId?: string; client: Client }): Promise<number | null> {
-    const channel = await client.rest.getChannel(message?.channelId ?? channelId ?? "");
+    const sourceChannelId = message?.channelId ?? channelId;
+    if (!sourceChannelId) return null;
+
+    const channel = await client.rest.getChannel(sourceChannelId);
     if (!channel.id || channel.type !== ChannelType.GUILD_TEXT) {
         return null;
     }
