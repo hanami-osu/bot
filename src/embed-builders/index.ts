@@ -8,3 +8,4 @@ export * from "./beatmap";
 export * from "./plays";
 export * from "./profile";
 export * from "./simulate";
+export * from "./whatif";

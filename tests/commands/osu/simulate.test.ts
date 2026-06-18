@@ -31,6 +31,13 @@ mock.module("@utils/database", () => ({
 
 mock.module("@builders", () => ({
     simulateBuilder: simulateBuilderMock,
+    whatIfBuilder: mock(({ user, projection, projectedRank }: any) => [
+        {
+            author: { name: user.username },
+            description: `${projection.projectedTotalPp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}pp #${projectedRank}`,
+            fields: [{ name: "Projected", value: `+\`${projection.ppGain.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}pp\`` }],
+        },
+    ]),
 }));
 mock.module("../../../src/embed-builders/index.ts", () => ({
     simulateBuilder: simulateBuilderMock,
