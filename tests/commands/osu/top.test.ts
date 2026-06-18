@@ -9,6 +9,8 @@ interface ReplyPayload {
     components?: unknown;
 }
 
+const playBuilderMock = mock(() => Promise.resolve([{ title: "top play", author: { name: "mrekk" } }]));
+
 function parseMockBigInt(value: string | number | bigint, fieldName = "value"): bigint {
     if (typeof value === "bigint") return value;
     if (typeof value === "number" && !Number.isSafeInteger(value)) throw new Error(`${fieldName} must be a safe integer or decimal string`);
@@ -48,7 +50,7 @@ mock.module("@utils/score-api", () => ({
 }));
 
 mock.module("@builders", () => ({
-    playBuilder: mock(() => Promise.resolve([{ title: "top play", author: { name: "mrekk" } }])),
+    playBuilder: playBuilderMock,
     simulateBuilder: mock(() => Promise.resolve([{ title: "simulated" }])),
     whatIfBuilder: mock(({ user, projection, projectedRank }: any) => [
         {
@@ -60,6 +62,7 @@ mock.module("@builders", () => ({
 }));
 
 const { run, data: topData } = await import("../../../src/commands/osu/top");
+const { data: recentData } = await import("../../../src/commands/osu/recent");
 const { data: recentBestData } = await import("../../../src/commands/osu/recentbest");
 const { data: recentListData } = await import("../../../src/commands/osu/recentlist");
 
@@ -67,11 +70,22 @@ function getPageMaxValue(commandData: { application: { options: Array<{ name: st
     return commandData.application.options.find((option) => option.name === "page")?.max_value;
 }
 
+function hasFilterOption(commandData: { application: { options: Array<{ name: string }> } }): boolean {
+    return commandData.application.options.some((option) => option.name === "filter");
+}
+
 describe("top command", () => {
     test("allows selecting pages for all fetched top plays", () => {
         expect(getPageMaxValue(topData)).toBe(40);
         expect(getPageMaxValue(recentBestData)).toBe(40);
         expect(getPageMaxValue(recentListData)).toBe(40);
+    });
+
+    test("exposes title filter option on fetched play commands", () => {
+        expect(hasFilterOption(topData)).toBe(true);
+        expect(hasFilterOption(recentData)).toBe(true);
+        expect(hasFilterOption(recentBestData)).toBe(true);
+        expect(hasFilterOption(recentListData)).toBe(true);
     });
 
     test("runs with mocked osu data and returns paginated embeds", async () => {
@@ -95,6 +109,28 @@ describe("top command", () => {
         if (!replyCall) throw new Error("Expected reply payload");
         expect(replyCall.embeds[0].title).toBe("top play");
         expect(replyCall.components).toBeDefined();
+    });
+
+    test("passes prefix title filters to the plays builder", async () => {
+        const mockClient = { rest: {} } as unknown as Client;
+        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
+        const mockMessage = {
+            author: { id: "123", username: "test_user" },
+            guildId: "guild",
+            channelId: "channel123",
+            reply,
+        } as unknown as Message;
+
+        playBuilderMock.mockClear();
+
+        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk", 'filter="Yami', "no", 'Uta"'], "!", "top");
+        ctx.defer = mock(() => Promise.resolve());
+
+        await run(ctx);
+
+        expect(playBuilderMock).toHaveBeenCalled();
+        const [builderOptions] = playBuilderMock.mock.calls[0] as Array<{ titleFilter?: string }>;
+        expect(builderOptions.titleFilter).toBe("Yami no Uta");
     });
 
     test("returns a generic not found embed for a missing user", async () => {
