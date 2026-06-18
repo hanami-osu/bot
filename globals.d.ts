@@ -6,6 +6,7 @@ declare module "bun" {
         OSU_CLIENT_SECRET: string;
         OSU_ACCESS_TOKEN: string;
         OSU_AUTH_URL: string;
+        OSU_DAILY_API: string;
         REDIS_URL: string;
         ERROR_CHANNEL_ID: string;
         DEV_GUILD_ID: string;
