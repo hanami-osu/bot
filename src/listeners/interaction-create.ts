@@ -3,18 +3,24 @@ import { commandsCache } from "@utils/cache";
 import { logger } from "@utils/logger";
 import { ButtonStateCache } from "@utils/cache";
 import { EmbedBuilderType } from "@type/builders";
-import { createPaginationActionRow } from "@utils/pagination";
+import { createPaginationActionRow, PAGINATION_JUMP_INPUT_ID } from "@utils/pagination";
 import { PaginationManager } from "@utils/pagination";
 import { leaderboardBuilder, playBuilder, compareBuilder } from "@builders";
 import type { Interaction, InteractionReplyOptions } from "@lilybird/transformers";
 import { handleCommandError } from "@utils/error";
 import { CommandContext } from "@utils/command-context";
 import { $listener } from "@utils/lilybird-handler";
+import { ComponentType, TextInputStyle } from "lilybird";
+import type { Message } from "lilybird";
+import type { EmbedBuilderOptions } from "@type/builders";
+
+type PaginationMessageOptions = Pick<InteractionReplyOptions, "embeds" | "components">;
 
 $listener({
     event: "interactionCreate",
     handle: async (interaction) => {
         await handleButton(interaction);
+        await handlePaginationModal(interaction);
 
         if (interaction.isApplicationCommandInteraction()) {
             const command = commandsCache.get(interaction.data.name);
@@ -86,6 +92,22 @@ async function handleButton(interaction: Interaction): Promise<void> {
         return;
     }
 
+    const jumpType = PaginationManager.parseJumpButtonType(interaction.data.id);
+    if (jumpType) {
+        const totalValues = PaginationManager.getTotalValues(PaginationManager.getTotalItems(builderOptions), jumpType);
+        if (totalValues <= 1) {
+            await interaction.reply({ ephemeral: true, content: "There is only one page available." });
+            return;
+        }
+
+        await interaction.showModal({
+            id: PaginationManager.createJumpModalId(jumpType, interaction.message.channelId, interaction.message.id),
+            title: jumpType === "page" ? "Jump to page" : "Jump to entry",
+            components: createPaginationJumpModalComponents(jumpType, totalValues, PaginationManager.getCurrentValue(builderOptions, jumpType)),
+        });
+        return;
+    }
+
     // Temporarily disable all buttons during processing
     const currentComponents = createPaginationActionRow(builderOptions);
     const disabledComponents = currentComponents.map((row: any) => ({
@@ -94,11 +116,6 @@ async function handleButton(interaction: Interaction): Promise<void> {
     }));
 
     await interaction.updateComponents({ components: disabledComponents });
-
-    if (interaction.data.id === "wildcard-page" || interaction.data.id === "wildcard-index") {
-        await interaction.editReply({ content: "This feature has not been implemented yet." });
-        return;
-    }
 
     const buttonAction = PaginationManager.parseButtonAction(interaction.data.id);
     if (!buttonAction) {
@@ -110,9 +127,98 @@ async function handleButton(interaction: Interaction): Promise<void> {
 
     await ButtonStateCache.set(interaction.message.id, updatedOptions);
 
-    const options: InteractionReplyOptions = {};
+    const options = await buildPaginationMessageOptions(updatedOptions);
 
-    // Build the appropriate embed
+    if (!options) {
+        await interaction.editReply({ content: "Unsupported builder type for pagination." });
+        return;
+    }
+
+    await interaction.editReply(options);
+}
+
+async function handlePaginationModal(interaction: Interaction): Promise<void> {
+    if (!interaction.isModalSubmitInteraction()) return;
+
+    const modalData = PaginationManager.parseJumpModalId(interaction.data.id);
+    if (!modalData) return;
+
+    const rawValue = getModalInputValue(interaction.data.components, PAGINATION_JUMP_INPUT_ID);
+    const requestedValue = rawValue ? Number(rawValue.trim()) : Number.NaN;
+
+    const builderOptions = await ButtonStateCache.get(modalData.messageId);
+    if (builderOptions === null || builderOptions === undefined) {
+        await interaction.reply({ ephemeral: true, content: "This page picker will not work because the message was created before a bot restart, so its data has been lost." });
+        return;
+    }
+
+    const user = interaction.inGuild() ? interaction.member.user : interaction.inDM() ? interaction.user : undefined;
+    if (!user) return;
+
+    if (builderOptions.initiatorId !== user.id) {
+        await interaction.reply({ ephemeral: true, content: "You need to be the person who initialized the command to be able to interact with this." });
+        return;
+    }
+
+    const totalValues = PaginationManager.getTotalValues(PaginationManager.getTotalItems(builderOptions), modalData.type);
+
+    if (!Number.isInteger(requestedValue) || requestedValue < 1 || requestedValue > totalValues) {
+        await interaction.reply({ ephemeral: true, content: `Please enter a whole number between 1 and ${totalValues}.` });
+        return;
+    }
+
+    const updatedOptions = PaginationManager.updateBuilderOptionsValue(builderOptions, requestedValue - 1, modalData.type);
+    await ButtonStateCache.set(modalData.messageId, updatedOptions);
+
+    const options = await buildPaginationMessageOptions(updatedOptions);
+    if (!options) {
+        await interaction.reply({ ephemeral: true, content: "Unsupported builder type for pagination." });
+        return;
+    }
+
+    await interaction.updateComponents(options);
+}
+
+function createPaginationJumpModalComponents(type: "page" | "index", totalValues: number, currentValue: number): Array<Message.Component.ActionRowStructure> {
+    const label = type === "page" ? `Page (1-${totalValues})` : `Entry (1-${totalValues})`;
+
+    return [
+        {
+            type: ComponentType.ActionRow,
+            components: [
+                {
+                    type: ComponentType.TextInput,
+                    custom_id: PAGINATION_JUMP_INPUT_ID,
+                    style: TextInputStyle.Short,
+                    label,
+                    min_length: 1,
+                    max_length: String(totalValues).length,
+                    required: true,
+                    value: String(currentValue + 1),
+                    placeholder: String(currentValue + 1),
+                },
+            ],
+        },
+    ];
+}
+
+function getModalInputValue(components: Array<Message.Component.Structure>, inputId: string): string | undefined {
+    for (const component of components) {
+        if (component.type !== ComponentType.ActionRow) continue;
+
+        for (const nestedComponent of component.components) {
+            if (nestedComponent.type === ComponentType.TextInput && nestedComponent.custom_id === inputId) {
+                return nestedComponent.value;
+            }
+        }
+    }
+
+    return undefined;
+}
+
+async function buildPaginationMessageOptions(updatedOptions: EmbedBuilderOptions): Promise<PaginationMessageOptions | null> {
+    const options: PaginationMessageOptions = {};
+
     switch (updatedOptions.type) {
         case EmbedBuilderType.LEADERBOARD:
             options.embeds = await leaderboardBuilder(updatedOptions as any);
@@ -124,12 +230,9 @@ async function handleButton(interaction: Interaction): Promise<void> {
             options.embeds = await compareBuilder(updatedOptions as any);
             break;
         default:
-            await interaction.reply({ ephemeral: true, content: "Unsupported builder type for pagination." });
-            return;
+            return null;
     }
 
-    // Create the action row with proper disabled states
     options.components = createPaginationActionRow(updatedOptions);
-
-    await interaction.editReply(options);
+    return options;
 }

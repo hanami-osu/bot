@@ -20,6 +20,35 @@ describe("PaginationManager", () => {
         test("returns null for invalid button ids", () => {
             expect(PaginationManager.parseButtonAction("invalid")).toBeNull();
             expect(PaginationManager.parseButtonAction("min-unknown")).toBeNull();
+            expect(PaginationManager.parseButtonAction("wildcard-page")).toBeNull();
+        });
+    });
+
+    describe("parseJumpButtonType", () => {
+        test("correctly parses jump buttons", () => {
+            expect(PaginationManager.parseJumpButtonType("wildcard-page")).toBe(PaginationType.PAGE);
+            expect(PaginationManager.parseJumpButtonType("wildcard-index")).toBe(PaginationType.INDEX);
+        });
+
+        test("returns null for non-jump buttons", () => {
+            expect(PaginationManager.parseJumpButtonType("increment-page")).toBeNull();
+            expect(PaginationManager.parseJumpButtonType("invalid")).toBeNull();
+        });
+    });
+
+    describe("jump modal ids", () => {
+        test("round-trips modal data", () => {
+            const modalId = PaginationManager.createJumpModalId(PaginationType.PAGE, "123", "456");
+            expect(PaginationManager.parseJumpModalId(modalId)).toEqual({
+                type: PaginationType.PAGE,
+                channelId: "123",
+                messageId: "456",
+            });
+        });
+
+        test("returns null for invalid modal ids", () => {
+            expect(PaginationManager.parseJumpModalId("pagination-jump:unknown:123:456")).toBeNull();
+            expect(PaginationManager.parseJumpModalId("invalid")).toBeNull();
         });
     });
 
@@ -66,6 +95,22 @@ describe("PaginationManager", () => {
             expect((updated as any).index).toBe(4);
             expect((updated as any).isPage).toBe(false);
         });
+
+        test("updates options to an exact PAGE value", () => {
+            const options: any = { plays: new Array(20), page: 0, isPage: true };
+            const updated = PaginationManager.updateBuilderOptionsValue(options, 3, PaginationType.PAGE);
+
+            expect((updated as any).page).toBe(3);
+            expect((updated as any).isPage).toBe(true);
+        });
+
+        test("updates options to an exact INDEX value", () => {
+            const options: any = { scores: new Array(20), index: 0, isPage: false };
+            const updated = PaginationManager.updateBuilderOptionsValue(options, 12, PaginationType.INDEX);
+
+            expect((updated as any).index).toBe(12);
+            expect((updated as any).isPage).toBe(false);
+        });
     });
 
     describe("getTotalItems", () => {
@@ -96,8 +141,9 @@ describe("PaginationManager", () => {
             const components = (row[0] as any).components;
             expect(components[0].disabled).toBe(true); // min
             expect(components[1].disabled).toBe(true); // prev
-            expect(components[2].disabled).toBe(false); // next
-            expect(components[3].disabled).toBe(false); // max
+            expect(components[2].disabled).toBe(false); // jump
+            expect(components[3].disabled).toBe(false); // next
+            expect(components[4].disabled).toBe(false); // max
         });
 
         test("disables next and max buttons on last page", () => {
@@ -110,8 +156,32 @@ describe("PaginationManager", () => {
             const components = (row[0] as any).components;
             expect(components[0].disabled).toBe(false); // min
             expect(components[1].disabled).toBe(false); // prev
-            expect(components[2].disabled).toBe(true); // next
-            expect(components[3].disabled).toBe(true); // max
+            expect(components[2].disabled).toBe(false); // jump
+            expect(components[3].disabled).toBe(true); // next
+            expect(components[4].disabled).toBe(true); // max
+        });
+
+        test("disables the jump button when only one page is available", () => {
+            const config = {
+                type: PaginationType.PAGE,
+                totalItems: 3,
+                currentValue: 0,
+            };
+            const row = PaginationManager.createActionRow(config);
+            const components = (row[0] as any).components;
+            expect(components[2].disabled).toBe(true); // jump
+        });
+
+        test("adds a jump button between previous and next", () => {
+            const config = {
+                type: PaginationType.PAGE,
+                totalItems: 20,
+                currentValue: 1,
+            };
+            const row = PaginationManager.createActionRow(config);
+            const components = (row[0] as any).components;
+            expect(components[2].custom_id).toBe("wildcard-page");
+            expect(components[2].label).toBe("...");
         });
     });
 });

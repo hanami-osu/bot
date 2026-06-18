@@ -5,6 +5,14 @@ import type { Client } from "lilybird";
 import type { Message } from "@lilybird/transformers";
 
 const simulateBuilderMock = mock(() => Promise.resolve([{ title: "simulated" }]));
+const playBuilderMock = mock(() => Promise.resolve([{ title: "play" }]));
+const whatIfBuilderMock = mock(({ user, projection, projectedRank }: any) => [
+    {
+        author: { name: user.username },
+        description: `${projection.projectedTotalPp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}pp #${projectedRank}`,
+        fields: [{ name: "Projected", value: `+\`${projection.ppGain.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}pp\`` }],
+    },
+]);
 interface ReplyPayload {
     embeds: Array<{ title?: string; description?: string }>;
 }
@@ -30,17 +38,14 @@ mock.module("@utils/database", () => ({
 }));
 
 mock.module("@builders", () => ({
+    playBuilder: playBuilderMock,
     simulateBuilder: simulateBuilderMock,
-    whatIfBuilder: mock(({ user, projection, projectedRank }: any) => [
-        {
-            author: { name: user.username },
-            description: `${projection.projectedTotalPp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}pp #${projectedRank}`,
-            fields: [{ name: "Projected", value: `+\`${projection.ppGain.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}pp\`` }],
-        },
-    ]),
+    whatIfBuilder: whatIfBuilderMock,
 }));
 mock.module("../../../src/embed-builders/index.ts", () => ({
+    playBuilder: playBuilderMock,
     simulateBuilder: simulateBuilderMock,
+    whatIfBuilder: whatIfBuilderMock,
 }));
 mock.module("../../../src/embed-builders/simulate.ts", () => ({
     simulateBuilder: simulateBuilderMock,

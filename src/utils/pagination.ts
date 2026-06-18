@@ -4,6 +4,7 @@ import type { Message } from "lilybird";
 import type { EmbedBuilderOptions } from "@type/builders";
 
 export const ITEMS_PER_PAGE = 5;
+export const PAGINATION_JUMP_INPUT_ID = "pagination-jump-value";
 
 export enum PaginationType {
     PAGE = "page",
@@ -24,12 +25,18 @@ interface PaginationConfig {
     itemsPerPage?: number;
 }
 
+interface PaginationJumpModalData {
+    type: PaginationType;
+    channelId: string;
+    messageId: string;
+}
+
 export class PaginationManager {
     private static getButtonConfig(type: PaginationType) {
         const suffix = type === PaginationType.PAGE ? "page" : "index";
         return {
-            customIds: [`min-${suffix}`, `decrement-${suffix}`, `increment-${suffix}`, `max-${suffix}`],
-            labels: ["<<", "<", ">", ">>"],
+            customIds: [`min-${suffix}`, `decrement-${suffix}`, `wildcard-${suffix}`, `increment-${suffix}`, `max-${suffix}`],
+            labels: ["<<", "<", "...", ">", ">>"],
         };
     }
 
@@ -37,11 +44,12 @@ export class PaginationManager {
         const { type, totalItems, currentValue, itemsPerPage = ITEMS_PER_PAGE } = config;
         const { customIds, labels } = this.getButtonConfig(type);
 
-        const totalPages = type === PaginationType.PAGE ? Math.ceil(totalItems / itemsPerPage) : totalItems;
+        const totalPages = this.getTotalValues(totalItems, type, itemsPerPage);
 
         const disabledStates = [
             currentValue === 0, // First button
             currentValue === 0, // Previous button
+            totalPages <= 1, // Jump button
             currentValue >= totalPages - 1, // Next button
             currentValue >= totalPages - 1, // Last button
         ];
@@ -85,8 +93,33 @@ export class PaginationManager {
         return null;
     }
 
+    static parseJumpButtonType(buttonId: string): PaginationType | null {
+        const match = buttonId.match(/^wildcard-(page|index)$/);
+        if (!match) return null;
+        return match[1] === "page" ? PaginationType.PAGE : PaginationType.INDEX;
+    }
+
+    static createJumpModalId(type: PaginationType, channelId: string, messageId: string): string {
+        return `pagination-jump:${type}:${channelId}:${messageId}`;
+    }
+
+    static parseJumpModalId(modalId: string): PaginationJumpModalData | null {
+        const match = modalId.match(/^pagination-jump:(page|index):([^:]+):([^:]+)$/);
+        if (!match) return null;
+
+        return {
+            type: match[1] === "page" ? PaginationType.PAGE : PaginationType.INDEX,
+            channelId: match[2],
+            messageId: match[3],
+        };
+    }
+
+    static getTotalValues(totalItems: number, type: PaginationType, itemsPerPage: number = ITEMS_PER_PAGE): number {
+        return type === PaginationType.PAGE ? Math.ceil(totalItems / itemsPerPage) : totalItems;
+    }
+
     static calculateNewValue(action: PaginationAction, currentValue: number, totalItems: number, type: PaginationType, itemsPerPage: number = ITEMS_PER_PAGE): number {
-        const maxValue = type === PaginationType.PAGE ? Math.ceil(totalItems / itemsPerPage) - 1 : totalItems - 1;
+        const maxValue = this.getTotalValues(totalItems, type, itemsPerPage) - 1;
 
         switch (action) {
             case PaginationAction.FIRST:
@@ -128,6 +161,26 @@ export class PaginationManager {
             updatedOptions.index = newIndex;
 
             // For plays builder, also update isPage flag
+            if ("isPage" in updatedOptions) {
+                updatedOptions.isPage = false;
+            }
+        }
+
+        return updatedOptions as EmbedBuilderOptions;
+    }
+
+    static updateBuilderOptionsValue(options: EmbedBuilderOptions, value: number, type: PaginationType): EmbedBuilderOptions {
+        const updatedOptions = { ...options } as any;
+
+        if (type === PaginationType.PAGE) {
+            updatedOptions.page = value;
+
+            if ("isPage" in updatedOptions) {
+                updatedOptions.isPage = true;
+            }
+        } else {
+            updatedOptions.index = value;
+
             if ("isPage" in updatedOptions) {
                 updatedOptions.isPage = false;
             }
