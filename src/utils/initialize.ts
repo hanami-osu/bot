@@ -16,7 +16,7 @@ export async function initializeOsuApi(): Promise<void> {
         type: "v2",
         client_id: Number(process.env.OSU_CLIENT_ID),
         client_secret: process.env.OSU_CLIENT_SECRET,
-        cachedTokenPath: "./osu-token.json",
+        cachedTokenPath: process.env.OSU_TOKEN_PATH ?? "./osu-token.json",
         scopes: ["public"],
     });
 }
