@@ -3,6 +3,7 @@ import type { User } from "./database";
 import type { Beatmap, LeaderboardScore, Mode, Score, UserBestScoreV2, UserScoreV2, ScoreV2, UserBestScore, UserScore } from "./osu";
 import type { UserExtended } from "./osu";
 import type { Mod } from "./mods";
+import type { WhatIfProjection } from "@utils/whatif";
 
 export const enum EmbedBuilderType {
     COMPARE = "compareBuilder",
@@ -14,6 +15,7 @@ export const enum EmbedBuilderType {
     BACKGROUND = "backgroundBuilder",
     BANNER = "bannerBuilder",
     SIMULATE = "simulateBuilder",
+    WHATIF = "whatIfBuilder",
 }
 
 interface ModStructure {
@@ -94,6 +96,14 @@ export interface BannerBuilderOptions extends BuilderOptions {
     mode: Mode;
 }
 
+export interface WhatIfBuilderOptions extends BuilderOptions {
+    type: EmbedBuilderType.WHATIF;
+    user: UserExtended;
+    mode: Mode;
+    projection: WhatIfProjection;
+    projectedRank: number | null;
+}
+
 export type EmbedBuilderOptions =
     | CompareBuilderOptions
     | LeaderboardBuilderOptions
@@ -103,4 +113,5 @@ export type EmbedBuilderOptions =
     | AvatarBuilderOptions
     | BackgroundBuilderOptions
     | BannerBuilderOptions
-    | SimulateBuilderOptions;
+    | SimulateBuilderOptions
+    | WhatIfBuilderOptions;

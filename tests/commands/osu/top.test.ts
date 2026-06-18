@@ -46,6 +46,13 @@ mock.module("@utils/score-api", () => ({
 mock.module("@builders", () => ({
     playBuilder: mock(() => Promise.resolve([{ title: "top play", author: { name: "mrekk" } }])),
     simulateBuilder: mock(() => Promise.resolve([{ title: "simulated" }])),
+    whatIfBuilder: mock(({ user, projection, projectedRank }: any) => [
+        {
+            author: { name: user.username },
+            description: `${projection.projectedTotalPp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}pp #${projectedRank}`,
+            fields: [{ name: "Projected", value: `+\`${projection.ppGain.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}pp\`` }],
+        },
+    ]),
 }));
 
 const { run } = await import("../../../src/commands/osu/top");
