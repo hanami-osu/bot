@@ -1,4 +1,5 @@
 import { ComponentType, ButtonStyle } from "lilybird";
+import { filterPlays } from "@utils/play-filters";
 import type { Message } from "lilybird";
 import type { EmbedBuilderOptions } from "@type/builders";
 
@@ -109,7 +110,7 @@ export class PaginationManager {
         if ("scores" in updatedOptions && Array.isArray(updatedOptions.scores)) {
             totalItems = updatedOptions.scores.length;
         } else if ("plays" in updatedOptions && Array.isArray(updatedOptions.plays)) {
-            totalItems = updatedOptions.plays.length;
+            totalItems = filterPlays(updatedOptions.plays, updatedOptions).length;
         }
 
         if (type === PaginationType.PAGE) {
@@ -140,7 +141,7 @@ export class PaginationManager {
             return options.scores.length;
         }
         if ("plays" in options && Array.isArray(options.plays)) {
-            return options.plays.length;
+            return filterPlays(options.plays, options).length;
         }
         return 0;
     }

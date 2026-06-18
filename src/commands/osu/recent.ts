@@ -53,14 +53,15 @@ export async function run(ctx: CommandContext) {
         index = ctx.index ?? 0;
     }
 
-    const { user, mods } = await parseCommandArgs(ctx, mode);
+    const { user, mods, flags } = await parseCommandArgs(ctx, mode);
 
     if (user.type === UserType.FAIL) {
         await ctx.editReply(user.failMessage);
         return;
     }
 
-    const { reply, embedOptions } = await getEmbeds(user, ctx.user.id, index, includeFails, mods);
+    const titleFilter = flags.filter?.trim() || undefined;
+    const { reply, embedOptions } = await getEmbeds(user, ctx.user.id, index, includeFails, mods, titleFilter);
     if (embedOptions) {
         await ctx.sendWithPagination(reply, embedOptions);
     } else {
@@ -68,7 +69,14 @@ export async function run(ctx: CommandContext) {
     }
 }
 
-async function getEmbeds(user: SuccessUser, authorId: string, index: number, includeFails: boolean, mods: any): Promise<{ reply: MessageReplyOptions; embedOptions?: PlaysBuilderOptions }> {
+async function getEmbeds(
+    user: SuccessUser,
+    authorId: string,
+    index: number,
+    includeFails: boolean,
+    mods: any,
+    titleFilter: string | undefined,
+): Promise<{ reply: MessageReplyOptions; embedOptions?: PlaysBuilderOptions }> {
     const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
     if (!osuUserRequest.success) {
         return {
@@ -111,6 +119,7 @@ async function getEmbeds(user: SuccessUser, authorId: string, index: number, inc
         index,
         isPage: false,
         mods,
+        titleFilter,
     };
 
     const embeds = await playBuilder(embedOptions);
@@ -182,6 +191,11 @@ export const data = {
                 name: "grade",
                 description: "Consider scores only with this grade.",
                 choices: ["SS", "S", "A", "B", "C", "D"].map((grade) => ({ name: grade, value: grade })),
+            },
+            {
+                type: ApplicationCommandOptionType.STRING,
+                name: "filter",
+                description: "Filter plays by beatmap title.",
             },
             {
                 type: ApplicationCommandOptionType.BOOLEAN,

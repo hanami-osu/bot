@@ -239,8 +239,15 @@ export async function parseOsuArguments(message: Message, args: Array<string>, m
         args.splice(indexToRemove, 1);
     }
 
-    const newArgs = args.join(" ").match(/(".*?"|\S+)/g) ?? [];
+    const newArgs = args.join(" ").match(/(?:[^\s="]+=".*?"|".*?"|\S+)/g) ?? [];
     for (const arg of newArgs) {
+        const flagMatch = /^([^=\s]+)=(.*)$/.exec(arg);
+        if (flagMatch) {
+            const [, key, rawValue] = flagMatch;
+            result.flags[key] = rawValue.replace(/^"(.*)"$/, "$1");
+            continue;
+        }
+
         if (arg.includes('"')) {
             (result.tempUser ??= []).push(arg.replace(/"/g, ""));
             continue;

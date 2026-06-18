@@ -18,11 +18,11 @@ export const enum EmbedBuilderType {
     WHATIF = "whatIfBuilder",
 }
 
-interface ModStructure {
+export interface ModStructure {
     exclude: null | boolean;
     include: null | boolean;
     forceInclude: null | boolean;
-    name: null | Mod;
+    name: null | Mod | string;
 }
 
 export interface BuilderOptions {
@@ -72,6 +72,7 @@ export interface PlaysBuilderOptions extends BuilderOptions {
     page?: number;
     isPage?: boolean;
     mods?: ModStructure;
+    titleFilter?: string;
 }
 
 export interface ProfileBuilderOptions extends BuilderOptions {
