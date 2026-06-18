@@ -5,7 +5,7 @@ import { EmbedBuilderType } from "@type/builders";
 import { Mode, PlayType } from "@type/osu";
 import { parseCommandArgs } from "@utils/args";
 import { CommandContext } from "@utils/command-context";
-import { getUserScores } from "@utils/score-api";
+import { getUserScores, USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
 import { safeParse } from "@utils/safe-parse";
 import { calculateWhatIfProjection, estimateGlobalRankFromPp, extractWhatIfPlayPps, parseWhatIfPlayPps, WhatIfValidationError } from "@utils/whatif";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
@@ -94,7 +94,7 @@ async function getEmbeds(user: SuccessUser, playPps: Array<number>, initiatorId:
     }
 
     const osuUser = osuUserRequest.data as UserExtended;
-    const scores = await getUserScores(osuUser.id, PlayType.BEST, { query: { mode: user.mode, limit: 100 } }, user.authorDb);
+    const scores = await getUserScores(osuUser.id, PlayType.BEST, { query: { mode: user.mode, limit: USER_SCORE_FETCH_LIMIT } }, user.authorDb);
     const currentPlayPps = scores.map((score) => score.pp).filter((pp): pp is number => typeof pp === "number");
     const currentTotalPp = osuUser.statistics.pp;
     const projection = calculateWhatIfProjection(currentTotalPp, currentPlayPps, playPps);

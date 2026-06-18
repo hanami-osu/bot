@@ -6,7 +6,7 @@ import { CommandData } from "@type/commands";
 import { Mode, PlayType } from "@type/osu";
 import { parseCommandArgs } from "@utils/args";
 import { createPaginationActionRow } from "@utils/pagination";
-import { getUserScores } from "@utils/score-api";
+import { getUserScores, USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
 import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
@@ -85,7 +85,7 @@ async function getEmbeds(user: SuccessUser, authorId: string, index: number, inc
     }
     const osuUser = osuUserRequest.data;
 
-    const plays = await getUserScores(osuUser.id, PlayType.RECENT, { query: { mode: user.mode, limit: 200, include_fails: includeFails } }, user.authorDb);
+    const plays = await getUserScores(osuUser.id, PlayType.RECENT, { query: { mode: user.mode, limit: USER_SCORE_FETCH_LIMIT, include_fails: includeFails } }, user.authorDb);
 
     if (plays.length === 0) {
         return {
@@ -150,7 +150,7 @@ export const data = {
                 name: "index",
                 description: "Specify an index, defaults to 1.",
                 min_value: 1,
-                max_value: 200,
+                max_value: USER_SCORE_FETCH_LIMIT,
             },
             {
                 type: ApplicationCommandOptionType.STRING,
