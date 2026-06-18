@@ -30,6 +30,9 @@ mock.module("@utils/database", () => ({
 }));
 
 mock.module("osu-api-extended", () => ({
+    enums: {
+        ModsEnum: {},
+    },
     v2: {
         users: {
             details: mock(({ user }: { user: string }) =>
@@ -40,6 +43,7 @@ mock.module("osu-api-extended", () => ({
 }));
 
 mock.module("@utils/score-api", () => ({
+    USER_SCORE_FETCH_LIMIT: 200,
     getUserScores: mock(() => Promise.resolve([{ id: 1, mods: [], statistics: {}, beatmap: { id: 1 }, beatmapset: {}, passed: true }])),
 }));
 

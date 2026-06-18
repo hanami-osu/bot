@@ -30,6 +30,9 @@ mock.module("@utils/database", () => ({
 }));
 
 mock.module("osu-api-extended", () => ({
+    enums: {
+        ModsEnum: {},
+    },
     v2: {
         users: {
             details: mock(({ user }: { user: string }) =>
@@ -40,6 +43,7 @@ mock.module("osu-api-extended", () => ({
 }));
 
 mock.module("@utils/score-api", () => ({
+    USER_SCORE_FETCH_LIMIT: 200,
     getUserScores: mock(() => Promise.resolve([{ id: 1, mods: [], statistics: {}, beatmap: { id: 1 }, beatmapset: {}, passed: true }])),
 }));
 
@@ -55,9 +59,21 @@ mock.module("@builders", () => ({
     ]),
 }));
 
-const { run } = await import("../../../src/commands/osu/top");
+const { run, data: topData } = await import("../../../src/commands/osu/top");
+const { data: recentBestData } = await import("../../../src/commands/osu/recentbest");
+const { data: recentListData } = await import("../../../src/commands/osu/recentlist");
+
+function getPageMaxValue(commandData: { application: { options: Array<{ name: string; max_value?: number }> } }): number | undefined {
+    return commandData.application.options.find((option) => option.name === "page")?.max_value;
+}
 
 describe("top command", () => {
+    test("allows selecting pages for all fetched top plays", () => {
+        expect(getPageMaxValue(topData)).toBe(40);
+        expect(getPageMaxValue(recentBestData)).toBe(40);
+        expect(getPageMaxValue(recentListData)).toBe(40);
+    });
+
     test("runs with mocked osu data and returns paginated embeds", async () => {
         const mockClient = { rest: {} } as unknown as Client;
         const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));

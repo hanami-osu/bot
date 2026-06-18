@@ -2,23 +2,46 @@ import { v2 } from "osu-api-extended";
 import { type User } from "@type/database";
 import type { Score, PlayType, Mode } from "@type/osu";
 
+export const USER_SCORE_FETCH_LIMIT = 200;
+const USER_SCORE_API_PAGE_LIMIT = 100;
+
+interface UserScoresOptions {
+    query: {
+        mode: Mode;
+        limit: number;
+        include_fails?: boolean;
+    };
+}
+
 // Gets user scores using V2 unified format
-export async function getUserScores(userId: number, type: PlayType, options: { query: { mode: Mode; limit: number; include_fails?: boolean } }, _authorDb: User | null): Promise<Array<Score>> {
+export async function getUserScores(userId: number, type: PlayType, options: UserScoresOptions, _authorDb: User | null): Promise<Array<Score>> {
     const apiType = type === "best" ? "user_best" : type === "recent" ? "user_recent" : "user_firsts";
+    const requestedLimit = options.query.limit;
+    const scores: Array<Score> = [];
 
-    const scores = await v2.scores.list({
-        type: apiType,
-        user_id: userId,
-        mode: options.query.mode,
-        limit: options.query.limit,
-        include_fails: options.query.include_fails,
-    });
+    while (scores.length < requestedLimit) {
+        const remainingLimit = requestedLimit - scores.length;
+        const pageLimit = Math.min(remainingLimit, USER_SCORE_API_PAGE_LIMIT);
+        const pageOffset = scores.length;
+        const page = await v2.scores.list({
+            type: apiType,
+            user_id: userId,
+            mode: options.query.mode,
+            limit: pageLimit,
+            offset: pageOffset === 0 ? undefined : pageOffset,
+            include_fails: options.query.include_fails,
+        });
 
-    if ("error" in scores || !Array.isArray(scores)) {
-        throw new Error(scores.error?.message ?? "Failed to fetch user scores");
+        if ("error" in page || !Array.isArray(page)) {
+            throw new Error(page.error?.message ?? "Failed to fetch user scores");
+        }
+
+        const pageScores = page as Array<Score>;
+        scores.push(...pageScores);
+        if (pageScores.length < pageLimit) break;
     }
 
-    return (scores as Array<Score>).map((score, index) => ({ ...score, position: index + 1 }));
+    return scores.slice(0, requestedLimit).map((score, index) => ({ ...score, position: index + 1 }));
 }
 
 // Gets beatmap user scores using V2 unified format

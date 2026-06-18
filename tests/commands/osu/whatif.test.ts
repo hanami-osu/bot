@@ -54,18 +54,28 @@ mock.module("osu-api-extended", () => ({
     },
 }));
 
+const getUserScoresMock = mock((_userId: number, _type: unknown, _options: unknown, _authorDb: unknown) =>
+    Promise.resolve([
+        { id: 1, pp: 500 },
+        { id: 2, pp: 400 },
+    ]),
+);
+
 mock.module("@utils/score-api", () => ({
-    getUserScores: mock(() =>
-        Promise.resolve([
-            { id: 1, pp: 500 },
-            { id: 2, pp: 400 },
-        ]),
-    ),
+    USER_SCORE_FETCH_LIMIT: 200,
+    getUserScores: getUserScoresMock,
 }));
 
-const { run } = await import("../../../src/commands/osu/whatif");
+const { run, data } = await import("../../../src/commands/osu/whatif");
 
 describe("whatif command", () => {
+    test("includes short prefix aliases for all modes", () => {
+        expect(data.message.aliases).toContain("wi");
+        expect(data.message.aliases).toContain("wit");
+        expect(data.message.aliases).toContain("wim");
+        expect(data.message.aliases).toContain("wic");
+    });
+
     test("projects pp and rank from prefix pp values", async () => {
         const originalApiKey = process.env.OSU_DAILY_API;
         const originalFetch = globalThis.fetch;
@@ -94,10 +104,39 @@ describe("whatif command", () => {
             expect(replyCall.embeds[0].description).toContain("1,408.50pp");
             expect(replyCall.embeds[0].description).toContain("#2");
             expect(replyCall.embeds[0].fields?.[0]?.value).toContain("+`408.50pp`");
+            expect(getUserScoresMock.mock.calls[0]?.[2]).toEqual({ query: { mode: "osu", limit: 200 } });
         } finally {
             globalThis.fetch = originalFetch;
             if (typeof originalApiKey === "undefined") Reflect.deleteProperty(process.env, "OSU_DAILY_API");
             else process.env.OSU_DAILY_API = originalApiKey;
+        }
+    });
+
+    test("routes short mode aliases to the matching osu mode", async () => {
+        const mockClient = { rest: {} } as unknown as Client;
+        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
+        const mockMessage = {
+            author: { id: "123", username: "test_user" },
+            guildId: "guild",
+            channelId: "channel123",
+            reply,
+        } as unknown as Message;
+
+        const modeCases = [
+            ["wi", "osu"],
+            ["wit", "taiko"],
+            ["wim", "mania"],
+            ["wic", "fruits"],
+        ] as const;
+
+        for (const [commandName, mode] of modeCases) {
+            const callCount = getUserScoresMock.mock.calls.length;
+            const ctx = new CommandContext(mockClient, undefined, mockMessage, ["450pp", "mrekk"], "!", commandName);
+            ctx.defer = mock(() => Promise.resolve());
+
+            await run(ctx);
+
+            expect(getUserScoresMock.mock.calls[callCount]?.[2]).toEqual({ query: { mode, limit: 200 } });
         }
     });
 });
