@@ -72,6 +72,15 @@ describe("args parser", () => {
             expect(result.mods.name).toBe("HDHR");
         });
 
+        test("parses quoted flag values without treating them as usernames", async () => {
+            const message = { author: { id: "0000" } } as unknown as Message;
+            const result = await parseOsuArguments(message, ["peppy", 'filter="yami', "no", 'uta"'], Mode.OSU);
+
+            expect(result.user.type).toBe(UserType.SUCCESS);
+            if (result.user.type === UserType.SUCCESS) expect(result.user.banchoId).toBe("peppy");
+            expect(result.flags.filter).toBe("yami no uta");
+        });
+
         test("resolves linked Discord mentions through injected database lookup", async () => {
             const message = { author: { id: "0000" } } as unknown as Message;
             const result = await parseOsuArguments(message, ["<@123456789012345678>"], Mode.OSU);

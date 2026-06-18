@@ -2,13 +2,14 @@ import { getFormattedProfile, getFormattedScore } from "@utils/formatter";
 import { SPACE } from "@utils/constants";
 import { EmbedScoreType } from "@type/database";
 import { saveScoreDatas } from "@utils/osu";
+import { filterPlays } from "@utils/play-filters";
 import { EmbedType } from "lilybird";
 import type { User } from "@type/database";
 import type { UserScore, Mode, ProfileInfo, ScoresInfo, UserBestScore, UserScoreV2, UserBestScoreV2 } from "@type/osu";
 import type { PlaysBuilderOptions } from "@type/builders";
 import type { Embed } from "lilybird";
 
-export async function playBuilder({ plays, user, mode, index, mods, isMultiple, page, authorDb, sortByDate }: PlaysBuilderOptions): Promise<Array<Embed.Structure>> {
+export async function playBuilder({ plays, user, mode, index, mods, isMultiple, page, authorDb, sortByDate, titleFilter }: PlaysBuilderOptions): Promise<Array<Embed.Structure>> {
     await saveScoreDatas(plays, mode);
 
     if (typeof page === "undefined" && typeof index === "undefined") {
@@ -17,28 +18,7 @@ export async function playBuilder({ plays, user, mode, index, mods, isMultiple, 
     }
 
     const profile = getFormattedProfile(user, mode);
-
-    if (mods?.name) {
-        const { exclude, forceInclude, include, name } = mods;
-        const filteredPlays: typeof plays = [];
-        for (const play of plays) {
-            const playMods = play.mods.map((mod) => (typeof mod === "string" ? mod : mod.acronym).toUpperCase());
-            const modName = typeof name === "string" ? name : name?.acronym;
-            const requestedMods = typeof modName === "string" ? (modName.toUpperCase().match(/.{1,2}/g) ?? []) : [];
-
-            if (modName) {
-                if (exclude) {
-                    if (!requestedMods.every((requestedMod) => playMods.includes(requestedMod))) filteredPlays.push(play);
-                } else if (forceInclude) {
-                    if (playMods.length === requestedMods.length && requestedMods.every((requestedMod) => playMods.includes(requestedMod))) filteredPlays.push(play);
-                } else if (include) {
-                    if (requestedMods.every((requestedMod) => playMods.includes(requestedMod))) filteredPlays.push(play);
-                }
-            } else filteredPlays.push(play);
-        }
-
-        plays = filteredPlays;
-    }
+    plays = filterPlays(plays, { mods, titleFilter });
 
     if (sortByDate)
         plays = [...plays].sort((a, b) => {

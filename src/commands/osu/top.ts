@@ -52,7 +52,8 @@ export async function run(ctx: CommandContext) {
     if (typeof page === "undefined" && typeof index === "undefined") page = 0;
     const isPage = typeof page !== "undefined";
 
-    const { reply, embedOptions } = await getEmbeds(user, ctx.user.id, index, page, isPage, mods);
+    const titleFilter = flags.filter?.trim() || undefined;
+    const { reply, embedOptions } = await getEmbeds(user, ctx.user.id, index, page, isPage, mods, titleFilter);
     if (embedOptions) {
         await ctx.sendWithPagination(reply, embedOptions);
     } else {
@@ -67,6 +68,7 @@ async function getEmbeds(
     page: number | undefined,
     isPage: boolean,
     mods: any,
+    titleFilter: string | undefined,
 ): Promise<{ reply: MessageReplyOptions; embedOptions?: PlaysBuilderOptions }> {
     const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
     if (!osuUserRequest.success) {
@@ -111,6 +113,7 @@ async function getEmbeds(
         page,
         index,
         mods,
+        titleFilter,
         plays,
     };
 
@@ -190,6 +193,11 @@ export const data = {
                 name: "grade",
                 description: "Consider scores only with this grade.",
                 choices: ["SS", "S", "A", "B", "C", "D"].map((grade) => ({ name: grade, value: grade })),
+            },
+            {
+                type: ApplicationCommandOptionType.STRING,
+                name: "filter",
+                description: "Filter plays by beatmap title.",
             },
             {
                 type: ApplicationCommandOptionType.USER,
