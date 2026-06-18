@@ -15,6 +15,10 @@ import { UserType } from "@type/command-args";
 import type { UserExtended } from "@type/osu";
 
 const modeAliases: Record<string, Mode> = {
+    wi: Mode.OSU,
+    wit: Mode.TAIKO,
+    wim: Mode.MANIA,
+    wic: Mode.FRUITS,
     whatif: Mode.OSU,
     whatift: Mode.TAIKO,
     whatiftaiko: Mode.TAIKO,
