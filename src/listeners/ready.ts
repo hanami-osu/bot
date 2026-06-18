@@ -1,4 +1,4 @@
-import { $listener } from "@lilybird/handlers/advanced";
+import { $listener } from "@utils/lilybird-handler";
 import { loadCommands, refreshGuildsDatabase, loadGuildPrefixes } from "@utils/initialize";
 import { logger } from "@utils/logger";
 import { markReady } from "@utils/readiness";
