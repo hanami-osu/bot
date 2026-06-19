@@ -1,16 +1,15 @@
 import { getEntry, insertData } from "@utils/database";
 import { Tables } from "@type/database";
-import { CommandData } from "@type/commands";
-import { slashCommandIdsCache } from "@utils/cache";
+import type { CommandData } from "@type/commands";
+import { getSlashCommandMention } from "../../state/command-registry";
 
 import { CommandContext } from "@utils/command-context";
 
-export async function run(ctx: CommandContext) {
+export async function run(ctx: CommandContext): Promise<void> {
     if (!ctx.isInteraction) return;
     await ctx.defer(true);
 
-    const linkCommandId = slashCommandIdsCache.get("link");
-    const linkCommand = linkCommandId ?? "/link";
+    const linkCommand = getSlashCommandMention("link");
     const userId = ctx.user.id;
     const user = await getEntry(Tables.USER, userId);
     if (!user?.banchoId) {

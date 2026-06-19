@@ -1,6 +1,6 @@
 import { initializeDatabase, initializeOsuApi } from "@utils/initialize";
 import { logger } from "@utils/logger";
-import { initializeRedis, closeRedis } from "@utils/cache";
+import { closeRedis, initializeRedis } from "./state/redis";
 import { prisma } from "@utils/database";
 import { clearReady } from "@utils/readiness";
 import { CachingDelegationType, createClient, Intents, type Client } from "lilybird";

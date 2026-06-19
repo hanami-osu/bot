@@ -166,7 +166,7 @@ export class CommandContext {
     }
 
     async sendWithPagination(options: ReplyOptions, embedOptions: EmbedBuilderOptions): Promise<void> {
-        const { ButtonStateCache } = await import("./cache");
+        const { ButtonStateCache } = await import("../state/button-state-cache");
         const sentMessage = await this.editReply(options);
 
         if (this.isMessage && typeof sentMessage === "object" && sentMessage !== null && "id" in sentMessage && typeof sentMessage.id === "string") {
