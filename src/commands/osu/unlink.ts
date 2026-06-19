@@ -7,20 +7,19 @@ import { CommandContext } from "@utils/command-context";
 
 export async function run(ctx: CommandContext) {
     if (!ctx.isInteraction) return;
-    const { interaction } = ctx;
-    await interaction!.deferReply(true);
+    await ctx.defer(true);
 
     const linkCommandId = slashCommandIdsCache.get("link");
     const linkCommand = linkCommandId ?? "/link";
     const userId = ctx.user.id;
     const user = await getEntry(Tables.USER, userId);
     if (!user?.banchoId) {
-        await interaction!.editReply(`You are not linked to the bot! You can link your account by using ${linkCommand} to visit Hanami Web.`);
+        await ctx.editReply(`You are not linked to the bot! You can link your account by using ${linkCommand} to visit Hanami Web.`);
         return;
     }
 
     await insertData({ table: Tables.USER, id: userId, data: [{ key: "banchoId", value: null }] });
-    await interaction!.editReply(`Sad to see you go :(\nYou can always re-link yourself by using ${linkCommand} to visit Hanami Web!`);
+    await ctx.editReply(`Sad to see you go :(\nYou can always re-link yourself by using ${linkCommand} to visit Hanami Web!`);
 }
 
 export const data = {

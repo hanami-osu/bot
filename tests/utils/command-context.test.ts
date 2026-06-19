@@ -23,10 +23,10 @@ describe("CommandContext", () => {
         } as any;
         const ctx = new CommandContext({} as any, mockInteraction);
 
-        await ctx.defer();
+        await ctx.defer(true);
         await ctx.reply({ content: "done" });
 
-        expect(mockInteraction.deferReply).toHaveBeenCalled();
+        expect(mockInteraction.deferReply).toHaveBeenCalledWith(true);
         expect(mockInteraction.reply).not.toHaveBeenCalled();
         expect(mockInteraction.editReply).toHaveBeenCalledWith({ content: "done" });
     });

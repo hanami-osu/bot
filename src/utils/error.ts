@@ -1,9 +1,11 @@
 import { EmbedType, Client } from "lilybird";
 import { logger } from "@utils/logger";
 import { Interaction, Message, ApplicationCommandData, GuildInteraction, DMInteraction } from "@lilybird/transformers";
+import type { CommandContext } from "@utils/command-context";
 
 interface CommandErrorContext {
     client: Client;
+    commandContext?: Pick<CommandContext, "reply">;
     interaction?: Interaction<ApplicationCommandData>;
     message?: Message;
     commandName: string;
@@ -23,12 +25,14 @@ function isDMInteraction(interaction: Interaction<ApplicationCommandData>): inte
 }
 
 export async function handleCommandError(error: Error, ctx: CommandErrorContext): Promise<void> {
-    const { client, interaction, message, commandName, subCommand, content, prefix } = ctx;
+    const { client, commandContext, interaction, message, commandName, subCommand, content, prefix } = ctx;
     const isInteraction = !!interaction;
 
     // Send reply to user
     try {
-        if (interaction) {
+        if (commandContext) {
+            await commandContext.reply(isInteraction ? { content: GENERIC_COMMAND_ERROR, ephemeral: true } : GENERIC_COMMAND_ERROR);
+        } else if (interaction) {
             await interaction.reply({ content: GENERIC_COMMAND_ERROR, ephemeral: true });
         } else if (message) {
             await message.reply({

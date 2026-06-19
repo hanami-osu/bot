@@ -82,6 +82,27 @@ describe("handleCommandError", () => {
         expect(logger.error).toHaveBeenCalled();
     });
 
+    test("uses command context for interaction error replies after defer", async () => {
+        const error = new Error("Test deferred interaction error");
+        const commandContext = {
+            reply: mock(() => Promise.resolve()),
+        };
+
+        await handleCommandError(error, {
+            client: mockClient,
+            commandContext,
+            interaction: mockInteraction,
+            commandName: "ping",
+        });
+
+        expect(commandContext.reply).toHaveBeenCalledWith({
+            content: "Something went wrong while running that command. The error has been logged, so please try again later.",
+            ephemeral: true,
+        });
+        expect(mockInteraction.reply).not.toHaveBeenCalled();
+        expect(mockClient.rest.createMessage).toHaveBeenCalled();
+    });
+
     test("handles message command error and sends log", async () => {
         const error = new Error("Test message error");
         error.stack = "Error: Test message error\n    at trace2";

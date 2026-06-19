@@ -8,7 +8,7 @@ const listScoresMock = mock(({ offset }: { offset?: number }) => {
 
 mock.module("osu-api-extended", () => ({
     enums: {
-        ModsEnum: {},
+        ModsEnum: { HD: 8, HR: 16, DT: 64, NC: 512 },
     },
     v2: {
         scores: {

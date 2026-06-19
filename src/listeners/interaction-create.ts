@@ -67,6 +67,7 @@ $listener({
             } catch (error) {
                 await handleCommandError(error as Error, {
                     client: interaction.client,
+                    commandContext: ctx,
                     interaction,
                     commandName: command.data.name,
                     subCommand: interaction.data.subCommand,

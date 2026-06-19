@@ -98,10 +98,12 @@ $listener({
         // normally this would need `await`, but I don't want the bot to wait while it's sending the request.
         client.rest.triggerTypingIndicator(channel.id);
 
+        let commandContext: CommandContext | undefined;
+
         try {
             if (command.run) {
-                const ctx = new CommandContext(client, undefined, message, args, chosenPrefix, commandName, channel, index);
-                await command.run(ctx);
+                commandContext = new CommandContext(client, undefined, message, args, chosenPrefix, commandName, channel, index);
+                await command.run(commandContext);
             } else if (command.runMessage) {
                 await command.runMessage({ client: client, message, args, prefix: chosenPrefix, index, commandName, channel });
             }
@@ -129,6 +131,7 @@ $listener({
         } catch (error) {
             await handleCommandError(error as Error, {
                 client,
+                commandContext,
                 message,
                 commandName: data.name,
                 content,

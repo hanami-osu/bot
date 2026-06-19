@@ -104,9 +104,9 @@ export class CommandContext {
 
     private sentMessage?: SentMessage;
 
-    async defer(): Promise<void> {
+    async defer(ephemeral?: boolean): Promise<void> {
         if (this.interaction) {
-            await this.interaction.deferReply();
+            await this.interaction.deferReply(ephemeral);
             this.hasInteractionResponse = true;
         } else if (this.channelId) {
             await this.client.rest.triggerTypingIndicator(this.channelId);
