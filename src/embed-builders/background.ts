@@ -6,7 +6,7 @@ export function backgroundBuilder({ beatmap }: BackgroundBuilderOptions): Array<
     return [
         {
             author: { name: `${beatmapset.artist} - ${beatmapset.title} by ${beatmapset.creator}`, icon_url: `https://s.ppy.sh/a/${beatmapset.user_id}`, url: `https://osu.ppy.sh/b/${beatmap.id}` },
-            image: { url: `https://assets.ppy.sh/beatmaps/${beatmapset.id}/covers/raw.jpg` },
+            image: { url: `https://catboy.best/preview/background/${beatmapset.id}/set` },
         },
     ];
 }

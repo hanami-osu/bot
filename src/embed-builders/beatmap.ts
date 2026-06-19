@@ -63,7 +63,7 @@ export async function beatmapBuilder({ beatmapId, mods }: BeatmapBuilderOptions)
         `<:chimu:1117792339549761576>[Chimu](https://chimu.moe/d/${map.beatmapset_id})`,
         `<:beatconnect:1075915329512931469>[Beatconnect](https://beatconnect.io/b/${map.beatmapset_id})`,
         `:notes:[Song Preview](https://b.ppy.sh/preview/${map.beatmapset_id}.mp3)`,
-        `🖼️[Full Background](https://assets.ppy.sh/beatmaps/${map.beatmapset_id}/covers/raw.jpg)`,
+        `🖼️[Full Background](https://catboy.best/preview/background/${map.beatmapset_id}/set)`,
     ];
 
     return [
