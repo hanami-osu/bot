@@ -55,7 +55,7 @@ $listener({
         const alias = commandAliasesCache.get(commandName);
         const command = alias ? commandsCache.get(alias) : commandsCache.get(commandName);
 
-        if (!command) return; // Removed fuzzy matching
+        if (!command || !command.data.hasPrefixVariant) return; // Removed fuzzy matching
 
         const { data } = command;
 
