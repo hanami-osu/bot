@@ -1,4 +1,4 @@
-import { getEntry, removeEntry } from "@utils/database";
+import { getEntry, insertData } from "@utils/database";
 import { Tables } from "@type/database";
 import { CommandData } from "@type/commands";
 import { slashCommandIdsCache } from "@utils/cache";
@@ -19,7 +19,7 @@ export async function run(ctx: CommandContext) {
         return;
     }
 
-    await removeEntry(Tables.USER, userId);
+    await insertData({ table: Tables.USER, id: userId, data: [{ key: "banchoId", value: null }] });
     await interaction!.editReply(`Sad to see you go :(\nYou can always re-link yourself by using ${linkCommand} to visit Hanami Web!`);
 }
 
