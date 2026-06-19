@@ -1,5 +1,5 @@
 import { DEFAULT_PREFIX, wysiEmoji } from "@utils/constants";
-import { commandAliasesCache, commandsCache } from "@utils/cache";
+import { commandAliasesCache, commandsCache, slashCommandIdsCache } from "@utils/cache";
 import { logger } from "@utils/logger";
 import { incrementCommandCount } from "@utils/database";
 import { guildPrefixesCache, cooldownsCache } from "@utils/cache";
@@ -55,9 +55,17 @@ $listener({
         const alias = commandAliasesCache.get(commandName);
         const command = alias ? commandsCache.get(alias) : commandsCache.get(commandName);
 
-        if (!command || !command.data.hasPrefixVariant) return; // Removed fuzzy matching
+        if (!command) return; // Removed fuzzy matching
 
         const { data } = command;
+
+        if (!data.hasPrefixVariant) {
+            await message.reply({
+                content: `The \`${data.name}\` command can only be used as a slash command. Try ${getSlashCommandMention(data.name)}.`,
+                allowed_mentions: { replied_user: false, parse: [], roles: [], users: [] },
+            });
+            return;
+        }
 
         // Check cooldown
         const cooldownExpiry = cooldownsCache.get(`${data.name}:${author.id}`);
@@ -140,3 +148,8 @@ $listener({
         }
     },
 });
+
+function getSlashCommandMention(commandName: string): string {
+    const commandId = slashCommandIdsCache.get(commandName);
+    return commandId ? `</${commandName}:${commandId}>` : `/${commandName}`;
+}
