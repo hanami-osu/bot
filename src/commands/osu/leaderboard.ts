@@ -3,9 +3,9 @@ import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
 import { CommandData } from "@type/commands";
 import { Mode } from "@type/osu";
-import { parseCommandArgs } from "@utils/args";
+import { CommandValidationError, parseCommandArgs, parsePrefixPageFlag } from "@utils/args";
 import { getBeatmapIdFromContext, getBeatmapTopScores } from "@utils/osu";
-import { createPaginationActionRow } from "@utils/pagination";
+import { createPaginationActionRow, ITEMS_PER_PAGE } from "@utils/pagination";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
 import type { LeaderboardBuilderOptions } from "@type/builders";
 import { v2 } from "osu-api-extended";
@@ -38,7 +38,15 @@ export async function run(ctx: CommandContext) {
 
     const { user, mods, flags } = await parseCommandArgs(ctx, Mode.OSU);
     if (!ctx.isInteraction) {
-        page = Number(flags.p ?? flags.page ?? 1) - 1;
+        try {
+            page = parsePrefixPageFlag(flags) ?? 0;
+        } catch (error) {
+            if (error instanceof CommandValidationError) {
+                await ctx.editReply(error.message);
+                return;
+            }
+            throw error;
+        }
     }
 
     const { reply, embedOptions } = await getEmbeds(user.beatmapId ?? undefined, ctx.user.id, mods, isGlobal, page, ctx);
@@ -135,6 +143,20 @@ async function getEmbeds(
                         type: EmbedType.Rich,
                         title: "Uh oh! :x:",
                         description: "It seems like this beatmap's leaderboard doesn't exist! :(",
+                    },
+                ],
+            },
+        };
+    }
+
+    if (page < 0 || page * ITEMS_PER_PAGE >= scores.length) {
+        return {
+            reply: {
+                embeds: [
+                    {
+                        type: EmbedType.Rich,
+                        title: "Uh oh! :x:",
+                        description: "That page is out of range for this leaderboard.",
                     },
                 ],
             },

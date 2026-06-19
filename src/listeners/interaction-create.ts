@@ -39,6 +39,13 @@ $listener({
                     return; // Command has no valid execution function
                 }
 
+                // update slash command counter only after the command successfully runs.
+                try {
+                    await incrementCommandCount(`${command.data.name}:slash`);
+                } catch (counterError) {
+                    await logger.warn("Could not increment slash command counter", { command: command.data.name, error: counterError });
+                }
+
                 try {
                     let guildName = "Direct Message";
                     if (ctx.guildId) {
@@ -64,12 +71,6 @@ $listener({
                     commandName: command.data.name,
                     subCommand: interaction.data.subCommand,
                 });
-            } finally {
-                try {
-                    await incrementCommandCount(`${command.data.name}:slash`);
-                } catch (counterError) {
-                    await logger.warn("Could not increment slash command counter", { command: command.data.name, error: counterError });
-                }
             }
         }
     },

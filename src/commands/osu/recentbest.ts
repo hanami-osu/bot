@@ -4,7 +4,7 @@ import { EmbedBuilderType } from "@type/builders";
 import { SuccessUser, UserType } from "@type/command-args";
 import { CommandData } from "@type/commands";
 import { Mode, PlayType } from "@type/osu";
-import { parseCommandArgs } from "@utils/args";
+import { CommandValidationError, parseCommandArgs, parsePrefixPageFlag } from "@utils/args";
 import { createPaginationActionRow, ITEMS_PER_PAGE } from "@utils/pagination";
 import { getUserScores, USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
 import { v2 } from "osu-api-extended";
@@ -37,17 +37,22 @@ export async function run(ctx: CommandContext) {
     }
 
     let index = ctx.isInteraction ? ctx.interaction!.data.getInteger("index") : ctx.index;
-    let page = ctx.isInteraction ? ctx.interaction!.data.getInteger("page") : Number(flags.p ?? flags.page) || undefined;
+    let page: number | undefined;
+    try {
+        page = ctx.isInteraction ? ctx.interaction!.data.getInteger("page") : parsePrefixPageFlag(flags, Math.ceil(USER_SCORE_FETCH_LIMIT / ITEMS_PER_PAGE));
+    } catch (error) {
+        if (error instanceof CommandValidationError) {
+            await ctx.editReply(error.message);
+            return;
+        }
+        throw error;
+    }
 
     if (typeof page === "undefined" && typeof index === "undefined") {
         page = ctx.isMessage ? 0 : 1;
     }
 
     if (page && ctx.isInteraction) page -= 1;
-    if (page && ctx.isMessage) page -= 1; // Wait, prefix sets page to 0 above already, but wait, prefix flags.page is 1-based.
-    // Let's standardize: `page` from flags is 1-based, we want 0-based
-    if (ctx.isMessage && typeof flags.p !== "undefined") page = Number(flags.p) - 1;
-    if (ctx.isMessage && typeof flags.page !== "undefined") page = Number(flags.page) - 1;
     if (index && ctx.isInteraction) index -= 1;
 
     // For prefix, if neither page nor index is set, it defaults to page=0.

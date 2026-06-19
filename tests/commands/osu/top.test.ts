@@ -133,6 +133,27 @@ describe("top command", () => {
         expect(builderOptions.titleFilter).toBe("Yami no Uta");
     });
 
+    test("rejects invalid prefix page flags before calling the builder", async () => {
+        const mockClient = { rest: {} } as unknown as Client;
+        const reply = mock((_options: string | ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
+        const mockMessage = {
+            author: { id: "123", username: "test_user" },
+            guildId: "guild",
+            channelId: "channel123",
+            reply,
+        } as unknown as Message;
+
+        playBuilderMock.mockClear();
+
+        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk", "p=abc"], "!", "top");
+        ctx.defer = mock(() => Promise.resolve());
+
+        await run(ctx);
+
+        expect(playBuilderMock).not.toHaveBeenCalled();
+        expect(reply).toHaveBeenCalledWith("page must be a whole number.");
+    });
+
     test("returns a generic not found embed for a missing user", async () => {
         const mockClient = { rest: {} } as unknown as Client;
         const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));

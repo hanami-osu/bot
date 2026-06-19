@@ -1,7 +1,5 @@
 import { stat } from "fs/promises";
-import { READY_FILE } from "@utils/readiness";
-
-const MAX_READY_AGE_MS = 5 * 60 * 1000;
+import { MAX_READY_AGE_MS, READY_FILE } from "@utils/readiness";
 
 try {
     const readyFile = await stat(READY_FILE);

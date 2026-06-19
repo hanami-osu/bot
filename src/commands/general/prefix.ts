@@ -59,7 +59,7 @@ async function add({ prefix, interaction, guildId }: { prefix?: string; interact
 
     if (prefixes !== null && !Array.isArray(prefixes)) prefixes = JSON.parse(prefixes) as Array<string>;
 
-    if (prefixes && prefixes.length > MAX_AMOUNT_OF_PREFIXES) {
+    if (prefixes && prefixes.length >= MAX_AMOUNT_OF_PREFIXES) {
         await interaction.editReply(`**The maximum amount of prefixes allowed is \`${MAX_AMOUNT_OF_PREFIXES}\`. You can remove a prefix using \`/prefix remove\`**`);
         return;
     }

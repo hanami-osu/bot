@@ -41,7 +41,7 @@ mock.module("@utils/database", () => ({
     incrementCommandCount: mock(() => Promise.resolve()),
 }));
 
-const { CommandValidationError, getCommandArgs, parseBeatmapUrl, parseOsuArguments } = await import("../../src/utils/args");
+const { CommandValidationError, getCommandArgs, parseBeatmapUrl, parseOsuArguments, parsePrefixPageFlag } = await import("../../src/utils/args");
 
 describe("args parser", () => {
     describe("parseBeatmapUrl", () => {
@@ -72,6 +72,24 @@ describe("args parser", () => {
             expect(result.mods.name).toBe("HDHR");
         });
 
+        test.each([
+            ["+HDHR", true, false, false],
+            ["+HDHR!", false, false, true],
+            ["-HDHR", true, false, false],
+            ["-HDHR!", false, true, false],
+        ] as const)("parses prefix mod action %s", async (modArg, include, exclude, forceInclude) => {
+            const message = { author: { id: "0000" } } as unknown as Message;
+            const result = await parseOsuArguments(message, ["peppy", modArg], Mode.OSU);
+
+            expect(result.user.type).toBe(UserType.SUCCESS);
+            if (result.user.type === UserType.SUCCESS) expect(result.user.banchoId).toBe("peppy");
+            expect(result.tempUser).toEqual(["peppy"]);
+            expect(result.mods.include).toBe(include);
+            expect(result.mods.exclude).toBe(exclude);
+            expect(result.mods.forceInclude).toBe(forceInclude);
+            expect(result.mods.name).toBe("HDHR");
+        });
+
         test("parses quoted flag values without treating them as usernames", async () => {
             const message = { author: { id: "0000" } } as unknown as Message;
             const result = await parseOsuArguments(message, ["peppy", 'filter="yami', "no", 'uta"'], Mode.OSU);
@@ -93,6 +111,18 @@ describe("args parser", () => {
             const message = { author: { id: "0000" } } as unknown as Message;
             await expect(parseOsuArguments(message, ["peppy", "+ZZ"], Mode.OSU)).rejects.toBeInstanceOf(CommandValidationError);
             await expect(parseOsuArguments(message, ["peppy", "+DTNC"], Mode.OSU)).rejects.toBeInstanceOf(CommandValidationError);
+        });
+    });
+
+    describe("parsePrefixPageFlag", () => {
+        test("parses prefix page flags as zero-based pages", () => {
+            expect(parsePrefixPageFlag({ p: "3" }, 40)).toBe(2);
+            expect(parsePrefixPageFlag({ page: "4" }, 40)).toBe(3);
+            expect(parsePrefixPageFlag({})).toBeUndefined();
+        });
+
+        test.each([{ p: "" }, { p: "abc" }, { p: "1.5" }, { p: "0" }, { p: "41" }] as Array<Record<string, string>>)("rejects invalid prefix page flag %p", (flags) => {
+            expect(() => parsePrefixPageFlag(flags, 40)).toThrow(CommandValidationError);
         });
     });
 
