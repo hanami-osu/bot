@@ -1,16 +1,10 @@
+import { configListEmbed, configUpdatedEmbed, type ConfigChange } from "@builders";
 import { CommandData } from "@type/commands";
-import { ApplicationCommandOptionType, type Embed } from "lilybird";
+import { ApplicationCommandOptionType } from "lilybird";
 import { getEntry, insertData } from "@utils/database";
-import { EmbedScoreType, ScoreData, ScoreEmbed, Tables } from "@type/database";
+import { ScoreEmbed, Tables } from "@type/database";
 
 import { CommandContext } from "@utils/command-context";
-
-const configDefaults: Record<string, string> = {
-    score_embeds: "Maximized",
-    mode: "osu",
-    embed_type: "Hanami",
-    score_data: "Stable",
-};
 
 export async function run(ctx: CommandContext): Promise<void> {
     await ctx.defer();
@@ -31,7 +25,7 @@ export async function run(ctx: CommandContext): Promise<void> {
         return;
     }
 
-    const changes: Array<{ type: string; data: string }> = [];
+    const changes: Array<ConfigChange> = [];
     if (typeof modeData !== "undefined") {
         await insertData({ table: Tables.USER, id: userId, data: [{ key: "mode", value: modeData }] });
         changes.push({ type: "mode", data: modeData });
@@ -52,18 +46,8 @@ export async function run(ctx: CommandContext): Promise<void> {
         changes.push({ type: "score_data", data: scoreDataValue === 0 ? "Stable" : "Lazer" });
     }
 
-    let changesText = "";
-    for (const change of changes) {
-        changesText += `${change.type}: ${change.data}\n`;
-    }
-
     await interaction.editReply({
-        embeds: [
-            {
-                title: `Successfully changed config for ${username}`,
-                description: `Updated settings:\n${changesText}`,
-            },
-        ],
+        embeds: [configUpdatedEmbed(username, changes)],
     });
 }
 
@@ -74,42 +58,7 @@ async function list(ctx: CommandContext, userId: string): Promise<void> {
         user = { banchoId: null, mode: null, score_embeds: null, embed_type: null, score_data: null, id: userId };
     }
 
-    const embeds: Embed.Structure = { fields: [], title: `Config settings of ${ctx.user.username}` };
-
-    if (user) {
-        for (const [key, v] of Object.entries(user)) {
-            const value = v as string | number | null;
-            if (key === "id" || key === "banchoId") continue;
-
-            if (value !== null) {
-                embeds.fields?.push({ name: key, value: getConfigDisplayValue(key, value) });
-            } else {
-                embeds.fields?.push({ name: key, value: configDefaults[key] ?? "Unknown" });
-            }
-        }
-    }
-
-    await ctx.editReply({ embeds: [embeds] });
-}
-
-function getConfigDisplayValue(key: string, value: string | number): string {
-    if (key === "score_embeds" && typeof value === "number") {
-        return ScoreEmbed[value] ?? configDefaults.score_embeds;
-    }
-
-    if (key === "score_data" && typeof value === "number") {
-        return ScoreData[value] ?? configDefaults.score_data;
-    }
-
-    if (key === "embed_type" && typeof value === "string") {
-        return Object.values(EmbedScoreType).includes(value as EmbedScoreType) ? value : configDefaults.embed_type;
-    }
-
-    if (key === "mode" && typeof value === "string") {
-        return value || configDefaults.mode;
-    }
-
-    return value.toString();
+    await ctx.editReply({ embeds: [configListEmbed(ctx.user.username, user)] });
 }
 
 export const data = {

@@ -1,11 +1,11 @@
-import { simulateBuilder } from "@builders";
+import { simpleErrorEmbed, simulateBuilder } from "@builders";
 import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
 import { CommandData } from "@type/commands";
 import { Mode } from "@type/osu";
 import { CommandValidationError, parseCommandArgs } from "@utils/args";
 import { getBeatmapIdFromContext } from "@utils/osu";
-import { ApplicationCommandOptionType, EmbedType } from "lilybird";
+import { ApplicationCommandOptionType } from "lilybird";
 
 import { CommandContext } from "@utils/command-context";
 import type { DifficultyOptions } from "@type/command-args";
@@ -24,7 +24,7 @@ export async function run(ctx: CommandContext) {
     } catch (error) {
         if (error instanceof CommandValidationError) {
             await ctx.editReply({
-                embeds: [{ type: EmbedType.Rich, title: "Invalid simulation input", description: error.message }],
+                embeds: [simpleErrorEmbed(error.message, "Invalid simulation input")],
             });
             return;
         }
@@ -36,13 +36,7 @@ export async function run(ctx: CommandContext) {
     const beatmapId = user.beatmapId ?? (await getBeatmapIdFromContext(ctx.beatmapLookupContext));
     if (!beatmapId) {
         await ctx.editReply({
-            embeds: [
-                {
-                    type: EmbedType.Rich,
-                    title: "Uh oh! :x:",
-                    description: "It seems like the beatmap ID couldn't be found :(\n",
-                },
-            ],
+            embeds: [simpleErrorEmbed("It seems like the beatmap ID couldn't be found :(\n")],
         });
         return;
     }
@@ -72,7 +66,7 @@ export async function run(ctx: CommandContext) {
     } catch (error) {
         if (error instanceof CommandValidationError) {
             await ctx.editReply({
-                embeds: [{ type: EmbedType.Rich, title: "Invalid simulation input", description: error.message }],
+                embeds: [simpleErrorEmbed(error.message, "Invalid simulation input")],
             });
             return;
         }

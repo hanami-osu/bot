@@ -1,4 +1,4 @@
-import { whatIfBuilder } from "@builders";
+import { userNotFoundEmbed, whatIfBuilder } from "@builders";
 import { MessageReplyOptions } from "@lilybird/transformers";
 import { CommandData } from "@type/commands";
 import { EmbedBuilderType } from "@type/builders";
@@ -8,7 +8,7 @@ import { CommandContext } from "@utils/command-context";
 import { getUserScores, USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
 import { safeParse } from "@utils/safe-parse";
 import { calculateWhatIfProjection, estimateGlobalRankFromPp, extractWhatIfPlayPps, parseWhatIfPlayPps, WhatIfValidationError } from "@utils/whatif";
-import { ApplicationCommandOptionType, EmbedType } from "lilybird";
+import { ApplicationCommandOptionType } from "lilybird";
 import { v2 } from "osu-api-extended";
 import type { SuccessUser } from "@type/command-args";
 import { UserType } from "@type/command-args";
@@ -87,13 +87,7 @@ async function getEmbeds(user: SuccessUser, playPps: Array<number>, initiatorId:
     const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
     if (!osuUserRequest.success) {
         return {
-            embeds: [
-                {
-                    type: EmbedType.Rich,
-                    title: "Uh oh! :x:",
-                    description: `It seems like the user **\`${user.banchoId}\`** doesn't exist! :(`,
-                },
-            ],
+            embeds: [userNotFoundEmbed(user.banchoId)],
         };
     }
 

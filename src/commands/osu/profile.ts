@@ -1,4 +1,4 @@
-import { profileBuilder } from "@builders";
+import { profileBuilder, userNotFoundEmbed } from "@builders";
 import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
 import { SuccessUser, UserType } from "@type/command-args";
@@ -7,7 +7,7 @@ import { Mode } from "@type/osu";
 import { parseCommandArgs } from "@utils/args";
 import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
-import { ApplicationCommandOptionType, EmbedType } from "lilybird";
+import { ApplicationCommandOptionType } from "lilybird";
 
 import { CommandContext } from "@utils/command-context";
 
@@ -31,13 +31,7 @@ async function getEmbeds(user: SuccessUser, authorId: string): Promise<MessageRe
     const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
     if (!osuUserRequest.success) {
         return {
-            embeds: [
-                {
-                    type: EmbedType.Rich,
-                    title: "Uh oh! :x:",
-                    description: `It seems like the user **\`${user.banchoId}\`** doesn't exist! :(`,
-                },
-            ],
+            embeds: [userNotFoundEmbed(user.banchoId)],
         };
     }
     const osuUser = osuUserRequest.data;

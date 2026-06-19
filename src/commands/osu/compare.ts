@@ -1,4 +1,4 @@
-import { compareBuilder } from "@builders";
+import { compareBuilder, simpleErrorEmbed, userNotFoundEmbed } from "@builders";
 import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
 import { SuccessUser, UserType } from "@type/command-args";
@@ -10,7 +10,7 @@ import { getBeatmapUserScores } from "@utils/score-api";
 import { createPaginationActionRow } from "@utils/pagination";
 import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
-import { ApplicationCommandOptionType, EmbedType } from "lilybird";
+import { ApplicationCommandOptionType } from "lilybird";
 
 const modeAliases: Record<string, { mode: Mode }> = {
     შედარება: { mode: Mode.OSU },
@@ -49,13 +49,7 @@ async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context
     if (!osuUserRequest.success) {
         return {
             reply: {
-                embeds: [
-                    {
-                        type: EmbedType.Rich,
-                        title: "Uh oh! :x:",
-                        description: `It seems like the user **\`${user.banchoId}\`** doesn't exist! :(`,
-                    },
-                ],
+                embeds: [userNotFoundEmbed(user.banchoId)],
             },
         };
     }
@@ -65,13 +59,7 @@ async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context
     if (typeof beatmapId === "undefined" || beatmapId === null) {
         return {
             reply: {
-                embeds: [
-                    {
-                        type: EmbedType.Rich,
-                        title: "Uh oh! :x:",
-                        description: "It seems like the beatmap ID couldn't be found :(\n",
-                    },
-                ],
+                embeds: [simpleErrorEmbed("It seems like the beatmap ID couldn't be found :(\n")],
             },
         };
     }
@@ -80,13 +68,7 @@ async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context
     if (!beatmapRequest.success) {
         return {
             reply: {
-                embeds: [
-                    {
-                        type: EmbedType.Rich,
-                        title: "Uh oh! :x:",
-                        description: "It seems like this beatmap doesn't exist! :(",
-                    },
-                ],
+                embeds: [simpleErrorEmbed("It seems like this beatmap doesn't exist! :(")],
             },
         };
     }
@@ -95,13 +77,7 @@ async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context
     if (beatmap.status === "pending" || beatmap.status === "wip" || beatmap.status === "graveyard") {
         return {
             reply: {
-                embeds: [
-                    {
-                        type: EmbedType.Rich,
-                        title: "Uh oh! :x:",
-                        description: "It seems like this beatmap's leaderboard doesn't exist! :(",
-                    },
-                ],
+                embeds: [simpleErrorEmbed("It seems like this beatmap's leaderboard doesn't exist! :(")],
             },
         };
     }
@@ -111,13 +87,7 @@ async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context
     if (plays.length === 0) {
         return {
             reply: {
-                embeds: [
-                    {
-                        type: EmbedType.Rich,
-                        title: "Uh oh! :x:",
-                        description: `It seems like \`${osuUser.username}\` has no plays on that beatmap!`,
-                    },
-                ],
+                embeds: [simpleErrorEmbed(`It seems like \`${osuUser.username}\` has no plays on that beatmap!`)],
             },
         };
     }

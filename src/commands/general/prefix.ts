@@ -1,10 +1,11 @@
+import { prefixListEmbed } from "@builders";
 import { getEntry, insertData } from "@utils/database";
 import { DEFAULT_PREFIX, MAX_AMOUNT_OF_PREFIXES } from "@utils/constants";
 import { guildPrefixesCache } from "@utils/cache";
 import { Tables } from "@type/database";
 import type { ApplicationCommandData, GuildInteraction } from "@lilybird/transformers";
 import { CommandData } from "@type/commands";
-import { ApplicationCommandOptionType, PermissionFlags, EmbedType } from "lilybird";
+import { ApplicationCommandOptionType, PermissionFlags } from "lilybird";
 import { CommandInteractionContext, CommandIntegrationType } from "@utils/command-context";
 
 const commands: Record<string, ({ prefix, interaction, guildId }: { prefix?: string; interaction: GuildInteraction<ApplicationCommandData>; guildId: string }) => Promise<void>> = {
@@ -118,7 +119,7 @@ async function list({ interaction, guildId }: { interaction: GuildInteraction<Ap
         return;
     }
 
-    await interaction.editReply({ embeds: [{ type: EmbedType.Rich, title: "Currently defined prefixes", description: `**\`${prefixes.join("`**, `")}\`**` }] });
+    await interaction.editReply({ embeds: [prefixListEmbed(prefixes)] });
 }
 
 export const data = {

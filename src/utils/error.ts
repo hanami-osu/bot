@@ -1,4 +1,5 @@
-import { EmbedType, Client } from "lilybird";
+import { commandErrorDisplayName, commandErrorLogEmbed } from "@builders";
+import { Client } from "lilybird";
 import { logger } from "@utils/logger";
 import { Interaction, Message, ApplicationCommandData, GuildInteraction, DMInteraction } from "@lilybird/transformers";
 import type { CommandContext } from "@utils/command-context";
@@ -69,19 +70,7 @@ export async function handleCommandError(error: Error, ctx: CommandErrorContext)
         // Ignored
     }
 
-    // Build fields
-    const fields = [
-        { name: "User", value: `<@${user.id}> (${user.username})` },
-        { name: "Guild", value: guildId && channelId ? `[${guildName}](https://discord.com/channels/${guildId}/${channelId})` : guildName },
-    ];
-
-    if (!isInteraction && content) {
-        fields.push({ name: "Message", value: content.length > 1024 ? content.slice(0, 1021) + "..." : content });
-    }
-
-    fields.push({ name: "Error", value: error.stack ? (error.stack.length > 1024 ? error.stack.slice(0, 1021) + "..." : error.stack) : "undefined (look at logs)" });
-
-    const cmdDisplayName = interaction && subCommand ? `${commandName} -> ${subCommand}` : commandName;
+    const cmdDisplayName = commandErrorDisplayName(commandName, subCommand, isInteraction);
 
     try {
         const errorChannelId = process.env.ERROR_CHANNEL_ID;
@@ -89,13 +78,7 @@ export async function handleCommandError(error: Error, ctx: CommandErrorContext)
 
         await client.rest.createMessage(errorChannelId, {
             content: process.env.OWNER_ID ? `<@${process.env.OWNER_ID}> command error logged` : "Command error logged",
-            embeds: [
-                {
-                    type: EmbedType.Rich,
-                    title: `Runtime error on command${interaction ? " (slash)" : ""}: ${cmdDisplayName}`,
-                    fields,
-                },
-            ],
+            embeds: [commandErrorLogEmbed({ commandName, subCommand, isInteraction, user, guildName, guildId, channelId, content, error })],
         });
     } catch (logChannelError) {
         logger.error("Failed to send error to log channel", logChannelError as Error);

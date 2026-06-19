@@ -1,11 +1,11 @@
-import { beatmapBuilder } from "@builders";
+import { beatmapBuilder, simpleErrorEmbed } from "@builders";
 import { EmbedBuilderType } from "@type/builders";
 import { Mods } from "@type/command-args";
 import { CommandData } from "@type/commands";
 import { Mode } from "@type/osu";
 import { parseCommandArgs } from "@utils/args";
 import { getBeatmapIdFromContext } from "@utils/osu";
-import { ApplicationCommandOptionType, EmbedType } from "lilybird";
+import { ApplicationCommandOptionType } from "lilybird";
 import type { Mod } from "@type/mods";
 
 import { CommandContext } from "@utils/command-context";
@@ -22,13 +22,7 @@ export async function run(ctx: CommandContext) {
 
 async function getEmbed(beatmapId: string | number | null, authorId: string, mods: Mods) {
     if (typeof beatmapId === "undefined" || beatmapId === null) {
-        return [
-            {
-                type: EmbedType.Rich,
-                title: "Uh oh! :x:",
-                description: "It seems like the beatmap ID couldn't be found :(\n",
-            },
-        ];
+        return [simpleErrorEmbed("It seems like the beatmap ID couldn't be found :(\n")];
     }
 
     const embeds = await beatmapBuilder({

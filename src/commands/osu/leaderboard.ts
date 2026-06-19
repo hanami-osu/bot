@@ -1,4 +1,4 @@
-import { leaderboardBuilder } from "@builders";
+import { leaderboardBuilder, simpleErrorEmbed } from "@builders";
 import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
 import { CommandData } from "@type/commands";
@@ -6,7 +6,7 @@ import { Mode } from "@type/osu";
 import { CommandValidationError, parseCommandArgs, parsePrefixPageFlag } from "@utils/args";
 import { getBeatmapIdFromContext, getBeatmapTopScores } from "@utils/osu";
 import { createPaginationActionRow, ITEMS_PER_PAGE } from "@utils/pagination";
-import { ApplicationCommandOptionType, EmbedType } from "lilybird";
+import { ApplicationCommandOptionType } from "lilybird";
 import type { LeaderboardBuilderOptions } from "@type/builders";
 import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
@@ -69,13 +69,7 @@ async function getEmbeds(
     if (typeof resolvedBeatmapId === "undefined" || resolvedBeatmapId === null) {
         return {
             reply: {
-                embeds: [
-                    {
-                        type: EmbedType.Rich,
-                        title: "Uh oh! :x:",
-                        description: "It seems like the beatmap ID couldn't be found :(\n",
-                    },
-                ],
+                embeds: [simpleErrorEmbed("It seems like the beatmap ID couldn't be found :(\n")],
             },
         };
     }
@@ -84,13 +78,7 @@ async function getEmbeds(
     if (!beatmapRequest.success) {
         return {
             reply: {
-                embeds: [
-                    {
-                        type: EmbedType.Rich,
-                        title: "Uh oh! :x:",
-                        description: "It seems like this beatmap doesn't exist! :(",
-                    },
-                ],
+                embeds: [simpleErrorEmbed("It seems like this beatmap doesn't exist! :(")],
             },
         };
     }
@@ -99,13 +87,7 @@ async function getEmbeds(
     if (beatmap.status === "pending" || beatmap.status === "wip" || beatmap.status === "graveyard") {
         return {
             reply: {
-                embeds: [
-                    {
-                        type: EmbedType.Rich,
-                        title: "Uh oh! :x:",
-                        description: "It seems like this beatmap's leaderboard doesn't exist! :(",
-                    },
-                ],
+                embeds: [simpleErrorEmbed("It seems like this beatmap's leaderboard doesn't exist! :(")],
             },
         };
     }
@@ -122,13 +104,7 @@ async function getEmbeds(
     if (!scoresRequest.success) {
         return {
             reply: {
-                embeds: [
-                    {
-                        type: EmbedType.Rich,
-                        title: "Uh oh! :x:",
-                        description: "Failed to fetch top scores! If you were using mods or a country leaderboard, maybe my osu! supporter ran out? Support me at https://yorunoken.com#support :3",
-                    },
-                ],
+                embeds: [simpleErrorEmbed("Failed to fetch top scores! If you were using mods or a country leaderboard, maybe my osu! supporter ran out? Support me at https://yorunoken.com#support :3")],
             },
         };
     }
@@ -138,13 +114,7 @@ async function getEmbeds(
     if (scores.length === 0) {
         return {
             reply: {
-                embeds: [
-                    {
-                        type: EmbedType.Rich,
-                        title: "Uh oh! :x:",
-                        description: "It seems like this beatmap's leaderboard doesn't exist! :(",
-                    },
-                ],
+                embeds: [simpleErrorEmbed("It seems like this beatmap's leaderboard doesn't exist! :(")],
             },
         };
     }
@@ -152,13 +122,7 @@ async function getEmbeds(
     if (page < 0 || page * ITEMS_PER_PAGE >= scores.length) {
         return {
             reply: {
-                embeds: [
-                    {
-                        type: EmbedType.Rich,
-                        title: "Uh oh! :x:",
-                        description: "That page is out of range for this leaderboard.",
-                    },
-                ],
+                embeds: [simpleErrorEmbed("That page is out of range for this leaderboard.")],
             },
         };
     }

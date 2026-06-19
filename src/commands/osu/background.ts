@@ -1,4 +1,4 @@
-import { backgroundBuilder } from "@builders";
+import { backgroundBuilder, simpleErrorEmbed } from "@builders";
 import { EmbedBuilderType } from "@type/builders";
 import { CommandData } from "@type/commands";
 import { Mode, type Beatmap } from "@type/osu";
@@ -6,7 +6,7 @@ import { parseCommandArgs } from "@utils/args";
 import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
 import { getBeatmapIdFromContext } from "@utils/osu";
-import { ApplicationCommandOptionType, EmbedType } from "lilybird";
+import { ApplicationCommandOptionType } from "lilybird";
 
 import { CommandContext } from "@utils/command-context";
 
@@ -22,24 +22,12 @@ export async function run(ctx: CommandContext) {
 
 async function getEmbed(beatmapId: string | number | null, authorId: string) {
     if (typeof beatmapId === "undefined" || beatmapId === null) {
-        return [
-            {
-                type: EmbedType.Rich,
-                title: "Uh oh! :x:",
-                description: "It seems like the beatmap ID couldn't be found :(\n",
-            },
-        ];
+        return [simpleErrorEmbed("It seems like the beatmap ID couldn't be found :(\n")];
     }
 
     const beatmapRequest = await safeParse(v2.beatmaps.details({ type: "difficulty", id: Number(beatmapId) }));
     if (!beatmapRequest.success) {
-        return [
-            {
-                type: EmbedType.Rich,
-                title: "Uh oh! :x:",
-                description: "It seems like this beatmap doesn't exist! :(",
-            },
-        ];
+        return [simpleErrorEmbed("It seems like this beatmap doesn't exist! :(")];
     }
     const beatmap = beatmapRequest.data;
 

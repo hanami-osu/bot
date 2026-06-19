@@ -1,4 +1,4 @@
-import { playBuilder } from "@builders";
+import { playBuilder, simpleErrorEmbed, userNotFoundEmbed } from "@builders";
 import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
 import { SuccessUser, UserType } from "@type/command-args";
@@ -9,7 +9,7 @@ import { createPaginationActionRow } from "@utils/pagination";
 import { getUserScores, USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
 import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
-import { ApplicationCommandOptionType, EmbedType } from "lilybird";
+import { ApplicationCommandOptionType } from "lilybird";
 import type { PlaysBuilderOptions } from "@type/builders";
 import { discordOption, filterOption, gradeOption, modeOption, modsActionOption, modsOption, usernameOption } from "./options";
 
@@ -82,13 +82,7 @@ async function getEmbeds(
     if (!osuUserRequest.success) {
         return {
             reply: {
-                embeds: [
-                    {
-                        type: EmbedType.Rich,
-                        title: "Uh oh! :x:",
-                        description: `It seems like the user **\`${user.banchoId}\`** doesn't exist! :(`,
-                    },
-                ],
+                embeds: [userNotFoundEmbed(user.banchoId)],
             },
         };
     }
@@ -99,13 +93,7 @@ async function getEmbeds(
     if (plays.length === 0) {
         return {
             reply: {
-                embeds: [
-                    {
-                        type: EmbedType.Rich,
-                        title: "Uh oh! :x:",
-                        description: `It seems like \`${osuUser.username}\` hasn't set any recent plays! :(`,
-                    },
-                ],
+                embeds: [simpleErrorEmbed(`It seems like \`${osuUser.username}\` hasn't set any recent plays! :(`)],
             },
         };
     }
