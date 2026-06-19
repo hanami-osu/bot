@@ -115,6 +115,10 @@ export class CommandContext {
 
     async reply(options: ReplyOptions): Promise<unknown> {
         if (this.interaction) {
+            if (this.hasInteractionResponse) {
+                return await this.editReply(options);
+            }
+
             if (typeof options === "string") await this.interaction.reply(options);
             else await this.interaction.reply(options as InteractionReplyOptions);
             this.sentMessage = undefined;
