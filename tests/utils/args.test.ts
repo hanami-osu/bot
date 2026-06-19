@@ -72,6 +72,24 @@ describe("args parser", () => {
             expect(result.mods.name).toBe("HDHR");
         });
 
+        test.each([
+            ["+HDHR", true, false, false],
+            ["+HDHR!", false, false, true],
+            ["-HDHR", true, false, false],
+            ["-HDHR!", false, true, false],
+        ] as const)("parses prefix mod action %s", async (modArg, include, exclude, forceInclude) => {
+            const message = { author: { id: "0000" } } as unknown as Message;
+            const result = await parseOsuArguments(message, ["peppy", modArg], Mode.OSU);
+
+            expect(result.user.type).toBe(UserType.SUCCESS);
+            if (result.user.type === UserType.SUCCESS) expect(result.user.banchoId).toBe("peppy");
+            expect(result.tempUser).toEqual(["peppy"]);
+            expect(result.mods.include).toBe(include);
+            expect(result.mods.exclude).toBe(exclude);
+            expect(result.mods.forceInclude).toBe(forceInclude);
+            expect(result.mods.name).toBe("HDHR");
+        });
+
         test("parses quoted flag values without treating them as usernames", async () => {
             const message = { author: { id: "0000" } } as unknown as Message;
             const result = await parseOsuArguments(message, ["peppy", 'filter="yami', "no", 'uta"'], Mode.OSU);

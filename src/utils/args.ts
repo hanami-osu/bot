@@ -259,7 +259,7 @@ export async function parseOsuArguments(message: Message, args: Array<string>, m
         if (mod) {
             const parsedMods = parseModsString(mod);
 
-            result.mods.include = modType !== "-";
+            result.mods.include = typeof force === "undefined";
             result.mods.exclude = modType === "-" && typeof force !== "undefined";
             result.mods.forceInclude = modType === "+" && typeof force !== "undefined";
             if (result.mods.include || result.mods.exclude || result.mods.forceInclude) {
