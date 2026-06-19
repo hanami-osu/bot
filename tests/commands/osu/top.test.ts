@@ -3,6 +3,7 @@ import { CommandContext } from "../../../src/utils/command-context";
 import { Tables } from "../../../src/types/database";
 import type { Client } from "lilybird";
 import type { Message } from "@lilybird/transformers";
+import type { CommandData } from "../../../src/types/commands";
 
 interface ReplyPayload {
     embeds: Array<{ title?: string; description?: string }>;
@@ -66,12 +67,17 @@ const { data: recentData } = await import("../../../src/commands/osu/recent");
 const { data: recentBestData } = await import("../../../src/commands/osu/recentbest");
 const { data: recentListData } = await import("../../../src/commands/osu/recentlist");
 
-function getPageMaxValue(commandData: { application: { options: Array<{ name: string; max_value?: number }> } }): number | undefined {
-    return commandData.application.options.find((option) => option.name === "page")?.max_value;
+function getApplicationOptions(commandData: CommandData): Array<{ name: string; max_value?: number }> {
+    expect(commandData.application?.options).toBeDefined();
+    return commandData.application?.options as Array<{ name: string; max_value?: number }>;
 }
 
-function hasFilterOption(commandData: { application: { options: Array<{ name: string }> } }): boolean {
-    return commandData.application.options.some((option) => option.name === "filter");
+function getPageMaxValue(commandData: CommandData): number | undefined {
+    return getApplicationOptions(commandData).find((option) => option.name === "page")?.max_value;
+}
+
+function hasFilterOption(commandData: CommandData): boolean {
+    return getApplicationOptions(commandData).some((option) => option.name === "filter");
 }
 
 describe("top command", () => {

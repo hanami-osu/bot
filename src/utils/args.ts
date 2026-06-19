@@ -6,7 +6,7 @@ import { enums } from "osu-api-extended";
 import type { SlashCommandArgs, DifficultyOptions, Mods, PrefixCommandArgs, User, CommandArgs } from "@type/command-args";
 import type { CommandContext } from "./command-context";
 import type { ApplicationCommandData, DMInteraction, GuildInteraction, Interaction, Message } from "@lilybird/transformers";
-import { slashCommandIdsCache } from "./cache";
+import { getSlashCommandMention } from "../state/command-registry";
 
 interface BeatMapSetURL {
     url: string;
@@ -212,7 +212,7 @@ export async function getCommandArgs(interaction: Interaction<ApplicationCommand
                   type: UserType.FAIL,
                   beatmapId,
                   authorDb: userAuthor,
-                  failMessage: discordUserId ? `The user <@${discordUserId}> hasn't linked their account to the bot yet!` : `Please link your account to the bot using ${slashCommandIdsCache.get("link")}!`,
+                  failMessage: discordUserId ? `The user <@${discordUserId}> hasn't linked their account to the bot yet!` : `Please link your account to the bot using ${getSlashCommandMention("link")}!`,
               }
         : userArg
           ? { type: UserType.SUCCESS, banchoId: userArg, mode, beatmapId, authorDb: userAuthor }
@@ -229,7 +229,7 @@ export async function parseOsuArguments(message: Message, args: Array<string>, m
         user: {
             beatmapId: null,
             type: UserType.FAIL,
-            failMessage: `Please link your account to the bot using ${slashCommandIdsCache.get("link")}!`,
+            failMessage: `Please link your account to the bot using ${getSlashCommandMention("link")}!`,
             authorDb: null,
         },
         flags: {},
