@@ -1,7 +1,7 @@
 import { rm, writeFile } from "fs/promises";
-import { MAX_READY_AGE_MS } from "healthcheck";
 import { logger } from "./logger";
 
+export const MAX_READY_AGE_MS = 5 * 60 * 1000;
 export const READY_FILE = process.env.HANAMI_READY_FILE ?? "/tmp/hanami-ready";
 
 async function writeReadyFile() {

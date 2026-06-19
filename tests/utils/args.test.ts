@@ -41,7 +41,7 @@ mock.module("@utils/database", () => ({
     incrementCommandCount: mock(() => Promise.resolve()),
 }));
 
-const { CommandValidationError, getCommandArgs, parseBeatmapUrl, parseOsuArguments } = await import("../../src/utils/args");
+const { CommandValidationError, getCommandArgs, parseBeatmapUrl, parseOsuArguments, parsePrefixPageFlag } = await import("../../src/utils/args");
 
 describe("args parser", () => {
     describe("parseBeatmapUrl", () => {
@@ -111,6 +111,18 @@ describe("args parser", () => {
             const message = { author: { id: "0000" } } as unknown as Message;
             await expect(parseOsuArguments(message, ["peppy", "+ZZ"], Mode.OSU)).rejects.toBeInstanceOf(CommandValidationError);
             await expect(parseOsuArguments(message, ["peppy", "+DTNC"], Mode.OSU)).rejects.toBeInstanceOf(CommandValidationError);
+        });
+    });
+
+    describe("parsePrefixPageFlag", () => {
+        test("parses prefix page flags as zero-based pages", () => {
+            expect(parsePrefixPageFlag({ p: "3" }, 40)).toBe(2);
+            expect(parsePrefixPageFlag({ page: "4" }, 40)).toBe(3);
+            expect(parsePrefixPageFlag({})).toBeUndefined();
+        });
+
+        test.each([{ p: "" }, { p: "abc" }, { p: "1.5" }, { p: "0" }, { p: "41" }] as Array<Record<string, string>>)("rejects invalid prefix page flag %p", (flags) => {
+            expect(() => parsePrefixPageFlag(flags, 40)).toThrow(CommandValidationError);
         });
     });
 

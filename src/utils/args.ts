@@ -123,6 +123,26 @@ function buildMods(name: string | null, action?: string | null): Mods {
     return mods;
 }
 
+export function parsePrefixIntegerFlag(value: string | undefined, label: string, min: number, max?: number): number | undefined {
+    if (typeof value === "undefined") return undefined;
+
+    const parsed = Number(value);
+    if (!Number.isInteger(parsed)) {
+        throw new CommandValidationError(`${label} must be a whole number.`);
+    }
+
+    if (parsed < min || (typeof max !== "undefined" && parsed > max)) {
+        throw new CommandValidationError(typeof max === "undefined" ? `${label} must be at least ${min}.` : `${label} must be between ${min} and ${max}.`);
+    }
+
+    return parsed;
+}
+
+export function parsePrefixPageFlag(flags: Record<string, string | undefined>, max?: number): number | undefined {
+    const page = parsePrefixIntegerFlag(flags.page ?? flags.p, "page", 1, max);
+    return typeof page === "undefined" ? undefined : page - 1;
+}
+
 function getBeatmapId(urlMatch: BeatMapSetURL | BeatMapURL | null): string | null {
     if (!urlMatch) return null;
     return "id" in urlMatch ? urlMatch.id : urlMatch.difficultyId;
