@@ -11,6 +11,7 @@ import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
 import { ApplicationCommandOptionType, EmbedType } from "lilybird";
 import type { PlaysBuilderOptions } from "@type/builders";
+import { discordOption, filterOption, gradeOption, modeOption, modsActionOption, modsOption, usernameOption } from "./options";
 
 const modeAliases: Record<string, { mode: Mode; includeFails: boolean }> = {
     rl: { mode: Mode.OSU, includeFails: true },
@@ -153,28 +154,14 @@ async function getEmbeds(
     };
 }
 
-export const data = {
+export const data: CommandData = {
     name: "recentlist",
     description: "Display a list of recent play(s) of a user.",
     hasPrefixVariant: true,
     application: {
         options: [
-            {
-                type: ApplicationCommandOptionType.STRING,
-                name: "username",
-                description: "Specify an osu! username",
-            },
-            {
-                type: ApplicationCommandOptionType.STRING,
-                name: "mode",
-                description: "Specify an osu! mode",
-                choices: [
-                    { name: "osu", value: "osu" },
-                    { name: "mania", value: "mania" },
-                    { name: "taiko", value: "taiko" },
-                    { name: "ctb", value: "fruits" },
-                ],
-            },
+            usernameOption(),
+            modeOption(),
             {
                 type: ApplicationCommandOptionType.INTEGER,
                 name: "index",
@@ -189,55 +176,19 @@ export const data = {
                 min_value: 1,
                 max_value: Math.ceil(USER_SCORE_FETCH_LIMIT / ITEMS_PER_PAGE),
             },
-            {
-                type: ApplicationCommandOptionType.STRING,
-                name: "mods",
-                description: "Specify a mods combination.",
-                min_length: 2,
-            },
-            {
-                type: ApplicationCommandOptionType.STRING,
-                name: "mods_action",
-                description: "Specify the action to perform on the mods combination.",
-                choices: [
-                    {
-                        name: "Include",
-                        value: "include",
-                    },
-                    {
-                        name: "Force Include",
-                        value: "force_include",
-                    },
-                    {
-                        name: "Exclude",
-                        value: "exclude",
-                    },
-                ],
-            },
-            {
-                type: ApplicationCommandOptionType.STRING,
-                name: "grade",
-                description: "Consider scores only with this grade.",
-                choices: ["SS", "S", "A", "B", "C", "D"].map((grade) => ({ name: grade, value: grade })),
-            },
-            {
-                type: ApplicationCommandOptionType.STRING,
-                name: "filter",
-                description: "Filter plays by beatmap title.",
-            },
+            modsOption(),
+            modsActionOption(),
+            gradeOption(),
+            filterOption(),
             {
                 type: ApplicationCommandOptionType.BOOLEAN,
                 name: "passes",
                 description: "Whether or not only passes should be considered.",
             },
-            {
-                type: ApplicationCommandOptionType.USER,
-                name: "discord",
-                description: "Specify a linked Discord user",
-            },
+            discordOption(),
         ],
     },
     message: {
         aliases: Object.keys(modeAliases),
     },
-} satisfies CommandData;
+};
