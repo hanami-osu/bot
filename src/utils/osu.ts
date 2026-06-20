@@ -1,7 +1,7 @@
 import { bulkInsertData, getEntry, insertData } from "@utils/database";
 import { Mode } from "@type/osu";
 import { Tables } from "@type/database";
-import { Beatmap, BeatmapAttributesBuilder, Performance } from "rosu-pp-js";
+import { Beatmap, BeatmapAttributesBuilder, Performance, type BeatmapAttributes, type PerformanceAttributes } from "rosu-pp-js";
 import { ChannelType } from "lilybird";
 import https from "https";
 import crypto from "crypto";
@@ -10,6 +10,13 @@ import type { Message } from "@lilybird/transformers";
 import type { Mod } from "@type/mods";
 import type { PerformanceInfo, Score, LeaderboardScore, GameMode, Rank, ScoreStatistics, Beatmap as BeatmapWeb, LeaderboardScoresRaw } from "@type/osu";
 import type { Client, Embed } from "lilybird";
+
+const rulesetIds: Record<Mode, number> = {
+    [Mode.OSU]: 0,
+    [Mode.TAIKO]: 1,
+    [Mode.FRUITS]: 2,
+    [Mode.MANIA]: 3,
+};
 
 export async function getBeatmapTopScores({ beatmapId, isGlobal, mode, mods }: { beatmapId: number; isGlobal: boolean; mode: GameMode; mods: Array<string> | undefined }): Promise<Array<LeaderboardScore>> {
     const url = new URL(`https://osu.ppy.sh/beatmaps/${beatmapId}/scores`);
@@ -49,9 +56,15 @@ function isNewMods(mods: Array<Mod> | Array<string>): mods is Array<Mod> {
     return Array.isArray(mods) && mods.every((mod) => typeof mod === "object" && "acronym" in mod);
 }
 
+function getRulesetId(mode: GameMode | Mode | undefined): number | undefined {
+    if (!mode) return undefined;
+    return rulesetIds[mode as Mode];
+}
+
 export async function getPerformanceResults({
     play,
     setId,
+    mode,
     beatmapId,
     maxCombo,
     accuracy,
@@ -65,6 +78,7 @@ export async function getPerformanceResults({
 }: {
     play?: Score | LeaderboardScore;
     setId?: number;
+    mode?: GameMode | Mode;
     beatmapId: number;
     maxCombo?: number;
     accuracy?: number;
@@ -91,10 +105,13 @@ export async function getPerformanceResults({
         isLazer = false;
     }
 
-    let rulesetId: number;
-    if (typeof play !== "undefined" && "mode_int" in play) rulesetId = play.mode_int;
-    else if (typeof play !== "undefined" && "mode" in play) rulesetId = play.ruleset_id;
-    else rulesetId = setId!;
+    let rulesetId: number | undefined;
+    if (typeof play !== "undefined" && typeof play.mode_int === "number") rulesetId = play.mode_int;
+    else if (typeof play !== "undefined" && typeof play.ruleset_id === "number") rulesetId = play.ruleset_id;
+    else if (typeof play !== "undefined") rulesetId = getRulesetId(play.mode as GameMode | undefined);
+    rulesetId ??= getRulesetId(mode);
+    rulesetId ??= setId;
+    if (typeof rulesetId === "undefined") return null;
 
     checksum ??= play?.beatmap?.checksum;
 
@@ -116,7 +133,13 @@ export async function getPerformanceResults({
         }
     }
 
-    mapData ??= (await downloadBeatmap(beatmapId)).contents;
+    if (!mapData) {
+        try {
+            mapData = (await downloadBeatmap(beatmapId)).contents;
+        } catch {
+            return null;
+        }
+    }
     if (!mapData) return null;
 
     let modsStringArray: Array<string> = [];
@@ -145,26 +168,37 @@ export async function getPerformanceResults({
         modsStringArray = mods as Array<string>;
     }
 
-    const beatmap = new Beatmap(mapData);
-    beatmap.convert(rulesetId);
+    let beatmap: Beatmap;
+    try {
+        beatmap = new Beatmap(mapData);
+        beatmap.convert(rulesetId);
+    } catch {
+        return null;
+    }
 
-    const difficultyAttrs = new BeatmapAttributesBuilder({
-        map: beatmap,
-        ar: mapSettings?.ar,
-        cs: mapSettings?.cs,
-        od: mapSettings?.od,
-        mods: rosuMods,
-        clockRate,
-    }).build();
+    let difficultyAttrs: BeatmapAttributes;
+    let perfect: PerformanceAttributes;
+    try {
+        difficultyAttrs = new BeatmapAttributesBuilder({
+            map: beatmap,
+            ar: mapSettings?.ar,
+            cs: mapSettings?.cs,
+            od: mapSettings?.od,
+            mods: rosuMods,
+            clockRate,
+        }).build();
 
-    const perfect = new Performance({
-        lazer: isLazer,
-        ar: mapSettings?.ar,
-        cs: mapSettings?.cs,
-        od: mapSettings?.od,
-        mods: rosuMods,
-        clockRate,
-    }).calculate(beatmap);
+        perfect = new Performance({
+            lazer: isLazer,
+            ar: mapSettings?.ar,
+            cs: mapSettings?.cs,
+            od: mapSettings?.od,
+            mods: rosuMods,
+            clockRate,
+        }).calculate(beatmap);
+    } catch {
+        return null;
+    }
 
     const {
         count_100: n100,
@@ -185,61 +219,67 @@ export async function getPerformanceResults({
         passedObjects = (hitValues.count_300 ?? 0) + (hitValues.count_100 ?? 0) + (hitValues.count_50 ?? 0) + (hitValues.count_miss ?? 0);
     }
 
-    const current = new Performance(
-        typeof accuracy === "undefined"
-            ? {
-                  lazer: isLazer,
-                  mods: rosuMods,
-                  n100,
-                  n300,
-                  n50,
-                  nGeki: nGeki ?? undefined,
-                  nKatu: nKatu ?? undefined,
-                  misses,
-                  largeTickHits,
-                  smallTickHits,
-                  sliderEndHits,
-                  combo: maxCombo ?? perfect.difficulty.maxCombo,
-                  passedObjects,
-                  clockRate,
-              }
-            : {
-                  lazer: isLazer,
-                  mods: rosuMods,
-                  accuracy,
-                  misses,
-                  largeTickHits,
-                  smallTickHits,
-                  sliderEndHits,
-                  combo: maxCombo ?? perfect.difficulty.maxCombo,
-                  passedObjects,
-                  clockRate,
-              },
-    ).calculate(perfect);
+    let current: PerformanceAttributes;
+    let fc: PerformanceAttributes;
+    try {
+        current = new Performance(
+            typeof accuracy === "undefined"
+                ? {
+                      lazer: isLazer,
+                      mods: rosuMods,
+                      n100,
+                      n300,
+                      n50,
+                      nGeki: nGeki ?? undefined,
+                      nKatu: nKatu ?? undefined,
+                      misses,
+                      largeTickHits,
+                      smallTickHits,
+                      sliderEndHits,
+                      combo: maxCombo ?? perfect.difficulty.maxCombo,
+                      passedObjects,
+                      clockRate,
+                  }
+                : {
+                      lazer: isLazer,
+                      mods: rosuMods,
+                      accuracy,
+                      misses,
+                      largeTickHits,
+                      smallTickHits,
+                      sliderEndHits,
+                      combo: maxCombo ?? perfect.difficulty.maxCombo,
+                      passedObjects,
+                      clockRate,
+                  },
+        ).calculate(perfect);
 
-    const fc = new Performance(
-        typeof accuracy === "undefined"
-            ? {
-                  lazer: isLazer,
-                  mods: rosuMods,
-                  n100,
-                  n50,
-                  nGeki: nGeki ?? undefined,
-                  nKatu: nKatu ?? undefined,
-                  misses: 0,
-                  accuracy,
-                  combo: perfect.difficulty.maxCombo,
-                  clockRate,
-              }
-            : {
-                  lazer: isLazer,
-                  mods: rosuMods,
-                  misses: 0,
-                  accuracy,
-                  combo: perfect.difficulty.maxCombo,
-                  clockRate,
-              },
-    ).calculate(perfect);
+        fc = new Performance(
+            typeof accuracy === "undefined"
+                ? {
+                      lazer: isLazer,
+                      mods: rosuMods,
+                      n100,
+                      n50,
+                      nGeki: nGeki ?? undefined,
+                      nKatu: nKatu ?? undefined,
+                      misses: 0,
+                      accuracy,
+                      combo: perfect.difficulty.maxCombo,
+                      clockRate,
+                  }
+                : {
+                      lazer: isLazer,
+                      mods: rosuMods,
+                      misses: 0,
+                      accuracy,
+                      combo: perfect.difficulty.maxCombo,
+                      clockRate,
+                  },
+        ).calculate(perfect);
+    } catch {
+        return null;
+    }
 
     return {
         mapValues: beatmap,

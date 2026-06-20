@@ -79,8 +79,8 @@ async function getSinglePlay({
     const embedType = authorDb?.embed_type ?? EmbedScoreType.Hanami;
 
     const play = await getFormattedScore({ scores: plays, index, mode });
-    const { mapValues, difficultyAttrs, current } = play.performance;
-    const bpm = difficultyAttrs.clockRate * mapValues.bpm;
+    const { performance } = play;
+    const bpm = performance ? performance.difficultyAttrs.clockRate * performance.mapValues.bpm : null;
 
     if (embedType === EmbedScoreType.Hanami) {
         const author = {
@@ -103,17 +103,19 @@ async function getSinglePlay({
 
         if (isMaximized) {
             fields[0].value += line3;
-            const beatmapInfoField = [
-                `**BPM:** \`${bpm.toFixed().toLocaleString()}\` ${SPACE} **Length:** \`${play.drainLength}\``,
-                `**AR:** \`${difficultyAttrs.ar.toFixed(1)}\` ${SPACE} **OD:** \`${difficultyAttrs.od.toFixed(1)}\` ${SPACE} **CS:** \`${difficultyAttrs.cs.toFixed(
-                    1,
-                )}\` ${SPACE} **HP:** \`${difficultyAttrs.hp.toFixed(1)}\``,
-            ];
-            fields.push({
-                name: "Beatmap Info:",
-                value: beatmapInfoField.join("\n"),
-                inline: false,
-            });
+            if (performance && bpm !== null) {
+                const beatmapInfoField = [
+                    `**BPM:** \`${bpm.toFixed().toLocaleString()}\` ${SPACE} **Length:** \`${play.drainLength}\``,
+                    `**AR:** \`${performance.difficultyAttrs.ar.toFixed(1)}\` ${SPACE} **OD:** \`${performance.difficultyAttrs.od.toFixed(1)}\` ${SPACE} **CS:** \`${performance.difficultyAttrs.cs.toFixed(
+                        1,
+                    )}\` ${SPACE} **HP:** \`${performance.difficultyAttrs.hp.toFixed(1)}\``,
+                ];
+                fields.push({
+                    name: "Beatmap Info:",
+                    value: beatmapInfoField.join("\n"),
+                    inline: false,
+                });
+            }
         }
 
         const image = isMaximized ? ({ url: play.coverLink } satisfies Embed.ImageStructure) : undefined;
@@ -128,13 +130,6 @@ async function getSinglePlay({
     }
 
     if (embedType === EmbedScoreType.Bathbot && isMaximized) {
-        const beatmapInfoField = [
-            `Length: \`${play.drainLength}\` ${SPACE} BPM: \`${bpm.toFixed().toLocaleString()}\` ${SPACE} Objects \`${mapValues.nObjects}\``,
-            `AR: \`${difficultyAttrs.ar.toFixed(1)}\` ${SPACE} OD: \`${difficultyAttrs.od.toFixed(1)}\` ${SPACE} CS: \`${difficultyAttrs.cs.toFixed(1)}\` ${SPACE} HP: \`${difficultyAttrs.hp.toFixed(
-                1,
-            )}\` Stars: ${play.stars}`,
-        ];
-
         const fields = [
             { name: "Grade", value: `${play.grade} ${play.percentagePassed !== null ? `@${play.percentagePassed}%` : ""} +${play.mods.join("")}`, inline: true },
             { name: "Score", value: play.score, inline: true },
@@ -144,13 +139,22 @@ async function getSinglePlay({
             { name: "Hits", value: `{${play.hitValues}}`, inline: true },
         ];
 
-        if (!play.isFc) {
+        if (!play.isFc && play.ifFcBathbot) {
             fields.push({ name: "If FC: PP", value: play.ifFcBathbot ?? "", inline: true });
             fields.push({ name: "Acc", value: `${play.fcAccuracy}%`, inline: true });
             fields.push({ name: "Hits", value: `{${play.fcHitValues}}`, inline: true });
         }
 
-        fields.push({ name: "Map Info", value: beatmapInfoField.join("\n"), inline: false });
+        if (performance && bpm !== null) {
+            const beatmapInfoField = [
+                `Length: \`${play.drainLength}\` ${SPACE} BPM: \`${bpm.toFixed().toLocaleString()}\` ${SPACE} Objects \`${performance.mapValues.nObjects}\``,
+                `AR: \`${performance.difficultyAttrs.ar.toFixed(1)}\` ${SPACE} OD: \`${performance.difficultyAttrs.od.toFixed(1)}\` ${SPACE} CS: \`${performance.difficultyAttrs.cs.toFixed(
+                    1,
+                )}\` ${SPACE} HP: \`${performance.difficultyAttrs.hp.toFixed(1)}\` Stars: ${play.stars}`,
+            ];
+            fields.push({ name: "Map Info", value: beatmapInfoField.join("\n"), inline: false });
+        }
+
         return [
             {
                 type: EmbedType.Rich,
@@ -189,7 +193,7 @@ async function getSinglePlay({
 
     // it's owo, so return owo embed.
     const desc = [
-        `▸ ${play.grade} ${play.percentagePassed !== null ? `(${play.percentagePassed}%)` : ""} ▸ **${current.pp.toFixed(2).toLocaleString()}PP** ${play.ifFcOwo} ▸ ${play.accuracy}%`,
+        `▸ ${play.grade} ${play.percentagePassed !== null ? `(${play.percentagePassed}%)` : ""} ▸ ${play.ppFormatted} ${play.ifFcOwo ?? ""} ▸ ${play.accuracy}%`,
         `▸ ${play.score} ▸ ${play.comboValues} ▸ [${play.hitValues}]`,
     ];
 
@@ -284,7 +288,7 @@ async function getMultiplePlays({
     let description = "";
     for (const playResult of playResults) {
         const line1 = `**${playResult.position}) [${playResult.songName} [${playResult.difficultyName}]](${playResult.mapLink}) +${playResult.mods.join("")}** [${playResult.stars}]\n`;
-        const line2 = `**▸ ${playResult.grade} ▸ ${playResult.performance.current.pp.toFixed(2).toLocaleString()}PP**${playResult.ifFcOwo ? ` _${playResult.ifFcOwo}_` : " "} ▸ ${playResult.accuracy}%\n`;
+        const line2 = `**▸ ${playResult.grade} ▸ ${playResult.ppFormatted}**${playResult.ifFcOwo ? ` _${playResult.ifFcOwo}_` : " "} ▸ ${playResult.accuracy}%\n`;
         const line3 = `▸ ${playResult.score} x${playResult.comboValues} ▸ [${playResult.hitValues}]\n`;
         const line4 = `▸ Score set ${playResult.playSubmitted}`;
 

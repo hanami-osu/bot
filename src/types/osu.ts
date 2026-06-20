@@ -82,7 +82,7 @@ export interface ScoresInfo {
     ifFcBathbot: string | null;
     ifFcOwo: string | null;
     comboValues: string;
-    performance: PerformanceInfo;
+    performance: PerformanceInfo | null;
     user: string | undefined;
     userId: number | undefined;
 }

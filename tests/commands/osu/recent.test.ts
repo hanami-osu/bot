@@ -49,6 +49,8 @@ mock.module("@utils/score-api", () => ({
 
 mock.module("@builders", () => ({
     playBuilder: mock(() => Promise.resolve([{ title: "recent play", author: { name: "mrekk" } }])),
+    simpleErrorEmbed: mock((description: string, title = "Uh oh! :x:") => ({ title, description })),
+    userNotFoundEmbed: mock((user: string) => ({ title: "Uh oh! :x:", description: `It seems like \`${user}\` doesn't exist :(` })),
     simulateBuilder: mock(() => Promise.resolve([{ title: "simulated" }])),
     whatIfBuilder: mock(({ user, projection, projectedRank }: any) => [
         {

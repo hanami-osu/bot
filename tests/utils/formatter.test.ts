@@ -160,6 +160,29 @@ SliderTickRate:1
 256,192,3000,1,0,0:0:0:0:
 `;
 
+        const mockManiaMapData = `osu file format v14
+[General]
+AudioFilename: audio.mp3
+Mode: 3
+[Metadata]
+Title:Mania Title
+Artist:Mania Artist
+Creator:Mania Creator
+Version:4K
+[Difficulty]
+HPDrainRate:5
+CircleSize:4
+OverallDifficulty:5
+ApproachRate:5
+SliderMultiplier:1.4
+SliderTickRate:1
+[HitObjects]
+64,192,1000,1,0,0:0:0:0:
+192,192,1500,1,0,0:0:0:0:
+320,192,2000,1,0,0:0:0:0:
+448,192,2500,1,0,0:0:0:0:
+`;
+
         test("formats score data correctly", async () => {
             // Need to import the module at the top, but we can do it here for the test
             const { getFormattedScore } = await import("../../src/utils/formatter");
@@ -217,6 +240,105 @@ SliderTickRate:1
             expect(result.coverLink).toBe("https://assets.ppy.sh/beatmaps/1234/covers/cover.jpg");
             expect(result.isFc).toBe(true);
             expect(result.drainLength).toBe("2:00");
+        });
+
+        test("uses the score ruleset for mania score performance", async () => {
+            const { getFormattedScore } = await import("../../src/utils/formatter");
+            const { Mode } = await import("../../src/types/osu");
+
+            const mockScore: any = {
+                id: 987654321,
+                score: 1000000,
+                created_at: "2023-01-01T00:00:00Z",
+                mode: "mania",
+                statistics: {
+                    perfect: 4,
+                    great: 4,
+                    good: 0,
+                    ok: 0,
+                    meh: 0,
+                    miss: 0,
+                },
+                max_combo: 4,
+                mods: [],
+                passed: true,
+                rank: "SS",
+                accuracy: 1,
+                beatmap: {
+                    id: 112233,
+                    version: "4K",
+                    total_length: 120,
+                    bpm: 120,
+                    difficulty_rating: 0.25,
+                },
+                beatmapset: {
+                    id: 4321,
+                    artist: "Mania Artist",
+                    title: "Mania Title",
+                    creator: "Mania Creator",
+                    status: "ranked",
+                },
+            };
+
+            const result = await getFormattedScore({
+                scores: [mockScore],
+                index: 0,
+                mode: Mode.OSU,
+                mapData: mockManiaMapData,
+            });
+
+            expect(result.performance).not.toBeNull();
+            expect(result.rulesetEmote).toBe("<:mania:1075928451602718771>");
+            expect(result.ppFormatted).not.toBe("PP unavailable");
+            expect(result.hitValues).toBe("4/0/0/0/0");
+        });
+
+        test("uses a safe pp fallback when performance cannot be calculated", async () => {
+            const { getFormattedScore } = await import("../../src/utils/formatter");
+            const { Mode } = await import("../../src/types/osu");
+
+            const mockScore: any = {
+                id: 987654322,
+                score: 1000000,
+                created_at: "2023-01-01T00:00:00Z",
+                statistics: {
+                    count_300: 4,
+                    count_100: 0,
+                    count_50: 0,
+                    count_miss: 0,
+                },
+                max_combo: 4,
+                mods: [],
+                passed: true,
+                rank: "SS",
+                accuracy: 1,
+                beatmap: {
+                    id: 112234,
+                    version: "4K",
+                    total_length: 120,
+                    bpm: 120,
+                    difficulty_rating: 0.25,
+                },
+                beatmapset: {
+                    id: 4322,
+                    artist: "Mania Artist",
+                    title: "Mania Title",
+                    creator: "Mania Creator",
+                    status: "ranked",
+                },
+            };
+
+            const result = await getFormattedScore({
+                scores: [mockScore],
+                index: 0,
+                mode: Mode.OSU,
+                mapData: mockManiaMapData,
+            });
+
+            expect(result.performance).toBeNull();
+            expect(result.ppFormatted).toBe("PP unavailable");
+            expect(result.stars).toBe("0.25★");
+            expect(result.comboValues).toBe("**4**/4x");
         });
     });
 });

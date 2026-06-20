@@ -39,11 +39,13 @@ mock.module("@utils/database", () => ({
 
 mock.module("@builders", () => ({
     playBuilder: playBuilderMock,
+    simpleErrorEmbed: mock((description: string, title = "Uh oh! :x:") => ({ title, description })),
     simulateBuilder: simulateBuilderMock,
     whatIfBuilder: whatIfBuilderMock,
 }));
 mock.module("../../../src/embed-builders/index.ts", () => ({
     playBuilder: playBuilderMock,
+    simpleErrorEmbed: mock((description: string, title = "Uh oh! :x:") => ({ title, description })),
     simulateBuilder: simulateBuilderMock,
     whatIfBuilder: whatIfBuilderMock,
 }));

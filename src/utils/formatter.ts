@@ -4,6 +4,35 @@ import { insertData } from "@utils/database";
 import { Tables } from "@type/database";
 import type { Mode, UserScore, Beatmap, LeaderboardScore, ScoresInfo, Score, UserBestScore, UserBestScoreV2, UserScoreV2, ScoreV2, ProfileInfo, ISOTimestamp, ScoreStatistics, UserExtended } from "@type/osu";
 
+const rulesetModes: Record<number, Mode> = {
+    0: "osu" as Mode,
+    1: "taiko" as Mode,
+    2: "fruits" as Mode,
+    3: "mania" as Mode,
+};
+
+function getScoreMode(play: UserBestScore | UserBestScoreV2 | UserScore | UserScoreV2 | Score | ScoreV2 | LeaderboardScore, fallback: Mode): Mode {
+    if (typeof play.mode_int === "number" && rulesetModes[play.mode_int]) return rulesetModes[play.mode_int];
+    if (typeof play.ruleset_id === "number" && rulesetModes[play.ruleset_id]) return rulesetModes[play.ruleset_id];
+    if (play.mode === "osu" || play.mode === "taiko" || play.mode === "fruits" || play.mode === "mania") return play.mode as Mode;
+    return fallback;
+}
+
+function getScoreMods(mods: UserBestScore["mods"]): Array<string> {
+    if (!Array.isArray(mods) || mods.length === 0) return ["NM"];
+    return mods.map((mod) => (typeof mod === "string" ? mod : mod.acronym));
+}
+
+function getBeatmapObjectCount(beatmap: { count_circles?: number; count_sliders?: number; count_spinners?: number }, fallback: number): number {
+    const objects = (beatmap.count_circles ?? 0) + (beatmap.count_sliders ?? 0) + (beatmap.count_spinners ?? 0);
+    return objects > 0 ? objects : Math.max(fallback, 1);
+}
+
+function getFallbackStars(beatmap: { difficulty_rating?: number }): string {
+    const stars = beatmap.difficulty_rating;
+    return typeof stars === "number" ? `${stars.toFixed(2).toLocaleString()}★` : "?★";
+}
+
 export async function getFormattedScore({
     scores,
     beatmap: map_,
@@ -18,6 +47,7 @@ export async function getFormattedScore({
     mapData?: string;
 }): Promise<ScoresInfo> {
     const play = scores[index];
+    const scoreMode = getScoreMode(play, mode);
 
     let beatmap;
     let beatmapset;
@@ -82,6 +112,7 @@ export async function getFormattedScore({
         hitValues: scoreStatistics,
         beatmapId: beatmap.id,
         play: play as any,
+        mode: scoreMode,
         maxCombo: play.max_combo,
         passed: play.passed,
         mods: play.mods as any,
@@ -89,12 +120,7 @@ export async function getFormattedScore({
         checksum: beatmap.checksum,
     });
 
-    // throw an error if performance doesn't exist.
-    // this can only mean one thing, and it's because the map couldn't be downloaded for some reason.
-    if (!performance) throw new Error("Scores.ts panicked!", { cause: "`performanece` doesn't exist, presumably because the map couldn't be downloaded." });
-    const { fc, current, difficultyAttrs, perfect, mapValues } = performance;
-
-    if (play.passed && "score" in play) {
+    if (performance && play.passed && "score" in play) {
         await insertData(
             {
                 table: Tables.PP,
@@ -102,15 +128,15 @@ export async function getFormattedScore({
                 data: [
                     {
                         key: "pp",
-                        value: current.pp,
+                        value: performance.current.pp,
                     },
                     {
                         key: "pp_fc",
-                        value: fc.pp,
+                        value: performance.fc.pp,
                     },
                     {
                         key: "pp_perfect",
-                        value: perfect.pp,
+                        value: performance.perfect.pp,
                     },
                 ],
             },
@@ -118,10 +144,10 @@ export async function getFormattedScore({
         );
     }
 
-    const hitValues = hitValueCalculator(mode, scoreStatistics);
+    const hitValues = hitValueCalculator(scoreMode, scoreStatistics);
 
     const playMaxCombo = play.max_combo;
-    const { maxCombo } = current.difficulty;
+    const maxCombo = performance?.current.difficulty.maxCombo ?? beatmap.max_combo ?? playMaxCombo;
     const isFc = scoreStatistics.count_miss === 0 && playMaxCombo + 7 >= maxCombo;
 
     // set value to null because we won't always need it.
@@ -139,31 +165,32 @@ export async function getFormattedScore({
         count_katu?: number;
     } = null;
 
-    if (!isFc) {
+    if (!isFc && performance) {
         fcStatistics = {
-            count_300: fc.state?.n300,
-            count_100: fc.state?.n100,
-            count_50: fc.state?.n50,
-            count_miss: fc.state?.misses,
-            count_geki: fc.state?.nGeki,
-            count_katu: fc.state?.nKatu,
+            count_300: performance.fc.state?.n300,
+            count_100: performance.fc.state?.n100,
+            count_50: performance.fc.state?.n50,
+            count_miss: performance.fc.state?.misses,
+            count_geki: performance.fc.state?.nGeki,
+            count_katu: performance.fc.state?.nKatu,
         };
 
-        fcAccuracy = accuracyCalculator(mode, fcStatistics);
-        ifFcHanami = `FC: **${fc.pp.toFixed(2).toLocaleString()}pp** for **${fcAccuracy.toFixed(2)}%**`;
-        ifFcBathbot = `**${fc.pp.toFixed(2).toLocaleString()}**/${perfect.pp.toFixed(2).toLocaleString()}PP`;
-        ifFcOwo = `(${fc.pp.toFixed(2).toLocaleString()}PP for ${fcAccuracy.toFixed(2)}% FC)`;
+        fcAccuracy = accuracyCalculator(scoreMode, fcStatistics);
+        ifFcHanami = `FC: **${performance.fc.pp.toFixed(2).toLocaleString()}pp** for **${fcAccuracy.toFixed(2)}%**`;
+        ifFcBathbot = `**${performance.fc.pp.toFixed(2).toLocaleString()}**/${performance.perfect.pp.toFixed(2).toLocaleString()}PP`;
+        ifFcOwo = `(${performance.fc.pp.toFixed(2).toLocaleString()}PP for ${fcAccuracy.toFixed(2)}% FC)`;
     }
 
-    const fcHitValues = hitValueCalculator(mode, fcStatistics);
+    const fcHitValues = hitValueCalculator(scoreMode, fcStatistics);
 
     // get beatmap's drain length
-    const drainLength = formatDuration(beatmap.total_length / difficultyAttrs.clockRate);
+    const drainLength = formatDuration(beatmap.total_length / (performance?.difficultyAttrs.clockRate ?? 1));
 
-    const objects = mapValues.nObjects;
+    const objects = performance?.mapValues.nObjects ?? getBeatmapObjectCount(beatmap, objectsHit);
 
     const percentageNum = (objectsHit / objects) * 100;
     const beatmapStatus = beatmapset.status;
+    const pp = performance?.current.pp ?? play.pp ?? 0;
 
     return {
         user,
@@ -186,14 +213,14 @@ export async function getFormattedScore({
         fcHitValues,
         fcAccuracy: fcAccuracy?.toFixed(2),
         isFc,
-        mods: performance.mods,
+        mods: performance?.mods ?? getScoreMods(play.mods),
         mapAuthor: beatmapset.creator,
         mapStatus: beatmapStatus.charAt(0).toUpperCase() + beatmapStatus.slice(1),
         drainLength,
-        stars: `${current.difficulty.stars.toFixed(2).toLocaleString()}★`,
-        rulesetEmote: rulesets[mode],
-        pp: current.pp,
-        ppFormatted: `**${current.pp.toFixed(2).toLocaleString()}**/${perfect.pp.toFixed(2).toLocaleString()}pp`,
+        stars: performance ? `${performance.current.difficulty.stars.toFixed(2).toLocaleString()}★` : getFallbackStars(beatmap),
+        rulesetEmote: rulesets[scoreMode],
+        pp,
+        ppFormatted: performance ? `**${performance.current.pp.toFixed(2).toLocaleString()}**/${performance.perfect.pp.toFixed(2).toLocaleString()}pp` : "PP unavailable",
         playSubmitted: `<t:${new Date(createdAt).getTime() / 1000}:R>`,
         ifFcHanami,
         ifFcBathbot,
