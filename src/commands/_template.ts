@@ -9,7 +9,7 @@ interface TemplateOptions {
     ephemeral: boolean;
 }
 
-function getOptions(ctx: CommandContext): TemplateOptions {
+function getDiscordOptions(ctx: CommandContext): TemplateOptions {
     if (ctx.isInteraction) {
         return {
             input: ctx.interaction?.data.getString("input")?.trim() || undefined,
@@ -24,14 +24,14 @@ function getOptions(ctx: CommandContext): TemplateOptions {
 }
 
 export async function run(ctx: CommandContext): Promise<void> {
-    const options = getOptions(ctx);
+    const discordOptions = getDiscordOptions(ctx);
 
-    await ctx.defer(options.ephemeral);
+    await ctx.defer(discordOptions.ephemeral);
 
     // Use this for guild-only commands.
     // if (!(await ctx.ensureGuild("This command can only be used in a server."))) return;
 
-    if (!options.input) {
+    if (!discordOptions.input) {
         await ctx.editReply({
             embeds: [simpleErrorEmbed("Missing required input.")],
         });
@@ -39,11 +39,11 @@ export async function run(ctx: CommandContext): Promise<void> {
     }
 
     await ctx.editReply({
-        content: `Received: \`${options.input}\``,
+        content: `Received: \`${discordOptions.input}\``,
     });
 }
 
-export const data = {
+export const data: CommandData = {
     name: "template",
     description: "Short command description.",
     hasPrefixVariant: true,
@@ -80,4 +80,4 @@ export const data = {
         contexts: [CommandInteractionContext.Guild, CommandInteractionContext.BotDM, CommandInteractionContext.PrivateChannel],
         unavailableMessage: "This command is not available here.",
     },
-} satisfies CommandData;
+};
