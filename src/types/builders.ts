@@ -1,6 +1,6 @@
 import type { DifficultyOptions } from "./command-args";
 import type { User } from "./database";
-import type { Beatmap, LeaderboardScore, Mode, Score, UserBestScoreV2, UserScoreV2, ScoreV2, UserBestScore, UserScore } from "./osu";
+import type { Beatmap, LeaderboardScore, Mode, Score, UserBestScoreV2, UserScoreV2, ScoreV2, UserBestScore, UserScore, ProfileInfo, ScoresInfo } from "./osu";
 import type { UserExtended } from "./osu";
 import type { Mod } from "./mods";
 import type { WhatIfProjection } from "@utils/whatif";
@@ -60,7 +60,7 @@ export interface BeatmapBuilderOptions extends BuilderOptions {
     mods: Array<Mod> | null;
 }
 
-export interface PlaysBuilderOptions extends BuilderOptions {
+export interface PlayPaginationOptions extends BuilderOptions {
     plays: Array<UserBestScore | UserScore | UserBestScoreV2 | UserScoreV2>;
     type: EmbedBuilderType.PLAYS;
     user: UserExtended;
@@ -73,6 +73,17 @@ export interface PlaysBuilderOptions extends BuilderOptions {
     isPage?: boolean;
     mods?: ModStructure;
     titleFilter?: string;
+}
+
+export interface PlaysBuilderOptions {
+    profile: ProfileInfo;
+    plays: Array<ScoresInfo>;
+    mode: Mode;
+    authorDb: User | null;
+    totalPlays: number;
+    index?: number;
+    isMultiple?: boolean;
+    page?: number;
 }
 
 export interface ProfileBuilderOptions extends BuilderOptions {
@@ -109,7 +120,7 @@ export type EmbedBuilderOptions =
     | CompareBuilderOptions
     | LeaderboardBuilderOptions
     | BeatmapBuilderOptions
-    | PlaysBuilderOptions
+    | PlayPaginationOptions
     | ProfileBuilderOptions
     | AvatarBuilderOptions
     | BackgroundBuilderOptions

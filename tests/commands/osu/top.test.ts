@@ -1,6 +1,8 @@
 import { describe, expect, mock, test } from "bun:test";
 import { CommandContext } from "../../../src/utils/command-context";
 import { Tables } from "../../../src/types/database";
+import { EmbedBuilderType } from "../../../src/types/builders";
+import { Mode } from "../../../src/types/osu";
 import type { Client } from "lilybird";
 import type { Message } from "@lilybird/transformers";
 import type { CommandData } from "../../../src/types/commands";
@@ -9,8 +11,6 @@ interface ReplyPayload {
     embeds: Array<{ title?: string; description?: string }>;
     components?: unknown;
 }
-
-const playBuilderMock = mock(() => Promise.resolve([{ title: "top play", author: { name: "mrekk" } }]));
 
 function parseMockBigInt(value: string | number | bigint, fieldName = "value"): bigint {
     if (typeof value === "bigint") return value;
@@ -36,30 +36,42 @@ mock.module("osu-api-extended", () => ({
     enums: {
         ModsEnum: { HD: 8, HR: 16, DT: 64, NC: 512 },
     },
-    v2: {
-        users: {
-            details: mock(({ user }: { user: string }) =>
-                user === "missing" ? Promise.resolve({ error: { message: "not found" } }) : Promise.resolve({ id: 1, username: user, statistics: {}, country: {}, cover: {} }),
-            ),
-        },
-    },
 }));
 
 mock.module("@utils/score-api", () => ({
     USER_SCORE_FETCH_LIMIT: 200,
-    getUserScores: mock(() => Promise.resolve([{ id: 1, mods: [], statistics: {}, beatmap: { id: 1 }, beatmapset: {}, passed: true }])),
 }));
 
-mock.module("@builders", () => ({
-    playBuilder: playBuilderMock,
-    simulateBuilder: mock(() => Promise.resolve([{ title: "simulated" }])),
-    whatIfBuilder: mock(({ user, projection, projectedRank }: any) => [
-        {
-            author: { name: user.username },
-            description: `${projection.projectedTotalPp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}pp #${projectedRank}`,
-            fields: [{ name: "Projected", value: `+\`${projection.ppGain.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}pp\`` }],
-        },
-    ]),
+const getFetchedPlayReplyMock = mock(({ user, titleFilter }: { user: { banchoId: string }; titleFilter?: string }) =>
+    Promise.resolve(
+        user.banchoId === "missing"
+            ? {
+                  reply: {
+                      embeds: [{ title: "Uh oh! :x:", description: "It seems like `missing` doesn't exist :(" }],
+                  },
+              }
+            : {
+                  reply: {
+                      embeds: [{ title: "top play", author: { name: "mrekk" } }],
+                      components: [],
+                  },
+                  embedOptions: {
+                      type: EmbedBuilderType.PLAYS,
+                      initiatorId: "123",
+                      plays: [],
+                      user: { id: 1, username: user.banchoId },
+                      mode: Mode.OSU,
+                      authorDb: null,
+                      page: 0,
+                      isPage: true,
+                      titleFilter,
+                  },
+              },
+    ),
+);
+
+mock.module("@services/play-service", () => ({
+    getFetchedPlayReply: getFetchedPlayReplyMock,
 }));
 
 const { run, data: topData } = await import("../../../src/commands/osu/top");
@@ -106,10 +118,12 @@ describe("top command", () => {
 
         const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk"], "!", "top");
         ctx.defer = mock(() => Promise.resolve());
+        getFetchedPlayReplyMock.mockClear();
 
         await run(ctx);
 
         expect(ctx.defer).toHaveBeenCalled();
+        expect(getFetchedPlayReplyMock).toHaveBeenCalled();
         expect(reply).toHaveBeenCalled();
         const replyCall = reply.mock.calls[0]?.[0];
         if (!replyCall) throw new Error("Expected reply payload");
@@ -127,16 +141,16 @@ describe("top command", () => {
             reply,
         } as unknown as Message;
 
-        playBuilderMock.mockClear();
+        getFetchedPlayReplyMock.mockClear();
 
         const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk", 'filter="Yami', "no", 'Uta"'], "!", "top");
         ctx.defer = mock(() => Promise.resolve());
 
         await run(ctx);
 
-        expect(playBuilderMock).toHaveBeenCalled();
-        const [builderOptions] = playBuilderMock.mock.calls[0] as Array<{ titleFilter?: string }>;
-        expect(builderOptions.titleFilter).toBe("Yami no Uta");
+        expect(getFetchedPlayReplyMock).toHaveBeenCalled();
+        const [serviceOptions] = getFetchedPlayReplyMock.mock.calls[0] as Array<{ titleFilter?: string }>;
+        expect(serviceOptions.titleFilter).toBe("Yami no Uta");
     });
 
     test("rejects invalid prefix page flags before calling the builder", async () => {
@@ -149,14 +163,14 @@ describe("top command", () => {
             reply,
         } as unknown as Message;
 
-        playBuilderMock.mockClear();
+        getFetchedPlayReplyMock.mockClear();
 
         const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk", "p=abc"], "!", "top");
         ctx.defer = mock(() => Promise.resolve());
 
         await run(ctx);
 
-        expect(playBuilderMock).not.toHaveBeenCalled();
+        expect(getFetchedPlayReplyMock).not.toHaveBeenCalled();
         expect(reply).toHaveBeenCalledWith("page must be a whole number.");
     });
 

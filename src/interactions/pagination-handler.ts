@@ -1,9 +1,10 @@
-import { compareBuilder, leaderboardBuilder, playBuilder } from "@builders";
+import { compareBuilder, leaderboardBuilder } from "@builders";
+import { buildPlayPaginationMessageOptions } from "@services/play-service";
 import { ComponentType, TextInputStyle } from "lilybird";
 import type { Message } from "lilybird";
 import type { Interaction, InteractionReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
-import type { CompareBuilderOptions, EmbedBuilderOptions, LeaderboardBuilderOptions, PlaysBuilderOptions } from "@type/builders";
+import type { CompareBuilderOptions, EmbedBuilderOptions, LeaderboardBuilderOptions, PlayPaginationOptions } from "@type/builders";
 import { createPaginationActionRow, PAGINATION_JUMP_INPUT_ID, PaginationManager, PaginationType } from "@utils/pagination";
 import { ButtonStateCache } from "../state/button-state-cache";
 
@@ -172,8 +173,7 @@ async function buildPaginationMessageOptions(updatedOptions: EmbedBuilderOptions
             options.embeds = await leaderboardBuilder(updatedOptions as LeaderboardBuilderOptions);
             break;
         case EmbedBuilderType.PLAYS:
-            options.embeds = await playBuilder(updatedOptions as PlaysBuilderOptions);
-            break;
+            return await buildPlayPaginationMessageOptions(updatedOptions as PlayPaginationOptions);
         case EmbedBuilderType.COMPARE:
             options.embeds = await compareBuilder(updatedOptions as CompareBuilderOptions);
             break;

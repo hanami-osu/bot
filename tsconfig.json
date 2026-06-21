@@ -21,6 +21,7 @@
         "paths": {
             "@type/*": ["types/*"],
             "@utils/*": ["utils/*"],
+            "@services/*": ["services/*"],
             "@listeners/*": ["listeners/*"],
             "@builders": ["embed-builders/index.ts"]
         },

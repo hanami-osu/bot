@@ -1,16 +1,10 @@
-import { playBuilder, simpleErrorEmbed, userNotFoundEmbed } from "@builders";
-import { MessageReplyOptions } from "@lilybird/transformers";
-import { EmbedBuilderType } from "@type/builders";
-import { SuccessUser, UserType } from "@type/command-args";
+import { UserType } from "@type/command-args";
 import { CommandData } from "@type/commands";
 import { Mode, PlayType } from "@type/osu";
+import { getFetchedPlayReply } from "@services/play-service";
 import { parseCommandArgs } from "@utils/args";
-import { createPaginationActionRow } from "@utils/pagination";
-import { getUserScores, USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
-import { v2 } from "osu-api-extended";
-import { safeParse } from "@utils/safe-parse";
+import { USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
 import { ApplicationCommandOptionType } from "lilybird";
-import type { PlaysBuilderOptions } from "@type/builders";
 import { discordOption, filterOption, gradeOption, modeOption, modsActionOption, modsOption, usernameOption } from "./options";
 
 const modeAliases: Record<string, { mode: Mode; includeFails: boolean }> = {
@@ -62,63 +56,22 @@ export async function run(ctx: CommandContext) {
     }
 
     const titleFilter = flags.filter?.trim() || undefined;
-    const { reply, embedOptions } = await getEmbeds(user, ctx.user.id, index, includeFails, mods, titleFilter);
+    const { reply, embedOptions } = await getFetchedPlayReply({
+        user,
+        authorId: ctx.user.id,
+        playType: PlayType.RECENT,
+        index,
+        isPage: false,
+        includeFails,
+        mods,
+        titleFilter,
+        emptyMessage: (username) => `It seems like \`${username}\` hasn't set any recent plays! :(`,
+    });
     if (embedOptions) {
         await ctx.sendWithPagination(reply, embedOptions);
     } else {
         await ctx.editReply(reply);
     }
-}
-
-async function getEmbeds(
-    user: SuccessUser,
-    authorId: string,
-    index: number,
-    includeFails: boolean,
-    mods: any,
-    titleFilter: string | undefined,
-): Promise<{ reply: MessageReplyOptions; embedOptions?: PlaysBuilderOptions }> {
-    const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
-    if (!osuUserRequest.success) {
-        return {
-            reply: {
-                embeds: [userNotFoundEmbed(user.banchoId)],
-            },
-        };
-    }
-    const osuUser = osuUserRequest.data;
-
-    const plays = await getUserScores(osuUser.id, PlayType.RECENT, { query: { mode: user.mode, limit: USER_SCORE_FETCH_LIMIT, include_fails: includeFails } }, user.authorDb);
-
-    if (plays.length === 0) {
-        return {
-            reply: {
-                embeds: [simpleErrorEmbed(`It seems like \`${osuUser.username}\` hasn't set any recent plays! :(`)],
-            },
-        };
-    }
-
-    const embedOptions: PlaysBuilderOptions = {
-        type: EmbedBuilderType.PLAYS,
-        initiatorId: authorId,
-        user: osuUser,
-        mode: user.mode,
-        authorDb: user.authorDb,
-        plays,
-        index,
-        isPage: false,
-        mods,
-        titleFilter,
-    };
-
-    const embeds = await playBuilder(embedOptions);
-    return {
-        reply: {
-            embeds,
-            components: createPaginationActionRow(embedOptions),
-        },
-        embedOptions,
-    };
 }
 
 export const data: CommandData = {

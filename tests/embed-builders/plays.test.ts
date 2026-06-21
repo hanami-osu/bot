@@ -1,91 +1,125 @@
-import { describe, expect, mock, test } from "bun:test";
-import { EmbedBuilderType } from "../../src/types/builders";
+import { describe, expect, test } from "bun:test";
 import { Mode } from "../../src/types/osu";
-
-const saveScoreDatasMock = mock(() => Promise.resolve());
-
-mock.module("@utils/osu", () => ({
-    saveScoreDatas: saveScoreDatasMock,
-}));
-
-mock.module("@utils/formatter", () => ({
-    getFormattedProfile: mock(() => ({
-        username: "yorunoken",
-        pp: "10,021.3",
-        globalRank: "8,083",
-        countryCode: "TR",
-        countryRank: "61",
-        userUrl: "https://osu.ppy.sh/users/1",
-        avatarUrl: "https://a.ppy.sh/1",
-        flagUrl: "https://osu.ppy.sh/images/flags/TR.png",
-    })),
-    getFormattedScore: mock(({ scores, index }: { scores: Array<{ beatmapset?: { title?: string } }>; index: number }) => {
-        const songName = scores[index]?.beatmapset?.title ?? `Song ${index + 1}`;
-        return Promise.resolve({
-            position: index + 1,
-            songName,
-            difficultyName: "Expert",
-            mapLink: `https://osu.ppy.sh/beatmaps/${index + 1}`,
-            mods: ["HR"],
-            stars: "8.00★",
-            grade: "A",
-            ppFormatted: "500.00pp",
-            score: "1,000,000",
-            accuracy: "99.00",
-            hitValues: "500/0/0",
-            comboValues: "1,000/1,000x",
-            playSubmitted: "1 day ago",
-        });
-    }),
-}));
+import type { PlaysBuilderOptions } from "../../src/types/builders";
+import type { ProfileInfo, ScoresInfo } from "../../src/types/osu";
 
 const { playBuilder } = await import("../../src/embed-builders/plays");
 
+const profile = {
+    username: "yorunoken",
+    pp: "10,021.3",
+    globalRank: "8,083",
+    countryCode: "TR",
+    countryRank: "61",
+    userUrl: "https://osu.ppy.sh/users/1",
+    avatarUrl: "https://a.ppy.sh/1",
+    flagUrl: "https://osu.ppy.sh/images/flags/TR.png",
+} as ProfileInfo;
+
+function score(index: number, title = `Song ${index}`): ScoresInfo {
+    return {
+        position: index,
+        songNameFormatted: `Artist - ${title}`,
+        songArtist: "Artist",
+        songName: title,
+        retries: 2,
+        percentagePassed: null,
+        difficultyName: "Expert",
+        score: "1,000,000",
+        accuracy: "99.00",
+        mapLink: `https://osu.ppy.sh/beatmaps/${index}`,
+        coverLink: `https://assets.ppy.sh/beatmaps/${index}/covers/cover.jpg`,
+        listLink: `https://assets.ppy.sh/beatmaps/${index}/covers/list.jpg`,
+        thumbLink: `https://b.ppy.sh/thumb/${index}l.jpg`,
+        grade: "A",
+        hitValues: "500/0/0",
+        fcHitValues: "",
+        fcAccuracy: undefined,
+        isFc: true,
+        mapAuthor: "mapper",
+        mapStatus: "Ranked",
+        mods: ["HR"],
+        drainLength: "2:00",
+        stars: "8.00★",
+        rulesetEmote: "<:osu:1075928454484205588>",
+        pp: 500,
+        ppFormatted: "500.00pp",
+        playSubmitted: "1 day ago",
+        ifFcHanami: null,
+        ifFcBathbot: null,
+        ifFcOwo: null,
+        comboValues: "1,000/1,000x",
+        performance: null,
+        user: undefined,
+        userId: undefined,
+    };
+}
+
+function builderOptions(options: Partial<PlaysBuilderOptions>): PlaysBuilderOptions {
+    return {
+        profile,
+        mode: Mode.OSU,
+        authorDb: null,
+        plays: [],
+        totalPlays: 0,
+        ...options,
+    };
+}
+
 describe("plays embed builder", () => {
-    test("uses all fetched plays when calculating top command page count", async () => {
-        const plays = Array.from({ length: 200 }, (_value, index) => ({ id: index + 1 }));
+    test("uses total fetched plays when calculating page count", async () => {
+        const embeds = await playBuilder(
+            builderOptions({
+                isMultiple: true,
+                page: 0,
+                plays: [score(1), score(2), score(3), score(4), score(5)],
+                totalPlays: 200,
+            }),
+        );
 
-        const embeds = await playBuilder({
-            type: EmbedBuilderType.PLAYS,
-            initiatorId: "user-1",
-            user: { id: 1, username: "yorunoken" },
-            mode: Mode.OSU,
-            authorDb: null,
-            isMultiple: true,
-            isPage: true,
-            page: 0,
-            plays,
-        } as never);
-
-        expect(saveScoreDatasMock).toHaveBeenCalledWith(plays, Mode.OSU);
         expect(embeds[0]?.footer?.text).toBe("Page 1 of 40");
         expect(embeds[0]?.description).toContain("#1");
         expect(embeds[0]?.description).toContain("#5");
     });
 
-    test("filters plays by beatmap title before rendering pages", async () => {
-        const plays = [
-            { id: 1, mods: [], beatmapset: { title: "Yami no Uta" } },
-            { id: 2, mods: [], beatmapset: { title: "Another Song" } },
-            { id: 3, mods: [], beatmapset: { title: "Uta ni Katachi wa Nai Keredo" } },
-        ];
+    test("returns a no-match embed when the service provides no formatted plays", async () => {
+        const embeds = await playBuilder(
+            builderOptions({
+                isMultiple: true,
+                page: 0,
+                plays: [],
+                totalPlays: 0,
+            }),
+        );
 
-        const embeds = await playBuilder({
-            type: EmbedBuilderType.PLAYS,
-            initiatorId: "user-1",
-            user: { id: 1, username: "yorunoken" },
-            mode: Mode.OSU,
-            authorDb: null,
-            isMultiple: true,
-            isPage: true,
-            page: 0,
-            titleFilter: "uta",
-            plays,
-        } as never);
+        expect(embeds[0]?.title).toBe("Uh oh! :x:");
+        expect(embeds[0]?.description).toBe("No plays matched those filters for `yorunoken`.");
+    });
 
-        expect(embeds[0]?.footer?.text).toBe("Page 1 of 1");
-        expect(embeds[0]?.description).toContain("Yami no Uta");
-        expect(embeds[0]?.description).toContain("Uta ni Katachi wa Nai Keredo");
-        expect(embeds[0]?.description).not.toContain("Another Song");
+    test("renders single-play position against the filtered total", async () => {
+        const embeds = await playBuilder(
+            builderOptions({
+                index: 1,
+                plays: [score(2, "Yami no Uta")],
+                totalPlays: 3,
+            }),
+        );
+
+        expect(embeds[0]?.title).toBe("Artist - Yami no Uta");
+        expect(embeds[0]?.footer?.text).toContain("Play 2 of 3");
+        expect(embeds[0]?.footer?.text).toContain("Try 2");
+    });
+
+    test("returns an out-of-range embed without formatted play data", async () => {
+        const embeds = await playBuilder(
+            builderOptions({
+                index: 3,
+                plays: [],
+                totalPlays: 3,
+            }),
+        );
+
+        expect(embeds[0]?.title).toBe("Uh oh! :x:");
+        expect(embeds[0]?.description).toBe("That play index is out of range for `yorunoken`.");
     });
 });
