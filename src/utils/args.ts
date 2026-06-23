@@ -345,7 +345,10 @@ export async function parseCommandArgs(ctx: CommandContext, mode: Mode = Mode.OS
         const options = getSlashOptions(ctx.interaction.data);
         for (const opt of options) {
             if (opt.value !== undefined && opt.value !== null) {
-                flags[opt.name] = String(opt.value);
+                // incase someone tries to put it in quotes
+                flags[opt.name] = String(opt.value)
+                    .trim()
+                    .replace(/^"(.*)"$/, "$1");
             }
         }
 
