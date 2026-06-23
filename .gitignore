@@ -2,7 +2,7 @@ node_modules/
 
 logs/
 package-lock.json
-.env*
+.env
 !.env.example
 *.db
 *.tsbuildinfo
