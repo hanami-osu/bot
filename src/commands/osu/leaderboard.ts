@@ -3,7 +3,7 @@ import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
 import { CommandData } from "@type/commands";
 import { Mode } from "@type/osu";
-import { CommandValidationError, parseCommandArgs, parsePrefixPageFlag } from "@utils/args";
+import { CommandValidationError, parseCommandArgs } from "@utils/args";
 import { getBeatmapIdFromContext, getBeatmapTopScores } from "@utils/osu";
 import { createPaginationActionRow, ITEMS_PER_PAGE } from "@utils/pagination";
 import { ApplicationCommandOptionType } from "lilybird";
@@ -27,28 +27,25 @@ export async function run(ctx: CommandContext) {
     await ctx.defer();
 
     let isGlobal = true;
-    let page = 0;
 
     if (ctx.isInteraction) {
         isGlobal = (ctx.interaction!.data.getString("type") ?? "global") === "global";
-        page = (ctx.interaction!.data.getNumber("page") ?? 1) - 1;
     } else {
         isGlobal = modeAliases[ctx.commandName ?? "leaderboard"]?.isGlobal ?? true;
     }
 
-    const { user, mods, flags } = await parseCommandArgs(ctx, Mode.OSU);
-    if (!ctx.isInteraction) {
-        try {
-            page = parsePrefixPageFlag(flags) ?? 0;
-        } catch (error) {
-            if (error instanceof CommandValidationError) {
-                await ctx.editReply(error.message);
-                return;
-            }
-            throw error;
+    let parsedArgs: Awaited<ReturnType<typeof parseCommandArgs>>;
+    try {
+        parsedArgs = await parseCommandArgs(ctx, Mode.OSU);
+    } catch (error) {
+        if (error instanceof CommandValidationError) {
+            await ctx.editReply(error.message);
+            return;
         }
+        throw error;
     }
 
+    const { user, mods, page = 0 } = parsedArgs;
     const { reply, embedOptions } = await getEmbeds(user.beatmapId ?? undefined, ctx.user.id, mods, isGlobal, page, ctx);
     if (embedOptions) {
         await ctx.sendWithPagination(reply, embedOptions);
@@ -172,9 +169,10 @@ export const data = {
                 min_length: 2,
             },
             {
-                type: ApplicationCommandOptionType.NUMBER,
+                type: ApplicationCommandOptionType.INTEGER,
                 name: "page",
                 description: "Specify a page.",
+                min_value: 1,
             },
         ],
     },

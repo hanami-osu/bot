@@ -43,7 +43,15 @@ export interface DifficultyOptions {
 
 export type User = SuccessUser | FailUser;
 
-export interface SlashCommandArgs {
+interface NormalizedCommandOptions {
+    flags: Record<string, string | undefined>;
+    titleFilter?: string;
+    page?: number;
+    index?: number;
+    grade?: string;
+}
+
+export interface SlashCommandArgs extends NormalizedCommandOptions {
     user: User;
     mods: Mods;
     difficultySettings?: DifficultyOptions;
@@ -59,13 +67,16 @@ export interface Mods {
 export interface PrefixCommandArgs {
     tempUser: Array<string> | null;
     user: User;
-    flags: Record<string, string | undefined>;
     mods: Mods;
+    flags: Record<string, string | undefined>;
+    titleFilter?: string;
+    page?: number;
+    index?: number;
+    grade?: string;
 }
 
-export interface CommandArgs {
+export interface CommandArgs extends NormalizedCommandOptions {
     user: User;
     mods: Mods;
-    flags: Record<string, string | undefined>;
     difficultySettings?: DifficultyOptions;
 }

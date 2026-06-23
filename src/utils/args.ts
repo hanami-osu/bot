@@ -7,6 +7,8 @@ import type { SlashCommandArgs, DifficultyOptions, Mods, PrefixCommandArgs, User
 import type { CommandContext } from "./command-context";
 import type { ApplicationCommandData, DMInteraction, GuildInteraction, Interaction, Message } from "@lilybird/transformers";
 import { getSlashCommandMention } from "../state/command-registry";
+import { USER_SCORE_FETCH_LIMIT } from "./score-api";
+import { ITEMS_PER_PAGE } from "./pagination";
 
 interface BeatMapSetURL {
     url: string;
@@ -143,25 +145,16 @@ export function parsePrefixPageFlag(flags: Record<string, string | undefined>, m
     return typeof page === "undefined" ? undefined : page - 1;
 }
 
+export function validatePage(page: number | undefined): void {
+    const maxPage = Math.ceil(USER_SCORE_FETCH_LIMIT / ITEMS_PER_PAGE);
+    if (typeof page !== "undefined" && page + 1 > maxPage) {
+        throw new CommandValidationError(`page must be between 1 and ${maxPage}.`);
+    }
+}
+
 function getBeatmapId(urlMatch: BeatMapSetURL | BeatMapURL | null): string | null {
     if (!urlMatch) return null;
     return "id" in urlMatch ? urlMatch.id : urlMatch.difficultyId;
-}
-
-type SlashOptionValue = string | number | boolean;
-interface SlashOption {
-    name: string;
-    value?: SlashOptionValue | null;
-}
-
-interface SlashDataWithOptions {
-    options?: Array<SlashOption>;
-}
-
-function getSlashOptions(data: ApplicationCommandData): Array<SlashOption> {
-    if (!("options" in data)) return [];
-    const { options } = data as ApplicationCommandData & SlashDataWithOptions;
-    return Array.isArray(options) ? options : [];
 }
 
 function isGuildInteraction(interaction: Interaction<ApplicationCommandData>): interaction is GuildInteraction<ApplicationCommandData> {
@@ -178,7 +171,20 @@ function getInteractionUserId(interaction: Interaction<ApplicationCommandData>):
     throw new Error("Interaction command context is missing user data");
 }
 
-export async function getCommandArgs(interaction: Interaction<ApplicationCommandData>, getAttributes?: boolean): Promise<SlashCommandArgs> {
+function normalizeStringOption(value: string | null | undefined): string | undefined {
+    if (typeof value !== "string") return undefined;
+    const normalized = value.trim().replace(/^"(.*)"$/, "$1");
+    return normalized.length > 0 ? normalized : undefined;
+}
+
+function parseSlashIntegerOption(value: number | null | undefined, label: string): number | undefined {
+    if (value === null || typeof value === "undefined") return undefined;
+    if (!Number.isInteger(value)) throw new CommandValidationError(`${label} must be a whole number.`);
+    if (value < 1) throw new CommandValidationError(`${label} must be at least 1.`);
+    return value - 1;
+}
+
+async function parseSlashCommandArgs(interaction: Interaction<ApplicationCommandData>, getAttributes?: boolean): Promise<SlashCommandArgs> {
     const { data } = interaction;
 
     // This is so fucking annoying holy shit I can't get it right
@@ -204,6 +210,10 @@ export async function getCommandArgs(interaction: Interaction<ApplicationCommand
     const mods = buildMods(parseModsString(modsValue), modsAction);
 
     const beatmapId = getBeatmapId(parseBeatmapUrl(data.getString("map") ?? ""));
+    const titleFilter = normalizeStringOption(data.getString("filter"));
+    const page = parseSlashIntegerOption(data.getInteger("page"), "page");
+    const index = parseSlashIntegerOption(data.getInteger("index"), "index");
+    const grade = normalizeStringOption(data.getString("grade"));
 
     const user: User = discordUserId
         ? discordUser?.banchoId
@@ -220,10 +230,10 @@ export async function getCommandArgs(interaction: Interaction<ApplicationCommand
             ? { type: UserType.SUCCESS, banchoId: userAuthor.banchoId, mode, beatmapId, authorDb: userAuthor }
             : { type: UserType.FAIL, beatmapId, authorDb: userAuthor, failMessage: "Please link your account to the bot using /link!" };
 
-    return { user, mods, difficultySettings };
+    return { user, mods, difficultySettings, flags: {}, titleFilter, page, index, grade };
 }
 
-export async function parseOsuArguments(message: Message, args: Array<string>, mode: Mode): Promise<PrefixCommandArgs> {
+async function parsePrefixCommandArgs(message: Message, args: Array<string>, mode: Mode): Promise<PrefixCommandArgs> {
     const result: PrefixCommandArgs = {
         tempUser: null,
         user: {
@@ -333,32 +343,20 @@ export async function parseOsuArguments(message: Message, args: Array<string>, m
         }
     }
 
+    result.titleFilter = normalizeStringOption(result.flags.filter);
+    result.page = parsePrefixPageFlag(result.flags);
+    result.grade = normalizeStringOption(result.flags.grade);
+
     return result;
 }
 
 export async function parseCommandArgs(ctx: CommandContext, mode: Mode = Mode.OSU, getAttributes?: boolean): Promise<CommandArgs> {
     if (ctx.isInteraction) {
         if (!ctx.interaction) throw new Error("Interaction command context is missing interaction data");
-        const slashArgs = await getCommandArgs(ctx.interaction, getAttributes);
-        const flags: Record<string, string | undefined> = {};
-
-        const options = getSlashOptions(ctx.interaction.data);
-        for (const opt of options) {
-            if (opt.value !== undefined && opt.value !== null) {
-                // incase someone tries to put it in quotes
-                flags[opt.name] = String(opt.value)
-                    .trim()
-                    .replace(/^"(.*)"$/, "$1");
-            }
-        }
-
-        // Emulate some flags like `-p` for interactions
-        if (flags["page"]) flags["p"] = flags["page"];
-
-        return { ...slashArgs, flags };
+        return await parseSlashCommandArgs(ctx.interaction, getAttributes);
     } else {
         if (!ctx.message) throw new Error("Message command context is missing message data");
-        const prefixArgs = await parseOsuArguments(ctx.message, ctx.args, mode);
-        return { ...prefixArgs };
+        const prefixArgs = await parsePrefixCommandArgs(ctx.message, ctx.args, mode);
+        return { ...prefixArgs, index: ctx.index };
     }
 }

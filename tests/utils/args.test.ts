@@ -1,8 +1,10 @@
 import { describe, expect, mock, test } from "bun:test";
+import { CommandContext } from "../../src/utils/command-context";
 import { Mode } from "../../src/types/osu";
 import { UserType } from "../../src/types/command-args";
 import { Tables } from "../../src/types/database";
-import type { ApplicationCommandData, GuildInteraction, Message } from "@lilybird/transformers";
+import type { Client } from "lilybird";
+import type { ApplicationCommandData, Interaction, Message } from "@lilybird/transformers";
 
 const linkedUsers = new Map<string, { id: string; banchoId: string | null }>([["123456789012345678", { id: "123456789012345678", banchoId: "yorunoken" }]]);
 
@@ -41,7 +43,36 @@ mock.module("@utils/database", () => ({
     incrementCommandCount: mock(() => Promise.resolve()),
 }));
 
-const { CommandValidationError, getCommandArgs, parseBeatmapUrl, parseOsuArguments, parsePrefixPageFlag } = await import("../../src/utils/args");
+const { CommandValidationError, parseBeatmapUrl, parseCommandArgs, parsePrefixPageFlag } = await import("../../src/utils/args");
+
+const mockClient = {} as unknown as Client;
+
+function createPrefixContext(args: Array<string>, index?: number): CommandContext {
+    const message = { author: { id: "0000" } } as unknown as Message;
+    return new CommandContext(mockClient, undefined, message, args, "!", "top", undefined, index);
+}
+
+function createMockInteraction(options: Record<string, string | number | boolean | null>, userId = "0000", includeRawOptions = true): Interaction<ApplicationCommandData> {
+    const data = {
+        ...(includeRawOptions ? { options: Object.entries(options).map(([name, value]) => ({ name, value })) } : {}),
+        getString: (name: string) => (typeof options[name] === "string" ? options[name] : undefined),
+        getNumber: (name: string) => (typeof options[name] === "number" ? options[name] : undefined),
+        getInteger: (name: string) => (typeof options[name] === "number" ? options[name] : undefined),
+        getUser: (name: string) => (typeof options[name] === "string" && name === "discord" ? options[name] : undefined),
+        getBoolean: (name: string) => (typeof options[name] === "boolean" ? options[name] : undefined),
+    } as unknown as ApplicationCommandData;
+
+    return {
+        member: { user: { id: userId } },
+        data,
+        inGuild: () => true,
+        inDM: () => false,
+    } as unknown as Interaction<ApplicationCommandData>;
+}
+
+function createInteractionContext(options: Record<string, string | number | boolean | null>, includeRawOptions = true): CommandContext {
+    return new CommandContext(mockClient, createMockInteraction(options, "0000", includeRawOptions));
+}
 
 describe("args parser", () => {
     describe("parseBeatmapUrl", () => {
@@ -59,15 +90,15 @@ describe("args parser", () => {
         });
     });
 
-    describe("parseOsuArguments", () => {
+    describe("parseCommandArgs prefix input", () => {
         test("parses explicit user, map, flags, and force-excluded mods", async () => {
-            const message = { author: { id: "0000" } } as unknown as Message;
-            const result = await parseOsuArguments(message, ["peppy", "https://osu.ppy.sh/b/72727", "p=3", "-HDHR!"], Mode.OSU);
+            const result = await parseCommandArgs(createPrefixContext(["peppy", "https://osu.ppy.sh/b/72727", "p=3", "-HDHR!"]), Mode.OSU);
 
             expect(result.user.type).toBe(UserType.SUCCESS);
             if (result.user.type === UserType.SUCCESS) expect(result.user.banchoId).toBe("peppy");
             expect(result.user.beatmapId).toBe("72727");
             expect(result.flags.p).toBe("3");
+            expect(result.page).toBe(2);
             expect(result.mods.exclude).toBe(true);
             expect(result.mods.name).toBe("HDHR");
         });
@@ -78,12 +109,10 @@ describe("args parser", () => {
             ["-HDHR", true, false, false],
             ["-HDHR!", false, true, false],
         ] as const)("parses prefix mod action %s", async (modArg, include, exclude, forceInclude) => {
-            const message = { author: { id: "0000" } } as unknown as Message;
-            const result = await parseOsuArguments(message, ["peppy", modArg], Mode.OSU);
+            const result = await parseCommandArgs(createPrefixContext(["peppy", modArg]), Mode.OSU);
 
             expect(result.user.type).toBe(UserType.SUCCESS);
             if (result.user.type === UserType.SUCCESS) expect(result.user.banchoId).toBe("peppy");
-            expect(result.tempUser).toEqual(["peppy"]);
             expect(result.mods.include).toBe(include);
             expect(result.mods.exclude).toBe(exclude);
             expect(result.mods.forceInclude).toBe(forceInclude);
@@ -91,26 +120,29 @@ describe("args parser", () => {
         });
 
         test("parses quoted flag values without treating them as usernames", async () => {
-            const message = { author: { id: "0000" } } as unknown as Message;
-            const result = await parseOsuArguments(message, ["peppy", 'filter="yami', "no", 'uta"'], Mode.OSU);
+            const result = await parseCommandArgs(createPrefixContext(["peppy", 'filter="Yami', "no", 'Uta"']), Mode.OSU);
 
             expect(result.user.type).toBe(UserType.SUCCESS);
             if (result.user.type === UserType.SUCCESS) expect(result.user.banchoId).toBe("peppy");
-            expect(result.flags.filter).toBe("yami no uta");
+            expect(result.flags.filter).toBe("Yami no Uta");
+            expect(result.titleFilter).toBe("Yami no Uta");
         });
 
         test("resolves linked Discord mentions through injected database lookup", async () => {
-            const message = { author: { id: "0000" } } as unknown as Message;
-            const result = await parseOsuArguments(message, ["<@123456789012345678>"], Mode.OSU);
+            const result = await parseCommandArgs(createPrefixContext(["<@123456789012345678>"]), Mode.OSU);
 
             expect(result.user.type).toBe(UserType.SUCCESS);
             if (result.user.type === UserType.SUCCESS) expect(result.user.banchoId).toBe("yorunoken");
         });
 
         test("rejects unknown and contradictory mods", async () => {
-            const message = { author: { id: "0000" } } as unknown as Message;
-            await expect(parseOsuArguments(message, ["peppy", "+ZZ"], Mode.OSU)).rejects.toBeInstanceOf(CommandValidationError);
-            await expect(parseOsuArguments(message, ["peppy", "+DTNC"], Mode.OSU)).rejects.toBeInstanceOf(CommandValidationError);
+            await expect(parseCommandArgs(createPrefixContext(["peppy", "+ZZ"]), Mode.OSU)).rejects.toBeInstanceOf(CommandValidationError);
+            await expect(parseCommandArgs(createPrefixContext(["peppy", "+DTNC"]), Mode.OSU)).rejects.toBeInstanceOf(CommandValidationError);
+        });
+
+        test("uses prefix command suffix indexes as zero-based indexes", async () => {
+            const result = await parseCommandArgs(createPrefixContext(["peppy"], 2), Mode.OSU);
+            expect(result.index).toBe(2);
         });
     });
 
@@ -126,20 +158,9 @@ describe("args parser", () => {
         });
     });
 
-    describe("getCommandArgs", () => {
-        const createMockInteraction = (options: Record<string, string | number | boolean | null>, userId = "0000") => ({
-            member: { user: { id: userId } },
-            data: {
-                options: Object.entries(options).map(([name, value]) => ({ name, value })),
-                getString: (name: string) => (typeof options[name] === "string" ? options[name] : null),
-                getNumber: (name: string) => (typeof options[name] === "number" ? options[name] : null),
-                getUser: (name: string) => (typeof options[name] === "string" && name === "discord" ? options[name] : null),
-                getBoolean: (name: string) => (typeof options[name] === "boolean" ? options[name] : null),
-            },
-        });
-
+    describe("parseCommandArgs slash input", () => {
         test("parses slash mode, map, mods_action, and difficulty attributes", async () => {
-            const interaction = createMockInteraction({
+            const ctx = createInteractionContext({
                 username: "peppy",
                 mode: Mode.TAIKO,
                 map: "https://osu.ppy.sh/beatmaps/72727",
@@ -149,7 +170,7 @@ describe("args parser", () => {
                 cs: 5,
             });
 
-            const result = await getCommandArgs(interaction as unknown as GuildInteraction<ApplicationCommandData>, true);
+            const result = await parseCommandArgs(ctx, Mode.OSU, true);
             expect(result.user.type).toBe(UserType.SUCCESS);
             if (result.user.type === UserType.SUCCESS) {
                 expect(result.user.banchoId).toBe("peppy");
@@ -161,6 +182,27 @@ describe("args parser", () => {
             expect(result.mods.forceInclude).toBe(true);
             expect(result.difficultySettings?.bpm).toBe(200);
             expect(result.difficultySettings?.cs).toBe(5);
+        });
+
+        test("normalizes slash filter without relying on raw data options", async () => {
+            const result = await parseCommandArgs(createInteractionContext({ username: "peppy", filter: "sidetracked" }, false), Mode.OSU);
+            expect(result.titleFilter).toBe("sidetracked");
+            expect(result.flags.filter).toBeUndefined();
+        });
+
+        test("normalizes slash page and index as zero-based values", async () => {
+            const pageResult = await parseCommandArgs(createInteractionContext({ username: "peppy", page: 3 }), Mode.OSU);
+            const indexResult = await parseCommandArgs(createInteractionContext({ username: "peppy", index: 3 }), Mode.OSU);
+
+            expect(pageResult.page).toBe(2);
+            expect(indexResult.index).toBe(2);
+        });
+
+        test("parses slash mods", async () => {
+            const result = await parseCommandArgs(createInteractionContext({ username: "peppy", mods: "HDHR", mods_action: "exclude" }), Mode.OSU);
+
+            expect(result.mods.name).toBe("HDHR");
+            expect(result.mods.exclude).toBe(true);
         });
     });
 });

@@ -2,7 +2,7 @@ import { UserType } from "@type/command-args";
 import { CommandData } from "@type/commands";
 import { Mode, PlayType } from "@type/osu";
 import { getFetchedPlayReply } from "@services/play-service";
-import { parseCommandArgs } from "@utils/args";
+import { CommandValidationError, parseCommandArgs } from "@utils/args";
 import { USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
 import { ApplicationCommandOptionType } from "lilybird";
 import { discordOption, filterOption, gradeOption, modeOption, modsActionOption, modsOption, usernameOption } from "./options";
@@ -36,31 +36,38 @@ export async function run(ctx: CommandContext) {
 
     let mode = Mode.OSU;
     let includeFails = true;
-    let index = 0;
 
     if (ctx.isInteraction) {
         includeFails = !(ctx.interaction!.data.getBoolean("passes") ?? false);
-        index = (ctx.interaction!.data.getInteger("index") ?? 1) - 1;
     } else {
         const aliasConfig = modeAliases[ctx.commandName ?? "recent"];
         mode = aliasConfig?.mode ?? Mode.OSU;
         includeFails = aliasConfig?.includeFails ?? true;
-        index = ctx.index ?? 0;
     }
 
-    const { user, mods, flags } = await parseCommandArgs(ctx, mode);
+    let parsedArgs: Awaited<ReturnType<typeof parseCommandArgs>>;
+    try {
+        parsedArgs = await parseCommandArgs(ctx, mode);
+    } catch (error) {
+        if (error instanceof CommandValidationError) {
+            await ctx.editReply(error.message);
+            return;
+        }
+        throw error;
+    }
+
+    const { user, mods, titleFilter } = parsedArgs;
 
     if (user.type === UserType.FAIL) {
         await ctx.editReply(user.failMessage);
         return;
     }
 
-    const titleFilter = flags.filter?.trim() || undefined;
     const { reply, embedOptions } = await getFetchedPlayReply({
         user,
         authorId: ctx.user.id,
         playType: PlayType.RECENT,
-        index,
+        index: parsedArgs.index ?? 0,
         isPage: false,
         includeFails,
         mods,

@@ -4,7 +4,7 @@ import { Tables } from "../../../src/types/database";
 import { EmbedBuilderType } from "../../../src/types/builders";
 import { Mode } from "../../../src/types/osu";
 import type { Client } from "lilybird";
-import type { Message } from "@lilybird/transformers";
+import type { ApplicationCommandData, Interaction, Message } from "@lilybird/transformers";
 import type { CommandData } from "../../../src/types/commands";
 
 interface ReplyPayload {
@@ -92,6 +92,35 @@ function hasFilterOption(commandData: CommandData): boolean {
     return getApplicationOptions(commandData).some((option) => option.name === "filter");
 }
 
+function createSlashContext(options: Record<string, string | number | boolean | null>): CommandContext {
+    const mockClient = {
+        rest: {
+            getOriginalInteractionResponse: mock(() => Promise.resolve({ id: "interaction-message" })),
+        },
+    } as unknown as Client;
+
+    const data = {
+        getString: (name: string) => (typeof options[name] === "string" ? options[name] : undefined),
+        getNumber: (name: string) => (typeof options[name] === "number" ? options[name] : undefined),
+        getInteger: (name: string) => (typeof options[name] === "number" ? options[name] : undefined),
+        getUser: (name: string) => (typeof options[name] === "string" && name === "discord" ? options[name] : undefined),
+        getBoolean: (name: string) => (typeof options[name] === "boolean" ? options[name] : undefined),
+    } as unknown as ApplicationCommandData;
+
+    const interaction = {
+        applicationId: "app",
+        token: "token",
+        member: { user: { id: "123", username: "test_user" } },
+        data,
+        inGuild: () => true,
+        inDM: () => false,
+        deferReply: mock(() => Promise.resolve()),
+        editReply: mock((_options: ReplyPayload) => Promise.resolve({ id: "interaction-message", edit: mock(() => Promise.resolve({})) })),
+    } as unknown as Interaction<ApplicationCommandData>;
+
+    return new CommandContext(mockClient, interaction);
+}
+
 describe("top command", () => {
     test("allows selecting pages for all fetched top plays", () => {
         expect(getPageMaxValue(topData)).toBe(40);
@@ -151,6 +180,16 @@ describe("top command", () => {
         expect(getFetchedPlayReplyMock).toHaveBeenCalled();
         const [serviceOptions] = getFetchedPlayReplyMock.mock.calls[0] as Array<{ titleFilter?: string }>;
         expect(serviceOptions.titleFilter).toBe("Yami no Uta");
+    });
+
+    test("passes slash title filters to the plays builder", async () => {
+        getFetchedPlayReplyMock.mockClear();
+
+        await run(createSlashContext({ username: "mrekk", filter: "sidetracked" }));
+
+        expect(getFetchedPlayReplyMock).toHaveBeenCalled();
+        const [serviceOptions] = getFetchedPlayReplyMock.mock.calls[0] as Array<{ titleFilter?: string }>;
+        expect(serviceOptions.titleFilter).toBe("sidetracked");
     });
 
     test("rejects invalid prefix page flags before calling the builder", async () => {

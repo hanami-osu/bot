@@ -2,7 +2,7 @@ import { UserType } from "@type/command-args";
 import { CommandData } from "@type/commands";
 import { Mode, PlayType } from "@type/osu";
 import { getFetchedPlayReply } from "@services/play-service";
-import { CommandValidationError, parseCommandArgs, parsePrefixPageFlag } from "@utils/args";
+import { CommandValidationError, parseCommandArgs, validatePage } from "@utils/args";
 import { ITEMS_PER_PAGE } from "@utils/pagination";
 import { USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
 import { ApplicationCommandOptionType } from "lilybird";
@@ -44,17 +44,10 @@ export async function run(ctx: CommandContext) {
         includeFails = aliasConfig?.includeFails ?? true;
     }
 
-    const { user, mods, flags } = await parseCommandArgs(ctx, mode);
-
-    if (user.type === UserType.FAIL) {
-        await ctx.editReply(user.failMessage);
-        return;
-    }
-
-    let index = ctx.isInteraction ? ctx.interaction!.data.getInteger("index") : ctx.index;
-    let page: number | undefined;
+    let parsedArgs: Awaited<ReturnType<typeof parseCommandArgs>>;
     try {
-        page = ctx.isInteraction ? ctx.interaction!.data.getInteger("page") : parsePrefixPageFlag(flags, Math.ceil(USER_SCORE_FETCH_LIMIT / ITEMS_PER_PAGE));
+        parsedArgs = await parseCommandArgs(ctx, mode);
+        validatePage(parsedArgs.page);
     } catch (error) {
         if (error instanceof CommandValidationError) {
             await ctx.editReply(error.message);
@@ -63,17 +56,19 @@ export async function run(ctx: CommandContext) {
         throw error;
     }
 
-    if (typeof page === "undefined" && typeof index === "undefined") {
-        page = ctx.isMessage ? 0 : 1;
+    const { user, mods, titleFilter } = parsedArgs;
+
+    if (user.type === UserType.FAIL) {
+        await ctx.editReply(user.failMessage);
+        return;
     }
 
-    if (page && ctx.isInteraction) page -= 1;
-    if (index && ctx.isInteraction) index -= 1;
+    const { index } = parsedArgs;
+    let { page } = parsedArgs;
 
     if (typeof page === "undefined" && typeof index === "undefined") page = 0;
     const isPage = typeof page !== "undefined";
 
-    const titleFilter = flags.filter?.trim() || undefined;
     const { reply, embedOptions } = await getFetchedPlayReply({
         user,
         authorId: ctx.user.id,
