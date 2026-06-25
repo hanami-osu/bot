@@ -1,11 +1,11 @@
 import { bulkInsertData, getEntry, insertData } from "@utils/database";
 import { Mode } from "@type/osu";
-import { Tables } from "@type/database";
+import { ScoreData, Tables } from "@type/database";
 import { Beatmap, BeatmapAttributesBuilder, Performance, type BeatmapAttributes, type PerformanceAttributes } from "rosu-pp-js";
 import { ChannelType } from "lilybird";
 import https from "https";
 import crypto from "crypto";
-import type { Score as ScoreDatabase } from "@type/database";
+import type { Score as ScoreDatabase, User } from "@type/database";
 import type { Message } from "@lilybird/transformers";
 import type { Mod } from "@type/mods";
 import type { PerformanceInfo, Score, LeaderboardScore, GameMode, Rank, ScoreStatistics, Beatmap as BeatmapWeb, LeaderboardScoresRaw } from "@type/osu";
@@ -18,10 +18,23 @@ const rulesetIds: Record<Mode, number> = {
     [Mode.MANIA]: 3,
 };
 
-export async function getBeatmapTopScores({ beatmapId, isGlobal, mode, mods }: { beatmapId: number; isGlobal: boolean; mode: GameMode; mods: Array<string> | undefined }): Promise<Array<LeaderboardScore>> {
+export async function getBeatmapTopScores({
+    beatmapId,
+    isGlobal,
+    mode,
+    mods,
+    authorDb,
+}: {
+    beatmapId: number;
+    isGlobal: boolean;
+    mode: GameMode;
+    mods: Array<string> | undefined;
+    authorDb: User | null;
+}): Promise<Array<LeaderboardScore>> {
     const url = new URL(`https://osu.ppy.sh/beatmaps/${beatmapId}/scores`);
     url.searchParams.append("mode", mode);
     url.searchParams.append("type", isGlobal ? "global" : "country");
+    if (typeof authorDb?.score_data === "number") url.searchParams.append("legacy_only", authorDb.score_data === ScoreData.Stable ? "1" : "0");
 
     if (mods && mods.length > 0) {
         for (const mod of mods) {
@@ -61,6 +74,17 @@ function getRulesetId(mode: GameMode | Mode | undefined): number | undefined {
     return rulesetIds[mode as Mode];
 }
 
+export function shouldUseLazerPerformance(play?: Score | LeaderboardScore, scoreData?: ScoreData | number | null): boolean {
+    if (scoreData === ScoreData.Stable) return false;
+    if (scoreData === ScoreData.Lazer) return true;
+
+    if (play && play.legacy_score_id !== null && typeof play.legacy_score_id !== "undefined") {
+        return false;
+    }
+
+    return true;
+}
+
 export async function getPerformanceResults({
     play,
     setId,
@@ -75,6 +99,7 @@ export async function getPerformanceResults({
     mapData,
     passed,
     checksum,
+    scoreData,
 }: {
     play?: Score | LeaderboardScore;
     setId?: number;
@@ -99,11 +124,9 @@ export async function getPerformanceResults({
     mapData?: string;
     passed?: boolean;
     checksum?: string;
+    scoreData?: ScoreData | number | null;
 }): Promise<PerformanceInfo | null> {
-    let isLazer = true;
-    if (play && play.legacy_score_id !== null && typeof play.legacy_score_id !== "undefined") {
-        isLazer = false;
-    }
+    const isLazer = shouldUseLazerPerformance(play, scoreData);
 
     let rulesetId: number | undefined;
     if (typeof play !== "undefined" && typeof play.mode_int === "number") rulesetId = play.mode_int;

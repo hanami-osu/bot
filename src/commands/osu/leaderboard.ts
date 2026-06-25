@@ -46,7 +46,7 @@ export async function run(ctx: CommandContext) {
     }
 
     const { user, mods, page = 0 } = parsedArgs;
-    const { reply, embedOptions } = await getEmbeds(user.beatmapId ?? undefined, ctx.user.id, mods, isGlobal, page, ctx);
+    const { reply, embedOptions } = await getEmbeds(user.beatmapId ?? undefined, ctx.user.id, user.authorDb, mods, isGlobal, page, ctx);
     if (embedOptions) {
         await ctx.sendWithPagination(reply, embedOptions);
     } else {
@@ -57,6 +57,7 @@ export async function run(ctx: CommandContext) {
 async function getEmbeds(
     beatmapId: string | undefined,
     authorId: string,
+    authorDb: LeaderboardBuilderOptions["authorDb"],
     mods: any,
     isGlobal: boolean,
     page: number,
@@ -94,6 +95,7 @@ async function getEmbeds(
             beatmapId: Number(resolvedBeatmapId),
             mode: beatmap.mode as GameMode,
             isGlobal,
+            authorDb,
             mods: mods.name ? ((typeof mods.name === "string" ? mods.name : mods.name.acronym).match(/.{1,2}/g) as Array<string>) : undefined,
         }),
     );
@@ -129,6 +131,7 @@ async function getEmbeds(
         initiatorId: authorId,
         page,
         beatmap: beatmap as Beatmap,
+        authorDb,
         scores,
     };
 

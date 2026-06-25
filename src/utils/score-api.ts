@@ -8,9 +8,6 @@ const USER_SCORE_API_PAGE_LIMIT = 100;
 function getScoreFetchAddons(authorDb: User | null): AddonParams | undefined {
     if (typeof authorDb?.score_data !== "number") return undefined;
 
-    console.log(authorDb.score_data, {
-        legacy_only: authorDb.score_data === ScoreData.Stable,
-    });
     return {
         legacy_only: authorDb.score_data === ScoreData.Stable,
     };

@@ -36,6 +36,7 @@ export interface CompareBuilderOptions extends BuilderOptions {
     plays: Array<Score | ScoreV2>;
     user: UserExtended;
     mode: Mode;
+    authorDb: User | null;
     mods?: ModStructure;
     page?: number;
 }
@@ -44,6 +45,7 @@ export interface LeaderboardBuilderOptions extends BuilderOptions {
     type: EmbedBuilderType.LEADERBOARD;
     scores: Array<LeaderboardScore>;
     beatmap: Beatmap;
+    authorDb: User | null;
     page: number | undefined;
 }
 

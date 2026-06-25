@@ -8,7 +8,7 @@ import type { CompareBuilderOptions } from "@type/builders";
 import type { Embed } from "lilybird";
 import type { Beatmap, Mode, ProfileInfo, ScoresInfo, Score, ScoreV2 } from "@type/osu";
 
-export async function compareBuilder({ beatmap, plays, user, mode, mods, page = 0 }: CompareBuilderOptions): Promise<Array<Embed.Structure>> {
+export async function compareBuilder({ beatmap, plays, user, mode, authorDb, mods, page = 0 }: CompareBuilderOptions): Promise<Array<Embed.Structure>> {
     saveScoreDatas(plays, mode, beatmap);
 
     const profile = getFormattedProfile(user, mode);
@@ -39,10 +39,24 @@ export async function compareBuilder({ beatmap, plays, user, mode, mods, page = 
         ] satisfies Array<Embed.Structure>;
     }
 
-    return getMultiplePlays({ plays, profile, beatmap, mode, page });
+    return getMultiplePlays({ plays, profile, beatmap, mode, authorDb, page });
 }
 
-async function getMultiplePlays({ plays, profile, beatmap, mode, page }: { plays: Array<Score | ScoreV2>; profile: ProfileInfo; beatmap: Beatmap; mode: Mode; page: number }): Promise<Array<Embed.Structure>> {
+async function getMultiplePlays({
+    plays,
+    profile,
+    beatmap,
+    mode,
+    authorDb,
+    page,
+}: {
+    plays: Array<Score | ScoreV2>;
+    profile: ProfileInfo;
+    beatmap: Beatmap;
+    mode: Mode;
+    authorDb: CompareBuilderOptions["authorDb"];
+    page: number;
+}): Promise<Array<Embed.Structure>> {
     const beatmapId = beatmap.id;
     const mapData = (await getEntry(Tables.MAP, beatmapId))?.data ?? (await downloadBeatmap(beatmapId)).contents;
 
@@ -50,7 +64,7 @@ async function getMultiplePlays({ plays, profile, beatmap, mode, page }: { plays
     const pageEnd = pageStart + 5;
 
     const playsTemp: Array<Promise<ScoresInfo>> = [];
-    for (let i = pageStart; pageEnd > i && i < plays.length; i++) playsTemp.push(getFormattedScore({ scores: plays, index: i, mode, beatmap, mapData }));
+    for (let i = pageStart; pageEnd > i && i < plays.length; i++) playsTemp.push(getFormattedScore({ scores: plays, index: i, mode, beatmap, mapData, authorDb }));
 
     const { beatmapset } = beatmap;
 

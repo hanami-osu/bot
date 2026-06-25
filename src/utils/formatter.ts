@@ -34,17 +34,29 @@ function getFallbackStars(beatmap: { difficulty_rating?: number }): string {
 }
 
 function getScoreValue(play: UserBestScore | UserBestScoreV2 | UserScore | UserScoreV2 | Score | ScoreV2 | LeaderboardScore, authorDb: User | null): number {
-    const legacyScore = typeof play.classic_total_score === "number" && play.classic_total_score > 0 ? play.classic_total_score : undefined;
-    const lazerScore = play.total_score ?? play.score;
+    const legacyTotalScore = typeof play.legacy_total_score === "number" && play.legacy_total_score > 0 ? play.legacy_total_score : undefined;
+    const classicTotalScore = typeof play.classic_total_score === "number" && play.classic_total_score > 0 ? play.classic_total_score : undefined;
+    const totalScore = typeof play.total_score === "number" ? play.total_score : undefined;
+    const score = typeof play.score === "number" ? play.score : undefined;
 
-    console.log(play);
-    console.log(legacyScore);
     if (authorDb?.score_data === ScoreData.Stable) {
-        console.log("stable score");
-        return legacyScore ?? lazerScore ?? 0;
+        return legacyTotalScore ?? classicTotalScore ?? totalScore ?? score ?? 0;
     }
 
-    return lazerScore ?? legacyScore ?? 0;
+    return totalScore ?? score ?? legacyTotalScore ?? classicTotalScore ?? 0;
+}
+
+function getScoreAccuracy(
+    play: UserBestScore | UserBestScoreV2 | UserScore | UserScoreV2 | Score | ScoreV2 | LeaderboardScore,
+    mode: Mode,
+    scoreStatistics: ScoreStatistics,
+    authorDb: User | null,
+): number {
+    if (authorDb?.score_data === ScoreData.Stable) {
+        return accuracyCalculator(mode, scoreStatistics);
+    }
+
+    return play.accuracy * 100;
 }
 
 export async function getFormattedScore({
@@ -60,7 +72,7 @@ export async function getFormattedScore({
     index: number;
     mode: Mode;
     mapData?: string;
-    authorDb: User | null;
+    authorDb?: User | null;
 }): Promise<ScoresInfo> {
     const play = scores[index];
     const scoreMode = getScoreMode(play, mode);
@@ -101,7 +113,8 @@ export async function getFormattedScore({
         retries = getRetryCount(beatmapIds, play.beatmap.id);
     }
 
-    const totalScore = getScoreValue(play, authorDb);
+    const totalScore = getScoreValue(play, authorDb ?? null);
+    const accuracy = getScoreAccuracy(play, scoreMode, scoreStatistics, authorDb ?? null);
     const createdAt = play.created_at ?? play.ended_at ?? "";
 
     if ("user" in play && play.user) {
@@ -127,6 +140,7 @@ export async function getFormattedScore({
         mods: play.mods as any,
         mapData,
         checksum: beatmap.checksum,
+        scoreData: authorDb?.score_data ?? null,
     });
 
     if (performance && play.passed && "score" in play) {
@@ -212,7 +226,7 @@ export async function getFormattedScore({
         songName: beatmapset.title,
         difficultyName: beatmap.version,
         score: totalScore.toLocaleString(),
-        accuracy: (play.accuracy * 100).toFixed(2),
+        accuracy: accuracy.toFixed(2),
         mapLink: `https://osu.ppy.sh/b/${beatmap.id}`,
         coverLink: `https://assets.ppy.sh/beatmaps/${beatmapset.id}/covers/cover.jpg`,
         listLink: `https://assets.ppy.sh/beatmaps/${beatmapset.id}/covers/list.jpg`,
