@@ -8,21 +8,21 @@ import { USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
 import { ApplicationCommandOptionType } from "lilybird";
 import { discordOption, filterOption, gradeOption, modeOption, modsActionOption, modsOption, usernameOption } from "./options";
 
-const modeAliases: Record<string, { mode: Mode; includeFails: boolean }> = {
-    rl: { mode: Mode.OSU, includeFails: true },
+const modeAliases: Record<string, { mode?: Mode; includeFails: boolean }> = {
+    rl: { includeFails: true },
     rlt: { mode: Mode.TAIKO, includeFails: true },
     rlm: { mode: Mode.MANIA, includeFails: true },
     rlc: { mode: Mode.FRUITS, includeFails: true },
-    recentlist: { mode: Mode.OSU, includeFails: true },
+    recentlist: { includeFails: true },
     recentlisttaiko: { mode: Mode.TAIKO, includeFails: true },
     recentlistmania: { mode: Mode.MANIA, includeFails: true },
     recentlistcatch: { mode: Mode.FRUITS, includeFails: true },
 
-    rlp: { mode: Mode.OSU, includeFails: false },
+    rlp: { includeFails: false },
     rlpt: { mode: Mode.TAIKO, includeFails: false },
     rlpm: { mode: Mode.MANIA, includeFails: false },
     rlpc: { mode: Mode.FRUITS, includeFails: false },
-    recentlistpass: { mode: Mode.OSU, includeFails: false },
+    recentlistpass: { includeFails: false },
     recentlistpasst: { mode: Mode.TAIKO, includeFails: false },
     recentlistpassm: { mode: Mode.MANIA, includeFails: false },
     recentlistpassc: { mode: Mode.FRUITS, includeFails: false },
@@ -33,14 +33,14 @@ import { CommandContext } from "@utils/command-context";
 export async function run(ctx: CommandContext) {
     await ctx.defer();
 
-    let mode = Mode.OSU;
+    let mode: Mode | undefined;
     let includeFails = true;
 
     if (ctx.isInteraction) {
         includeFails = !(ctx.interaction!.data.getBoolean("passes") ?? false);
     } else {
         const aliasConfig = modeAliases[ctx.commandName ?? "recentlist"];
-        mode = aliasConfig?.mode ?? Mode.OSU;
+        mode = aliasConfig?.mode;
         includeFails = aliasConfig?.includeFails ?? true;
     }
 
@@ -80,7 +80,7 @@ export async function run(ctx: CommandContext) {
         isMultiple: true,
         mods,
         titleFilter,
-        emptyMessage: (username) => `It seems like \`${username}\` hasn't had any recent plays in the last 24 hours!`,
+        emptyMessage: (username) => `It seems like \`${username}\` hasn't had any recent plays in \`${user.mode}\` in the last 24 hours!`,
     });
     if (embedOptions) {
         await ctx.sendWithPagination(reply, embedOptions);

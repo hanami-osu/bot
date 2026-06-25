@@ -1,4 +1,4 @@
-import { describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { CommandContext } from "../../src/utils/command-context";
 import { Mode } from "../../src/types/osu";
 import { UserType } from "../../src/types/command-args";
@@ -6,7 +6,7 @@ import { Tables } from "../../src/types/database";
 import type { Client } from "lilybird";
 import type { ApplicationCommandData, Interaction, Message } from "@lilybird/transformers";
 
-const linkedUsers = new Map<string, { id: string; banchoId: string | null }>([["123456789012345678", { id: "123456789012345678", banchoId: "yorunoken" }]]);
+const linkedUsers = new Map<string, { id: string; banchoId: string | null; mode?: string | null }>([["123456789012345678", { id: "123456789012345678", banchoId: "yorunoken" }]]);
 
 function parseMockBigInt(value: string | number | bigint, fieldName = "value"): bigint {
     if (typeof value === "bigint") return value;
@@ -47,9 +47,14 @@ const { CommandValidationError, parseBeatmapUrl, parseCommandArgs, parsePrefixPa
 
 const mockClient = {} as unknown as Client;
 
-function createPrefixContext(args: Array<string>, index?: number): CommandContext {
+beforeEach(() => {
+    linkedUsers.clear();
+    linkedUsers.set("123456789012345678", { id: "123456789012345678", banchoId: "yorunoken" });
+});
+
+function createPrefixContext(args: Array<string>, index?: number, commandName = "top"): CommandContext {
     const message = { author: { id: "0000" } } as unknown as Message;
-    return new CommandContext(mockClient, undefined, message, args, "!", "top", undefined, index);
+    return new CommandContext(mockClient, undefined, message, args, "!", commandName, undefined, index);
 }
 
 function createMockInteraction(options: Record<string, string | number | boolean | null>, userId = "0000", includeRawOptions = true): Interaction<ApplicationCommandData> {
@@ -203,6 +208,60 @@ describe("args parser", () => {
 
             expect(result.mods.name).toBe("HDHR");
             expect(result.mods.exclude).toBe(true);
+        });
+
+        test("prioritizes explicit slash mode over saved config", async () => {
+            linkedUsers.set("0000", { id: "0000", banchoId: "linked", mode: Mode.MANIA });
+
+            const result = await parseCommandArgs(createInteractionContext({ username: "peppy", mode: Mode.TAIKO }));
+
+            expect(result.user.type).toBe(UserType.SUCCESS);
+            if (result.user.type === UserType.SUCCESS) expect(result.user.mode).toBe(Mode.TAIKO);
+        });
+
+        test("uses saved mode when slash mode is not explicit", async () => {
+            linkedUsers.set("0000", { id: "0000", banchoId: "linked", mode: Mode.MANIA });
+
+            const result = await parseCommandArgs(createInteractionContext({ username: "peppy" }));
+
+            expect(result.user.type).toBe(UserType.SUCCESS);
+            if (result.user.type === UserType.SUCCESS) expect(result.user.mode).toBe(Mode.MANIA);
+        });
+
+        test("uses osu mode when slash mode and saved config are unset", async () => {
+            linkedUsers.delete("0000");
+
+            const result = await parseCommandArgs(createInteractionContext({ username: "peppy" }));
+
+            expect(result.user.type).toBe(UserType.SUCCESS);
+            if (result.user.type === UserType.SUCCESS) expect(result.user.mode).toBe(Mode.OSU);
+        });
+    });
+
+    describe("mode priority", () => {
+        test("neutral prefix aliases use saved config mode", async () => {
+            linkedUsers.set("0000", { id: "0000", banchoId: "linked", mode: Mode.MANIA });
+
+            const result = await parseCommandArgs(createPrefixContext(["peppy"], undefined, "top"));
+
+            expect(result.user.type).toBe(UserType.SUCCESS);
+            if (result.user.type === UserType.SUCCESS) expect(result.user.mode).toBe(Mode.MANIA);
+        });
+
+        test("neutral prefix aliases fall back to osu without saved config", async () => {
+            const result = await parseCommandArgs(createPrefixContext(["peppy"], undefined, "top"));
+
+            expect(result.user.type).toBe(UserType.SUCCESS);
+            if (result.user.type === UserType.SUCCESS) expect(result.user.mode).toBe(Mode.OSU);
+        });
+
+        test("prefix fallback mode overrides saved config", async () => {
+            linkedUsers.set("0000", { id: "0000", banchoId: "linked", mode: Mode.MANIA });
+
+            const result = await parseCommandArgs(createPrefixContext(["peppy"], undefined, "topt"), Mode.TAIKO);
+
+            expect(result.user.type).toBe(UserType.SUCCESS);
+            if (result.user.type === UserType.SUCCESS) expect(result.user.mode).toBe(Mode.TAIKO);
         });
     });
 });

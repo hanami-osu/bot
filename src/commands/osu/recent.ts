@@ -7,23 +7,23 @@ import { USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
 import { ApplicationCommandOptionType } from "lilybird";
 import { discordOption, filterOption, gradeOption, modeOption, modsActionOption, modsOption, usernameOption } from "./options";
 
-const modeAliases: Record<string, { mode: Mode; includeFails: boolean }> = {
-    r: { mode: Mode.OSU, includeFails: true },
-    rs: { mode: Mode.OSU, includeFails: true },
+const modeAliases: Record<string, { mode?: Mode; includeFails: boolean }> = {
+    r: { includeFails: true },
+    rs: { includeFails: true },
     rt: { mode: Mode.TAIKO, includeFails: true },
     rm: { mode: Mode.MANIA, includeFails: true },
     rc: { mode: Mode.FRUITS, includeFails: true },
-    recent: { mode: Mode.OSU, includeFails: true },
+    recent: { includeFails: true },
     recenttaiko: { mode: Mode.TAIKO, includeFails: true },
     recentmania: { mode: Mode.MANIA, includeFails: true },
     recentcatch: { mode: Mode.FRUITS, includeFails: true },
 
-    rp: { mode: Mode.OSU, includeFails: false },
-    rsp: { mode: Mode.OSU, includeFails: false },
+    rp: { includeFails: false },
+    rsp: { includeFails: false },
     rpt: { mode: Mode.TAIKO, includeFails: false },
     rpm: { mode: Mode.MANIA, includeFails: false },
     rpc: { mode: Mode.FRUITS, includeFails: false },
-    recentpass: { mode: Mode.OSU, includeFails: false },
+    recentpass: { includeFails: false },
     recentpasstaiko: { mode: Mode.TAIKO, includeFails: false },
     recentpassmania: { mode: Mode.MANIA, includeFails: false },
     recentpasscatch: { mode: Mode.FRUITS, includeFails: false },
@@ -34,14 +34,14 @@ import { CommandContext } from "@utils/command-context";
 export async function run(ctx: CommandContext) {
     await ctx.defer();
 
-    let mode = Mode.OSU;
+    let mode: Mode | undefined;
     let includeFails = true;
 
     if (ctx.isInteraction) {
         includeFails = !(ctx.interaction!.data.getBoolean("passes") ?? false);
     } else {
         const aliasConfig = modeAliases[ctx.commandName ?? "recent"];
-        mode = aliasConfig?.mode ?? Mode.OSU;
+        mode = aliasConfig?.mode;
         includeFails = aliasConfig?.includeFails ?? true;
     }
 
@@ -72,7 +72,7 @@ export async function run(ctx: CommandContext) {
         includeFails,
         mods,
         titleFilter,
-        emptyMessage: (username) => `It seems like \`${username}\` hasn't set any recent plays! :(`,
+        emptyMessage: (username) => `It seems like \`${username}\` hasn't set any recent plays in \`${user.mode}\`! :(`,
     });
     if (embedOptions) {
         await ctx.sendWithPagination(reply, embedOptions);

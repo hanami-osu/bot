@@ -8,9 +8,9 @@ import { USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
 import { ApplicationCommandOptionType } from "lilybird";
 import { discordOption, filterOption, gradeOption, modeOption, modsActionOption, modsOption, usernameOption } from "./options";
 
-const modeAliases: Record<string, { mode: Mode }> = {
-    t: { mode: Mode.OSU },
-    top: { mode: Mode.OSU },
+const modeAliases: Record<string, { mode?: Mode }> = {
+    t: {},
+    top: {},
     topt: { mode: Mode.TAIKO },
     topm: { mode: Mode.MANIA },
     topc: { mode: Mode.FRUITS },
@@ -24,7 +24,7 @@ import { CommandContext } from "@utils/command-context";
 export async function run(ctx: CommandContext) {
     await ctx.defer();
 
-    const mode = modeAliases[ctx.commandName ?? "top"]?.mode ?? Mode.OSU;
+    const mode = ctx.isMessage ? modeAliases[ctx.commandName ?? "top"]?.mode : undefined;
     let parsedArgs: Awaited<ReturnType<typeof parseCommandArgs>>;
     try {
         parsedArgs = await parseCommandArgs(ctx, mode);

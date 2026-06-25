@@ -14,10 +14,8 @@ import { CommandContext } from "@utils/command-context";
 export async function run(ctx: CommandContext) {
     await ctx.defer();
 
-    let commandName = ctx.commandName;
-    if (commandName === "profile") commandName = Mode.OSU;
-
-    const { user } = await parseCommandArgs(ctx, (commandName as Mode) ?? Mode.OSU);
+    const mode = ctx.isMessage && ctx.commandName !== "profile" ? (ctx.commandName as Mode) : undefined;
+    const { user } = await parseCommandArgs(ctx, mode);
     if (user.type === UserType.FAIL) {
         await ctx.editReply(user.failMessage);
         return;

@@ -12,12 +12,12 @@ import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
 import { ApplicationCommandOptionType } from "lilybird";
 
-const modeAliases: Record<string, { mode: Mode }> = {
-    შედარება: { mode: Mode.OSU },
-    mog: { mode: Mode.OSU },
-    gap: { mode: Mode.OSU },
-    c: { mode: Mode.OSU },
-    compare: { mode: Mode.OSU },
+const modeAliases: Record<string, { mode?: Mode }> = {
+    შედარება: {},
+    mog: {},
+    gap: {},
+    c: {},
+    compare: {},
     compareosu: { mode: Mode.OSU },
     comparetaiko: { mode: Mode.TAIKO },
     comparemania: { mode: Mode.MANIA },
@@ -28,7 +28,7 @@ import { CommandContext } from "@utils/command-context";
 
 export async function run(ctx: CommandContext) {
     await ctx.defer();
-    const mode = modeAliases[ctx.commandName ?? "compare"]?.mode ?? Mode.OSU;
+    const mode = ctx.isMessage ? modeAliases[ctx.commandName ?? "compare"]?.mode : undefined;
     const { user, mods } = await parseCommandArgs(ctx, mode);
 
     if (user.type === UserType.FAIL) {
@@ -82,12 +82,12 @@ async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context
         };
     }
 
-    const plays = (await getBeatmapUserScores(beatmap.id, osuUser.id, { query: { mode: user.mode } }, user.authorDb)).sort((a: any, b: any) => b.pp - a.pp);
+    const plays = await getBeatmapUserScores(beatmap.id, osuUser.id, { query: { mode: user.mode } }, user.authorDb);
 
     if (plays.length === 0) {
         return {
             reply: {
-                embeds: [simpleErrorEmbed(`It seems like \`${osuUser.username}\` has no plays on that beatmap!`)],
+                embeds: [simpleErrorEmbed(`It seems like \`${osuUser.username}\` has no plays on that beatmap in \`${user.mode}\`!`)],
             },
         };
     }

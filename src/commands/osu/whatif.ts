@@ -14,12 +14,12 @@ import type { SuccessUser } from "@type/command-args";
 import { UserType } from "@type/command-args";
 import type { UserExtended } from "@type/osu";
 
-const modeAliases: Record<string, Mode> = {
-    wi: Mode.OSU,
+const modeAliases: Record<string, Mode | undefined> = {
+    wi: undefined,
     wit: Mode.TAIKO,
     wim: Mode.MANIA,
     wic: Mode.FRUITS,
-    whatif: Mode.OSU,
+    whatif: undefined,
     whatift: Mode.TAIKO,
     whatiftaiko: Mode.TAIKO,
     whatifm: Mode.MANIA,
@@ -38,13 +38,13 @@ const modeFlagAliases: Record<string, Mode> = {
     ctb: Mode.FRUITS,
 };
 
-function getPrefixMode(commandName: string | undefined, args: Array<string>): Mode {
+function getPrefixMode(commandName: string | undefined, args: Array<string>): Mode | undefined {
     for (const arg of args) {
         const [, modeValue] = /^mode=(osu|mania|taiko|fruits|catch|ctb)$/i.exec(arg) ?? [];
         if (modeValue) return modeFlagAliases[modeValue.toLowerCase()];
     }
 
-    return modeAliases[commandName ?? "whatif"] ?? Mode.OSU;
+    return modeAliases[commandName ?? "whatif"];
 }
 
 function getWhatIfValues(ctx: CommandContext): { playPps: Array<number>; remainingArgs: Array<string> } {
@@ -70,7 +70,7 @@ export async function run(ctx: CommandContext) {
         return;
     }
 
-    const mode = ctx.isMessage ? getPrefixMode(ctx.commandName, remainingArgs) : Mode.OSU;
+    const mode = ctx.isMessage ? getPrefixMode(ctx.commandName, remainingArgs) : undefined;
     const parseCtx = ctx.isMessage ? new CommandContext(ctx.client, undefined, ctx.message, remainingArgs, ctx.prefix, ctx.commandName, ctx.channel, ctx.index) : ctx;
     const { user } = await parseCommandArgs(parseCtx, mode);
 

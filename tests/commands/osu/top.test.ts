@@ -1,4 +1,4 @@
-import { describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { CommandContext } from "../../../src/utils/command-context";
 import { Tables } from "../../../src/types/database";
 import { EmbedBuilderType } from "../../../src/types/builders";
@@ -12,6 +12,8 @@ interface ReplyPayload {
     components?: unknown;
 }
 
+let authorMode: Mode | null = null;
+
 function parseMockBigInt(value: string | number | bigint, fieldName = "value"): bigint {
     if (typeof value === "bigint") return value;
     if (typeof value === "number" && !Number.isSafeInteger(value)) throw new Error(`${fieldName} must be a safe integer or decimal string`);
@@ -20,7 +22,7 @@ function parseMockBigInt(value: string | number | bigint, fieldName = "value"): 
 }
 
 mock.module("@utils/database", () => ({
-    getEntry: mock((table: Tables, id: string) => Promise.resolve(table === Tables.USER && id === "123" ? { id, banchoId: null } : null)),
+    getEntry: mock((table: Tables, id: string) => Promise.resolve(table === Tables.USER && id === "123" ? { id, banchoId: null, mode: authorMode } : null)),
     insertData: mock(() => Promise.resolve()),
     bulkInsertData: mock(() => Promise.resolve()),
     removeEntry: mock(() => Promise.resolve(true)),
@@ -42,7 +44,7 @@ mock.module("@utils/score-api", () => ({
     USER_SCORE_FETCH_LIMIT: 200,
 }));
 
-const getFetchedPlayReplyMock = mock(({ user, titleFilter }: { user: { banchoId: string }; titleFilter?: string }) =>
+const getFetchedPlayReplyMock = mock(({ user, titleFilter }: { user: { banchoId: string; mode: Mode }; titleFilter?: string }) =>
     Promise.resolve(
         user.banchoId === "missing"
             ? {
@@ -122,6 +124,11 @@ function createSlashContext(options: Record<string, string | number | boolean | 
 }
 
 describe("top command", () => {
+    beforeEach(() => {
+        authorMode = null;
+        getFetchedPlayReplyMock.mockClear();
+    });
+
     test("allows selecting pages for all fetched top plays", () => {
         expect(getPageMaxValue(topData)).toBe(40);
         expect(getPageMaxValue(recentBestData)).toBe(40);
@@ -158,6 +165,46 @@ describe("top command", () => {
         if (!replyCall) throw new Error("Expected reply payload");
         expect(replyCall.embeds[0].title).toBe("top play");
         expect(replyCall.components).toBeDefined();
+    });
+
+    test("uses saved mode for neutral prefix aliases", async () => {
+        authorMode = Mode.MANIA;
+        const mockClient = { rest: {} } as unknown as Client;
+        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
+        const mockMessage = {
+            author: { id: "123", username: "test_user" },
+            guildId: "guild",
+            channelId: "channel123",
+            reply,
+        } as unknown as Message;
+
+        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk"], "!", "top");
+        ctx.defer = mock(() => Promise.resolve());
+
+        await run(ctx);
+
+        const [serviceOptions] = getFetchedPlayReplyMock.mock.calls[0] as Array<{ user: { mode: Mode } }>;
+        expect(serviceOptions.user.mode).toBe(Mode.MANIA);
+    });
+
+    test("mode-specific prefix aliases override saved mode", async () => {
+        authorMode = Mode.MANIA;
+        const mockClient = { rest: {} } as unknown as Client;
+        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
+        const mockMessage = {
+            author: { id: "123", username: "test_user" },
+            guildId: "guild",
+            channelId: "channel123",
+            reply,
+        } as unknown as Message;
+
+        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk"], "!", "topt");
+        ctx.defer = mock(() => Promise.resolve());
+
+        await run(ctx);
+
+        const [serviceOptions] = getFetchedPlayReplyMock.mock.calls[0] as Array<{ user: { mode: Mode } }>;
+        expect(serviceOptions.user.mode).toBe(Mode.TAIKO);
     });
 
     test("passes prefix title filters to the plays builder", async () => {

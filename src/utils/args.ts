@@ -177,6 +177,22 @@ function normalizeStringOption(value: string | null | undefined): string | undef
     return normalized.length > 0 ? normalized : undefined;
 }
 
+function normalizeMode(value: string | null | undefined): Mode | undefined {
+    switch (value) {
+        case Mode.OSU:
+        case Mode.TAIKO:
+        case Mode.FRUITS:
+        case Mode.MANIA:
+            return value;
+        default:
+            return undefined;
+    }
+}
+
+function resolveMode(explicitMode: string | null | undefined, fallbackMode: Mode | undefined, savedMode: string | null | undefined): Mode {
+    return normalizeMode(explicitMode) ?? fallbackMode ?? normalizeMode(savedMode) ?? Mode.OSU;
+}
+
 function parseSlashIntegerOption(value: number | null | undefined, label: string): number | undefined {
     if (value === null || typeof value === "undefined") return undefined;
     if (!Number.isInteger(value)) throw new CommandValidationError(`${label} must be a whole number.`);
@@ -184,7 +200,7 @@ function parseSlashIntegerOption(value: number | null | undefined, label: string
     return value - 1;
 }
 
-async function parseSlashCommandArgs(interaction: Interaction<ApplicationCommandData>, getAttributes?: boolean): Promise<SlashCommandArgs> {
+async function parseSlashCommandArgs(interaction: Interaction<ApplicationCommandData>, fallbackMode?: Mode, getAttributes?: boolean): Promise<SlashCommandArgs> {
     const { data } = interaction;
 
     // This is so fucking annoying holy shit I can't get it right
@@ -203,7 +219,7 @@ async function parseSlashCommandArgs(interaction: Interaction<ApplicationCommand
     const userAuthor = await getEntry(Tables.USER, getInteractionUserId(interaction));
     const discordUserId = data.getUser("discord");
     const discordUser = await getEntry(Tables.USER, discordUserId ?? "");
-    const mode = (data.getString("mode") as Mode | undefined) ?? Mode.OSU;
+    const mode = resolveMode(data.getString("mode"), fallbackMode, userAuthor?.mode);
 
     const modsValue = data.getString("mods");
     const modsAction = data.getString("mods_action") ?? (data.getBoolean("force_include") ? "force_include" : data.getBoolean("exclude") ? "exclude" : data.getBoolean("include") ? "include" : null);
@@ -233,7 +249,7 @@ async function parseSlashCommandArgs(interaction: Interaction<ApplicationCommand
     return { user, mods, difficultySettings, flags: {}, titleFilter, page, index, grade };
 }
 
-async function parsePrefixCommandArgs(message: Message, args: Array<string>, mode: Mode): Promise<PrefixCommandArgs> {
+async function parsePrefixCommandArgs(message: Message, args: Array<string>, fallbackMode?: Mode): Promise<PrefixCommandArgs> {
     const result: PrefixCommandArgs = {
         tempUser: null,
         user: {
@@ -309,6 +325,7 @@ async function parsePrefixCommandArgs(message: Message, args: Array<string>, mod
     }
 
     const userAuthor = await getEntry(Tables.USER, message.author.id);
+    const mode = resolveMode(undefined, fallbackMode, userAuthor?.mode);
 
     if (!result.tempUser && userAuthor?.banchoId) {
         result.user = {
@@ -350,10 +367,10 @@ async function parsePrefixCommandArgs(message: Message, args: Array<string>, mod
     return result;
 }
 
-export async function parseCommandArgs(ctx: CommandContext, mode: Mode = Mode.OSU, getAttributes?: boolean): Promise<CommandArgs> {
+export async function parseCommandArgs(ctx: CommandContext, mode?: Mode, getAttributes?: boolean): Promise<CommandArgs> {
     if (ctx.isInteraction) {
         if (!ctx.interaction) throw new Error("Interaction command context is missing interaction data");
-        return await parseSlashCommandArgs(ctx.interaction, getAttributes);
+        return await parseSlashCommandArgs(ctx.interaction, mode, getAttributes);
     } else {
         if (!ctx.message) throw new Error("Message command context is missing message data");
         const prefixArgs = await parsePrefixCommandArgs(ctx.message, ctx.args, mode);

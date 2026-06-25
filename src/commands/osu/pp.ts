@@ -13,8 +13,8 @@ import type { SuccessUser } from "@type/command-args";
 import { UserType } from "@type/command-args";
 import type { UserExtended } from "@type/osu";
 
-const modeAliases: Record<string, Mode> = {
-    pp: Mode.OSU,
+const modeAliases: Record<string, Mode | undefined> = {
+    pp: undefined,
     ppt: Mode.TAIKO,
     ppm: Mode.MANIA,
     ppc: Mode.FRUITS,
@@ -31,13 +31,13 @@ const modeFlagAliases: Record<string, Mode> = {
     ctb: Mode.FRUITS,
 };
 
-function getPrefixMode(commandName: string | undefined, args: Array<string>): Mode {
+function getPrefixMode(commandName: string | undefined, args: Array<string>): Mode | undefined {
     for (const arg of args) {
         const [, modeValue] = /^mode=(osu|mania|taiko|fruits|catch|ctb)$/i.exec(arg) ?? [];
         if (modeValue) return modeFlagAliases[modeValue.toLowerCase()];
     }
 
-    return modeAliases[commandName ?? "pp"] ?? Mode.OSU;
+    return modeAliases[commandName ?? "pp"];
 }
 
 function getRequirementInput(ctx: CommandContext): { input: PpRequirementInput; remainingArgs: Array<string> } {
@@ -67,7 +67,7 @@ export async function run(ctx: CommandContext): Promise<void> {
         return;
     }
 
-    const mode = ctx.isMessage ? getPrefixMode(ctx.commandName, remainingArgs) : Mode.OSU;
+    const mode = ctx.isMessage ? getPrefixMode(ctx.commandName, remainingArgs) : undefined;
     const parseCtx = ctx.isMessage ? new CommandContext(ctx.client, undefined, ctx.message, remainingArgs, ctx.prefix, ctx.commandName, ctx.channel, ctx.index) : ctx;
     const { user } = await parseCommandArgs(parseCtx, mode);
 
