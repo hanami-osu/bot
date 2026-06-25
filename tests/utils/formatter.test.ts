@@ -1,5 +1,17 @@
 import { expect, test, describe, mock } from "bun:test";
+import { ScoreData, type User } from "../../src/types/database";
 import { Mode } from "../../src/types/osu";
+
+function createUser(scoreData: ScoreData | null): User {
+    return {
+        id: "1",
+        banchoId: "1",
+        score_embeds: null,
+        embed_type: null,
+        mode: null,
+        score_data: scoreData,
+    };
+}
 
 function parseMockBigInt(value: string | number | bigint, fieldName = "value"): bigint {
     if (typeof value === "bigint") return value;
@@ -183,6 +195,43 @@ SliderTickRate:1
 448,192,2500,1,0,0:0:0:0:
 `;
 
+        function createAccuracyScore(): any {
+            return {
+                id: 123456790,
+                score: 1000000,
+                created_at: "2023-01-01T00:00:00Z",
+                statistics: {
+                    count_300: 2,
+                    count_100: 1,
+                    count_50: 0,
+                    count_miss: 0,
+                },
+                max_combo: 3,
+                mods: [],
+                passed: true,
+                rank: "A",
+                accuracy: 0.99,
+                beatmap: {
+                    id: 72727,
+                    version: "Test Version",
+                    total_length: 120,
+                    hit_length: 120,
+                    bpm: 120,
+                    cs: 5,
+                    drain: 5,
+                    accuracy: 5,
+                    ar: 5,
+                },
+                beatmapset: {
+                    id: 1234,
+                    artist: "Test Artist",
+                    title: "Test Title",
+                    creator: "Test Creator",
+                    status: "ranked",
+                },
+            };
+        }
+
         test("formats score data correctly", async () => {
             // Need to import the module at the top, but we can do it here for the test
             const { getFormattedScore } = await import("../../src/utils/formatter");
@@ -240,6 +289,47 @@ SliderTickRate:1
             expect(result.coverLink).toBe("https://assets.ppy.sh/beatmaps/1234/covers/cover.jpg");
             expect(result.isFc).toBe(true);
             expect(result.drainLength).toBe("2:00");
+        });
+
+        test("uses stable classic accuracy when stable score data is selected", async () => {
+            const { getFormattedScore } = await import("../../src/utils/formatter");
+
+            const result = await getFormattedScore({
+                scores: [createAccuracyScore()],
+                index: 0,
+                mode: Mode.OSU,
+                mapData: mockMapData,
+                authorDb: createUser(ScoreData.Stable),
+            });
+
+            expect(result.accuracy).toBe("77.78");
+        });
+
+        test("uses API accuracy when lazer score data is selected", async () => {
+            const { getFormattedScore } = await import("../../src/utils/formatter");
+
+            const result = await getFormattedScore({
+                scores: [createAccuracyScore()],
+                index: 0,
+                mode: Mode.OSU,
+                mapData: mockMapData,
+                authorDb: createUser(ScoreData.Lazer),
+            });
+
+            expect(result.accuracy).toBe("99.00");
+        });
+
+        test("uses API accuracy when score data is unset", async () => {
+            const { getFormattedScore } = await import("../../src/utils/formatter");
+
+            const result = await getFormattedScore({
+                scores: [createAccuracyScore()],
+                index: 0,
+                mode: Mode.OSU,
+                mapData: mockMapData,
+            });
+
+            expect(result.accuracy).toBe("99.00");
         });
 
         test("uses the score ruleset for mania score performance", async () => {

@@ -8,7 +8,7 @@ import type { LeaderboardBuilderOptions } from "@type/builders";
 import type { Embed } from "lilybird";
 import type { Beatmap, LeaderboardScore, Mode, ScoresInfo } from "@type/osu";
 
-export async function leaderboardBuilder({ scores, beatmap, page = 0 }: LeaderboardBuilderOptions): Promise<Array<Embed.Structure>> {
+export async function leaderboardBuilder({ scores, beatmap, authorDb, page = 0 }: LeaderboardBuilderOptions): Promise<Array<Embed.Structure>> {
     if (scores.length === 0) {
         return [
             {
@@ -19,10 +19,10 @@ export async function leaderboardBuilder({ scores, beatmap, page = 0 }: Leaderbo
         ] satisfies Array<Embed.Structure>;
     }
 
-    return getPlays(scores, beatmap, page);
+    return getPlays(scores, beatmap, authorDb, page);
 }
 
-async function getPlays(plays: Array<LeaderboardScore>, beatmap: Beatmap, page: number): Promise<Array<Embed.Structure>> {
+async function getPlays(plays: Array<LeaderboardScore>, beatmap: Beatmap, authorDb: LeaderboardBuilderOptions["authorDb"], page: number): Promise<Array<Embed.Structure>> {
     const beatmapId = beatmap.id;
     const mode = beatmap.mode as Mode;
     const mapData = (await getEntry(Tables.MAP, beatmapId))?.data ?? (await downloadBeatmap(beatmapId)).contents;
@@ -31,7 +31,7 @@ async function getPlays(plays: Array<LeaderboardScore>, beatmap: Beatmap, page: 
     const pageEnd = pageStart + 5;
 
     const playsTemp: Array<Promise<ScoresInfo>> = [];
-    for (let i = pageStart; pageEnd > i && i < plays.length; i++) playsTemp.push(getFormattedScore({ scores: plays, index: i, mode, beatmap, mapData }));
+    for (let i = pageStart; pageEnd > i && i < plays.length; i++) playsTemp.push(getFormattedScore({ scores: plays, index: i, mode, beatmap, mapData, authorDb }));
 
     let description = "";
     const playResults = await Promise.all(playsTemp);

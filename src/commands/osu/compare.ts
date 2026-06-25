@@ -1,6 +1,6 @@
 import { compareBuilder, simpleErrorEmbed, userNotFoundEmbed } from "@builders";
 import { MessageReplyOptions } from "@lilybird/transformers";
-import { EmbedBuilderType } from "@type/builders";
+import { EmbedBuilderType, type CompareBuilderOptions } from "@type/builders";
 import { SuccessUser, UserType } from "@type/command-args";
 import { CommandData } from "@type/commands";
 import { Mode, type Beatmap } from "@type/osu";
@@ -44,7 +44,7 @@ export async function run(ctx: CommandContext) {
     }
 }
 
-async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context: CommandContext): Promise<{ reply: MessageReplyOptions; embedOptions?: any }> {
+async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context: CommandContext): Promise<{ reply: MessageReplyOptions; embedOptions?: CompareBuilderOptions }> {
     const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
     if (!osuUserRequest.success) {
         return {
@@ -92,10 +92,11 @@ async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context
         };
     }
 
-    const embedOptions = {
-        type: EmbedBuilderType.COMPARE as EmbedBuilderType.COMPARE,
+    const embedOptions: CompareBuilderOptions = {
+        type: EmbedBuilderType.COMPARE,
         initiatorId: authorId,
         mode: user.mode,
+        authorDb: user.authorDb,
         user: osuUser,
         beatmap: beatmap as Beatmap,
         plays,

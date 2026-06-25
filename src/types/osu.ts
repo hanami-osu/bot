@@ -171,14 +171,24 @@ export type Score = {
     passed: boolean;
     pp: number | null;
     rank: Rank;
+
     score?: number;
     total_score?: number;
+    classic_total_score?: number;
+    legacy_total_score?: number;
+    total_score_without_mods?: number;
+
     legacy_score_id?: number | null;
     statistics: ScoreStatistics;
+    maximum_statistics?: ScoreStatistics;
+
     beatmap: Beatmap;
     beatmapset: Beatmapset;
+
     created_at?: ISOTimestamp;
     ended_at?: ISOTimestamp;
+    started_at?: ISOTimestamp;
+
     mods: Array<Mod> | Array<string>;
     position?: number;
     user?: {
