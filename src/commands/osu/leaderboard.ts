@@ -2,7 +2,6 @@ import { leaderboardBuilder, simpleErrorEmbed } from "@builders";
 import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
 import { CommandData } from "@type/commands";
-import { Mode } from "@type/osu";
 import { CommandValidationError, parseCommandArgs } from "@utils/args";
 import { getBeatmapIdFromContext, getBeatmapTopScores } from "@utils/osu";
 import { createPaginationActionRow, ITEMS_PER_PAGE } from "@utils/pagination";
@@ -36,7 +35,7 @@ export async function run(ctx: CommandContext) {
 
     let parsedArgs: Awaited<ReturnType<typeof parseCommandArgs>>;
     try {
-        parsedArgs = await parseCommandArgs(ctx, Mode.OSU);
+        parsedArgs = await parseCommandArgs(ctx);
     } catch (error) {
         if (error instanceof CommandValidationError) {
             await ctx.editReply(error.message);

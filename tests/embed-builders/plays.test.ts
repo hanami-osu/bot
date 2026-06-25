@@ -93,7 +93,7 @@ describe("plays embed builder", () => {
         );
 
         expect(embeds[0]?.title).toBe("Uh oh! :x:");
-        expect(embeds[0]?.description).toBe("No plays matched those filters for `yorunoken`.");
+        expect(embeds[0]?.description).toBe("No plays matched those filters for `yorunoken` in `osu`.");
     });
 
     test("renders single-play position against the filtered total", async () => {

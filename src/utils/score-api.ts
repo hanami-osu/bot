@@ -1,17 +1,10 @@
-import { IDefaultParams as AddonParams, v2 } from "osu-api-extended";
-import { ScoreData, type User } from "@type/database";
+import { v2 } from "osu-api-extended";
+import { getScoreFetchAddons } from "@utils/score-preference";
+import type { User } from "@type/database";
 import type { Score, PlayType, Mode } from "@type/osu";
 
 export const USER_SCORE_FETCH_LIMIT = 200;
 const USER_SCORE_API_PAGE_LIMIT = 100;
-
-function getScoreFetchAddons(authorDb: User | null): AddonParams | undefined {
-    if (typeof authorDb?.score_data !== "number") return undefined;
-
-    return {
-        legacy_only: authorDb.score_data === ScoreData.Stable,
-    };
-}
 
 interface UserScoresOptions {
     query: {

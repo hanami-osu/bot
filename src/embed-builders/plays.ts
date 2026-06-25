@@ -1,5 +1,6 @@
 import { SPACE } from "@utils/constants";
 import { EmbedScoreType } from "@type/database";
+import { ITEMS_PER_PAGE } from "@utils/pagination";
 import { EmbedType } from "lilybird";
 import type { User } from "@type/database";
 import type { Mode, ProfileInfo, ScoresInfo } from "@type/osu";
@@ -17,7 +18,7 @@ export async function playBuilder({ plays, profile, mode, index, isMultiple, pag
             {
                 type: EmbedType.Rich,
                 title: "Uh oh! :x:",
-                description: `No plays matched those filters for \`${profile.username}\`.`,
+                description: `No plays matched those filters for \`${profile.username}\` in \`${mode}\`.`,
             },
         ] satisfies Array<Embed.Structure>;
     }
@@ -32,7 +33,7 @@ export async function playBuilder({ plays, profile, mode, index, isMultiple, pag
         ] satisfies Array<Embed.Structure>;
     }
 
-    if (typeof page !== "undefined" && (page < 0 || page * 5 >= totalPlays)) {
+    if (typeof page !== "undefined" && (page < 0 || page * ITEMS_PER_PAGE >= totalPlays)) {
         return [
             {
                 type: EmbedType.Rich,
@@ -235,7 +236,7 @@ async function getMultiplePlays({
                 },
                 thumbnail: { url: profile.avatarUrl },
                 description,
-                footer: { text: `Page ${page + 1} of ${Math.ceil(totalPlays / 5)}` },
+                footer: { text: `Page ${page + 1} of ${Math.ceil(totalPlays / ITEMS_PER_PAGE)}` },
             },
         ];
     }
@@ -260,7 +261,7 @@ async function getMultiplePlays({
                 },
                 thumbnail: { url: profile.avatarUrl },
                 description,
-                footer: { text: `Page ${page + 1} of ${Math.ceil(totalPlays / 5)} • Mode: ${mode}` },
+                footer: { text: `Page ${page + 1} of ${Math.ceil(totalPlays / ITEMS_PER_PAGE)} • Mode: ${mode}` },
             },
         ];
     }
@@ -286,7 +287,7 @@ async function getMultiplePlays({
             },
             thumbnail: { url: profile.avatarUrl },
             description,
-            footer: { text: `On osu! Bancho | Page ${page + 1} of ${Math.ceil(totalPlays / 5)}` },
+            footer: { text: `On osu! Bancho | Page ${page + 1} of ${Math.ceil(totalPlays / ITEMS_PER_PAGE)}` },
         },
     ];
 }

@@ -2,6 +2,7 @@ import { getFormattedScore } from "@utils/formatter";
 import { SPACE } from "@utils/constants";
 import { getEntry } from "@utils/database";
 import { downloadBeatmap } from "@utils/osu";
+import { ITEMS_PER_PAGE } from "@utils/pagination";
 import { Tables } from "@type/database";
 import { EmbedType } from "lilybird";
 import type { LeaderboardBuilderOptions } from "@type/builders";
@@ -27,8 +28,8 @@ async function getPlays(plays: Array<LeaderboardScore>, beatmap: Beatmap, author
     const mode = beatmap.mode as Mode;
     const mapData = (await getEntry(Tables.MAP, beatmapId))?.data ?? (await downloadBeatmap(beatmapId)).contents;
 
-    const pageStart = page * 5;
-    const pageEnd = pageStart + 5;
+    const pageStart = page * ITEMS_PER_PAGE;
+    const pageEnd = pageStart + ITEMS_PER_PAGE;
 
     const playsTemp: Array<Promise<ScoresInfo>> = [];
     for (let i = pageStart; pageEnd > i && i < plays.length; i++) playsTemp.push(getFormattedScore({ scores: plays, index: i, mode, beatmap, mapData, authorDb }));
@@ -54,7 +55,7 @@ async function getPlays(plays: Array<LeaderboardScore>, beatmap: Beatmap, author
         thumbnail: { url: `https://assets.ppy.sh/beatmaps/${beatmapset.id}/covers/list.jpg` },
         description,
         footer: {
-            text: `${beatmap.status.charAt(0).toUpperCase()}${beatmap.status.slice(1)} beatmapset by ${beatmap.beatmapset.creator} ${SPACE} - ${SPACE} Page ${page + 1} of ${Math.ceil(plays.length / 5)}`,
+            text: `${beatmap.status.charAt(0).toUpperCase()}${beatmap.status.slice(1)} beatmapset by ${beatmap.beatmapset.creator} ${SPACE} - ${SPACE} Page ${page + 1} of ${Math.ceil(plays.length / ITEMS_PER_PAGE)}`,
         },
     };
 

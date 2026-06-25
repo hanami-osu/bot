@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
 import { ScoreData } from "../../src/types/database";
-import { shouldUseLazerPerformance } from "../../src/utils/osu";
+import { shouldUseLazerPerformance } from "../../src/utils/score-preference";
 
 function createPlay(legacyScoreId: number | null): Parameters<typeof shouldUseLazerPerformance>[0] {
     return { legacy_score_id: legacyScoreId } as Parameters<typeof shouldUseLazerPerformance>[0];

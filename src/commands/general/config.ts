@@ -70,7 +70,7 @@ export const data = {
             {
                 type: ApplicationCommandOptionType.NUMBER,
                 name: "score_embeds",
-                description: "Specify what size score embeds should be. (compare, recent...)",
+                description: "Specify the size of recent/top/firsts score embeds.",
                 choices: [
                     { name: "Maximized", value: 1 },
                     { name: "Minimized", value: 0 },
@@ -92,7 +92,7 @@ export const data = {
             {
                 type: ApplicationCommandOptionType.STRING,
                 name: "embed_type",
-                description: "Specify an osu! embed type. Default: Hanami",
+                description: "Specify the style of recent/top/firsts score embeds. Default: Hanami",
                 choices: [
                     { name: "Bathbot", value: "bathbot" },
                     { name: "owo", value: "owobot" },

@@ -2,11 +2,12 @@ import { getFormattedProfile, getFormattedScore } from "@utils/formatter";
 import { SPACE } from "@utils/constants";
 import { getEntry } from "@utils/database";
 import { downloadBeatmap, saveScoreDatas } from "@utils/osu";
+import { ITEMS_PER_PAGE } from "@utils/pagination";
 import { Tables } from "@type/database";
 import { EmbedType } from "lilybird";
 import type { CompareBuilderOptions } from "@type/builders";
 import type { Embed } from "lilybird";
-import type { Beatmap, Mode, ProfileInfo, ScoresInfo, Score, ScoreV2 } from "@type/osu";
+import type { Beatmap, Mode, ProfileInfo, Score, ScoreV2 } from "@type/osu";
 
 export async function compareBuilder({ beatmap, plays, user, mode, authorDb, mods, page = 0 }: CompareBuilderOptions): Promise<Array<Embed.Structure>> {
     saveScoreDatas(plays, mode, beatmap);
@@ -60,19 +61,19 @@ async function getMultiplePlays({
     const beatmapId = beatmap.id;
     const mapData = (await getEntry(Tables.MAP, beatmapId))?.data ?? (await downloadBeatmap(beatmapId)).contents;
 
-    const pageStart = page * 5;
-    const pageEnd = pageStart + 5;
-
-    const playsTemp: Array<Promise<ScoresInfo>> = [];
-    for (let i = pageStart; pageEnd > i && i < plays.length; i++) playsTemp.push(getFormattedScore({ scores: plays, index: i, mode, beatmap, mapData, authorDb }));
+    const pageStart = page * ITEMS_PER_PAGE;
+    const pageEnd = pageStart + ITEMS_PER_PAGE;
+    const formattedPlays = await Promise.all(plays.map((_play, index) => getFormattedScore({ scores: plays, index, mode, beatmap, mapData, authorDb })));
+    const playResults = formattedPlays
+        .map((play, index) => ({ play, index }))
+        .sort((a, b) => b.play.pp - a.play.pp || a.index - b.index)
+        .slice(pageStart, pageEnd)
+        .map(({ play }) => play);
 
     const { beatmapset } = beatmap;
 
     let description = "";
 
-    // Create an array of promises to await
-    let playResults = await Promise.all(playsTemp);
-    playResults = playResults.sort((a, b) => b.pp - a.pp);
     for (const playResult of playResults) {
         const line1 = `${playResult.grade} **[${playResult.stars}]** ${SPACE}  ${playResult.ppFormatted} ${SPACE} **${playResult.accuracy}% ${SPACE} +${playResult.mods.join("")}**\n`;
         const line2 = `${playResult.score} ${SPACE} {${playResult.hitValues}} ${SPACE} [${playResult.comboValues}] ${SPACE} ${playResult.playSubmitted}`;
@@ -91,7 +92,7 @@ async function getMultiplePlays({
         thumbnail: { url: `https://assets.ppy.sh/beatmaps/${beatmapset.id}/covers/list.jpg` },
         description,
         footer: {
-            text: `${beatmap.status.charAt(0).toUpperCase()}${beatmap.status.slice(1)} beatmapset by ${beatmap.beatmapset.creator} ${SPACE} - ${SPACE} Page ${page + 1} of ${Math.ceil(plays.length / 5)}`,
+            text: `${beatmap.status.charAt(0).toUpperCase()}${beatmap.status.slice(1)} beatmapset by ${beatmap.beatmapset.creator} ${SPACE} - ${SPACE} Page ${page + 1} of ${Math.ceil(plays.length / ITEMS_PER_PAGE)}`,
         },
     };
 

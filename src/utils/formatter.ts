@@ -1,7 +1,8 @@
 import { accuracyCalculator, formatDuration, getPerformanceResults, getRetryCount, hitValueCalculator } from "@utils/osu";
 import { grades, rulesets } from "@utils/constants";
 import { insertData } from "@utils/database";
-import { ScoreData, Tables, type User } from "@type/database";
+import { getScoreAccuracy, getScoreValue } from "@utils/score-preference";
+import { Tables, type User } from "@type/database";
 import type { Mode, UserScore, Beatmap, LeaderboardScore, ScoresInfo, Score, UserBestScore, UserBestScoreV2, UserScoreV2, ScoreV2, ProfileInfo, ScoreStatistics, UserExtended } from "@type/osu";
 
 const rulesetModes: Record<number, Mode> = {
@@ -31,32 +32,6 @@ function getBeatmapObjectCount(beatmap: { count_circles?: number; count_sliders?
 function getFallbackStars(beatmap: { difficulty_rating?: number }): string {
     const stars = beatmap.difficulty_rating;
     return typeof stars === "number" ? `${stars.toFixed(2).toLocaleString()}★` : "?★";
-}
-
-function getScoreValue(play: UserBestScore | UserBestScoreV2 | UserScore | UserScoreV2 | Score | ScoreV2 | LeaderboardScore, authorDb: User | null): number {
-    const legacyTotalScore = typeof play.legacy_total_score === "number" && play.legacy_total_score > 0 ? play.legacy_total_score : undefined;
-    const classicTotalScore = typeof play.classic_total_score === "number" && play.classic_total_score > 0 ? play.classic_total_score : undefined;
-    const totalScore = typeof play.total_score === "number" ? play.total_score : undefined;
-    const score = typeof play.score === "number" ? play.score : undefined;
-
-    if (authorDb?.score_data === ScoreData.Stable) {
-        return legacyTotalScore ?? classicTotalScore ?? totalScore ?? score ?? 0;
-    }
-
-    return totalScore ?? score ?? legacyTotalScore ?? classicTotalScore ?? 0;
-}
-
-function getScoreAccuracy(
-    play: UserBestScore | UserBestScoreV2 | UserScore | UserScoreV2 | Score | ScoreV2 | LeaderboardScore,
-    mode: Mode,
-    scoreStatistics: ScoreStatistics,
-    authorDb: User | null,
-): number {
-    if (authorDb?.score_data === ScoreData.Stable) {
-        return accuracyCalculator(mode, scoreStatistics);
-    }
-
-    return play.accuracy * 100;
 }
 
 export async function getFormattedScore({
