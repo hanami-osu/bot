@@ -12,6 +12,7 @@ import { getUserScores, USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
 import { v2 } from "osu-api-extended";
 import type { Message, Embed } from "lilybird";
 import type { MessageReplyOptions } from "@lilybird/transformers";
+import { User } from "@type/database";
 
 interface FetchedPlayReplyOptions {
     user: SuccessUser;
@@ -133,7 +134,7 @@ async function getPlayBuilderOptions({ plays: rawPlays, user, mode, index, mods,
 
     const profile = getFormattedProfile(user, mode);
     const totalPlays = plays.length;
-    const formattedPlays = await getFormattedPlaysForView({ plays, mode, index, page, totalPlays });
+    const formattedPlays = await getFormattedPlaysForView({ plays, mode, index, page, totalPlays, authorDb });
 
     return {
         profile,
@@ -147,7 +148,21 @@ async function getPlayBuilderOptions({ plays: rawPlays, user, mode, index, mods,
     };
 }
 
-async function getFormattedPlaysForView({ plays, mode, index, page, totalPlays }: { plays: Array<Score>; mode: Mode; index?: number; page?: number; totalPlays: number }): Promise<Array<ScoresInfo>> {
+async function getFormattedPlaysForView({
+    plays,
+    mode,
+    index,
+    page,
+    totalPlays,
+    authorDb,
+}: {
+    plays: Array<Score>;
+    mode: Mode;
+    index?: number;
+    page?: number;
+    totalPlays: number;
+    authorDb: User | null;
+}): Promise<Array<ScoresInfo>> {
     if (totalPlays === 0) return [];
 
     if (typeof index !== "undefined" && (index < 0 || index >= totalPlays)) return [];
@@ -159,14 +174,14 @@ async function getFormattedPlaysForView({ plays, mode, index, page, totalPlays }
         const formattedPlays: Array<Promise<ScoresInfo>> = [];
 
         for (let i = pageStart; pageEnd > i && i < plays.length; i++) {
-            formattedPlays.push(getFormattedScore({ scores: plays, index: i, mode }));
+            formattedPlays.push(getFormattedScore({ scores: plays, index: i, mode, authorDb }));
         }
 
         return Promise.all(formattedPlays);
     }
 
     if (typeof index !== "undefined") {
-        return [await getFormattedScore({ scores: plays, index, mode })];
+        return [await getFormattedScore({ scores: plays, index, mode, authorDb })];
     }
 
     return [];

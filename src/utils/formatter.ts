@@ -1,8 +1,8 @@
 import { accuracyCalculator, formatDuration, getPerformanceResults, getRetryCount, hitValueCalculator } from "@utils/osu";
 import { grades, rulesets } from "@utils/constants";
 import { insertData } from "@utils/database";
-import { Tables } from "@type/database";
-import type { Mode, UserScore, Beatmap, LeaderboardScore, ScoresInfo, Score, UserBestScore, UserBestScoreV2, UserScoreV2, ScoreV2, ProfileInfo, ISOTimestamp, ScoreStatistics, UserExtended } from "@type/osu";
+import { ScoreData, Tables, type User } from "@type/database";
+import type { Mode, UserScore, Beatmap, LeaderboardScore, ScoresInfo, Score, UserBestScore, UserBestScoreV2, UserScoreV2, ScoreV2, ProfileInfo, ScoreStatistics, UserExtended } from "@type/osu";
 
 const rulesetModes: Record<number, Mode> = {
     0: "osu" as Mode,
@@ -33,18 +33,34 @@ function getFallbackStars(beatmap: { difficulty_rating?: number }): string {
     return typeof stars === "number" ? `${stars.toFixed(2).toLocaleString()}★` : "?★";
 }
 
+function getScoreValue(play: UserBestScore | UserBestScoreV2 | UserScore | UserScoreV2 | Score | ScoreV2 | LeaderboardScore, authorDb: User | null): number {
+    const legacyScore = typeof play.classic_total_score === "number" && play.classic_total_score > 0 ? play.classic_total_score : undefined;
+    const lazerScore = play.total_score ?? play.score;
+
+    console.log(play);
+    console.log(legacyScore);
+    if (authorDb?.score_data === ScoreData.Stable) {
+        console.log("stable score");
+        return legacyScore ?? lazerScore ?? 0;
+    }
+
+    return lazerScore ?? legacyScore ?? 0;
+}
+
 export async function getFormattedScore({
     scores,
     beatmap: map_,
     index,
     mode,
     mapData,
+    authorDb,
 }: {
     scores: Array<UserBestScore | UserBestScoreV2 | UserScore | UserScoreV2 | Score | ScoreV2 | LeaderboardScore>;
     beatmap?: Beatmap;
     index: number;
     mode: Mode;
     mapData?: string;
+    authorDb: User | null;
 }): Promise<ScoresInfo> {
     const play = scores[index];
     const scoreMode = getScoreMode(play, mode);
@@ -61,8 +77,6 @@ export async function getFormattedScore({
         beatmapset = set;
     }
 
-    let totalScore: number;
-    let createdAt: ISOTimestamp;
     const scoreStatistics: ScoreStatistics = {
         count_300: play.statistics.count_300 ?? play.statistics.great ?? 0,
         count_100: play.statistics.count_100 ?? play.statistics.ok ?? 0,
@@ -87,17 +101,12 @@ export async function getFormattedScore({
         retries = getRetryCount(beatmapIds, play.beatmap.id);
     }
 
-    if ("score" in play && play.score !== undefined) {
-        totalScore = play.score;
-        createdAt = play.created_at ?? "";
-    } else {
-        // handle V2 and leaderboard scores
-        if ("user" in play && play.user) {
-            user = play.user.username;
-            userId = play.user_id;
-        }
-        totalScore = play.total_score ?? 0;
-        createdAt = play.ended_at ?? "";
+    const totalScore = getScoreValue(play, authorDb);
+    const createdAt = play.created_at ?? play.ended_at ?? "";
+
+    if ("user" in play && play.user) {
+        user = play.user.username;
+        userId = play.user_id;
     }
 
     const objectsHit =
