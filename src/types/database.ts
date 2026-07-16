@@ -18,6 +18,9 @@ export enum EmbedScoreType {
 export interface User {
     id: string;
     banchoId: string | null;
+    hanamiUserId: string | null;
+    identitySyncedAt: Date | null;
+    identityVersion: number;
     score_embeds: number | null;
     embed_type: EmbedScoreType | null;
     mode: string | null;

@@ -55,7 +55,17 @@ async function list(ctx: CommandContext, userId: string): Promise<void> {
     let user = await getEntry(Tables.USER, userId);
     if (!user) {
         await insertData({ table: Tables.USER, id: userId, data: [{ key: "banchoId", value: null }] });
-        user = { banchoId: null, mode: null, score_embeds: null, embed_type: null, score_data: null, id: userId };
+        user = {
+            id: userId,
+            banchoId: null,
+            hanamiUserId: null,
+            identitySyncedAt: null,
+            identityVersion: 0,
+            mode: null,
+            score_embeds: null,
+            embed_type: null,
+            score_data: null,
+        };
     }
 
     await ctx.editReply({ embeds: [configListEmbed(ctx.user.username, user)] });

@@ -14,6 +14,9 @@ describe("config embed builder", () => {
         const embed = configListEmbed("tester", {
             id: "user-1",
             banchoId: null,
+            hanamiUserId: null,
+            identitySyncedAt: null,
+            identityVersion: 0,
             score_embeds: 1,
             embed_type: EmbedScoreType.Hanami,
             mode: null,

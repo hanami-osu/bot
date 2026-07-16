@@ -11,4 +11,5 @@ command-ids.json
 osu-token.json
 /src/generated/prisma
 *.sql
+!prisma/migrations/20260717000000_add_hanami_identity/migration.sql
 scratch

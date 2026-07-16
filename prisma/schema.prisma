@@ -8,12 +8,15 @@ datasource db {
 }
 
 model User {
-    id           String  @id @db.VarChar(255)
-    banchoId     String? @db.VarChar(255)
-    score_embeds Int?
-    mode         String? @db.VarChar(255)
-    embed_type   String? @db.VarChar(255)
-    score_data   Int?
+    id               String    @id @db.VarChar(255)
+    banchoId         String?   @db.VarChar(255)
+    hanamiUserId     String?   @unique @map("hanami_user_id") @db.VarChar(255)
+    identitySyncedAt DateTime? @map("identity_synced_at") @db.DateTime(3)
+    identityVersion  Int       @default(0) @map("identity_version")
+    score_embeds     Int?
+    mode             String?   @db.VarChar(255)
+    embed_type       String?   @db.VarChar(255)
+    score_data       Int?
 
     @@map("users")
 }

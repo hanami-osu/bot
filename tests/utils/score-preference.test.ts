@@ -7,6 +7,9 @@ function createUser(scoreData: ScoreData | null): User {
     return {
         id: "1",
         banchoId: "1",
+        hanamiUserId: null,
+        identitySyncedAt: null,
+        identityVersion: 0,
         score_embeds: null,
         embed_type: null,
         mode: null,
