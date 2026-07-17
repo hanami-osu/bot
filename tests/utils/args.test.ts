@@ -6,7 +6,9 @@ import { Tables } from "../../src/types/database";
 import type { Client } from "lilybird";
 import type { ApplicationCommandData, Interaction, Message } from "@lilybird/transformers";
 
-const linkedUsers = new Map<string, { id: string; banchoId: string | null; mode?: string | null }>([["123456789012345678", { id: "123456789012345678", banchoId: "yorunoken" }]]);
+const linkedUsers = new Map<string, { id: string; banchoId: string | null; mode?: string | null }>([
+    ["123456789012345678", { id: "123456789012345678", banchoId: "yorunoken" }],
+]);
 
 function parseMockBigInt(value: string | number | bigint, fieldName = "value"): bigint {
     if (typeof value === "bigint") return value;
@@ -21,7 +23,8 @@ function mapMockFromPrisma(value: unknown): unknown {
     for (const key of Object.keys(mapped)) if (typeof mapped[key] === "bigint") mapped[key] = mapped[key].toString();
     if (typeof mapped.prefixes === "string") {
         const prefixes = JSON.parse(mapped.prefixes);
-        if (!Array.isArray(prefixes) || !prefixes.every((prefix) => typeof prefix === "string")) throw new Error("guild prefixes must be a JSON array of strings");
+        if (!Array.isArray(prefixes) || !prefixes.every((prefix) => typeof prefix === "string"))
+            throw new Error("guild prefixes must be a JSON array of strings");
         mapped.prefixes = prefixes;
     }
     return mapped;
@@ -38,7 +41,8 @@ mock.module("@utils/database", () => ({
     getRowCount: mock(() => Promise.resolve(0)),
     getRowSum: mock(() => Promise.resolve(0)),
     parseBigIntValue: parseMockBigInt,
-    mapToPrismaValue: (key: string, value: unknown) => (["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value),
+    mapToPrismaValue: (key: string, value: unknown) =>
+        ["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value,
     mapFromPrismaValue: mapMockFromPrisma,
     incrementCommandCount: mock(() => Promise.resolve()),
 }));
@@ -57,7 +61,11 @@ function createPrefixContext(args: Array<string>, index?: number, commandName = 
     return new CommandContext(mockClient, undefined, message, args, "!", commandName, undefined, index);
 }
 
-function createMockInteraction(options: Record<string, string | number | boolean | null>, userId = "0000", includeRawOptions = true): Interaction<ApplicationCommandData> {
+function createMockInteraction(
+    options: Record<string, string | number | boolean | null>,
+    userId = "0000",
+    includeRawOptions = true,
+): Interaction<ApplicationCommandData> {
     const data = {
         ...(includeRawOptions ? { options: Object.entries(options).map(([name, value]) => ({ name, value })) } : {}),
         getString: (name: string) => (typeof options[name] === "string" ? options[name] : undefined),
@@ -90,9 +98,12 @@ describe("args parser", () => {
             expect(parsed && ("id" in parsed ? parsed.id : parsed.difficultyId)).toBe(expected);
         });
 
-        test.each(["https://example.com/b/72727", "https://osu.ppy.sh/users/72727", "https://osu.ppy.sh/beatmapsets/123456#osu/not-a-number"])("rejects unrelated URL %s", (url) => {
-            expect(parseBeatmapUrl(url)).toBeNull();
-        });
+        test.each(["https://example.com/b/72727", "https://osu.ppy.sh/users/72727", "https://osu.ppy.sh/beatmapsets/123456#osu/not-a-number"])(
+            "rejects unrelated URL %s",
+            (url) => {
+                expect(parseBeatmapUrl(url)).toBeNull();
+            },
+        );
     });
 
     describe("parseCommandArgs prefix input", () => {
@@ -158,9 +169,12 @@ describe("args parser", () => {
             expect(parsePrefixPageFlag({})).toBeUndefined();
         });
 
-        test.each([{ p: "" }, { p: "abc" }, { p: "1.5" }, { p: "0" }, { p: "41" }] as Array<Record<string, string>>)("rejects invalid prefix page flag %p", (flags) => {
-            expect(() => parsePrefixPageFlag(flags, 40)).toThrow(CommandValidationError);
-        });
+        test.each([{ p: "" }, { p: "abc" }, { p: "1.5" }, { p: "0" }, { p: "41" }] as Array<Record<string, string>>)(
+            "rejects invalid prefix page flag %p",
+            (flags) => {
+                expect(() => parsePrefixPageFlag(flags, 40)).toThrow(CommandValidationError);
+            },
+        );
     });
 
     describe("parseCommandArgs slash input", () => {

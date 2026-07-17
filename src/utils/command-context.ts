@@ -1,5 +1,13 @@
 import { Client } from "lilybird";
-import { Message, ApplicationCommandData, GuildTextChannel, User, MessageReplyOptions, InteractionReplyOptions, Interaction } from "@lilybird/transformers";
+import {
+    Message,
+    ApplicationCommandData,
+    GuildTextChannel,
+    User,
+    MessageReplyOptions,
+    InteractionReplyOptions,
+    Interaction,
+} from "@lilybird/transformers";
 import type { EmbedBuilderOptions } from "@type/builders";
 
 type ReplyOptions = string | MessageReplyOptions | InteractionReplyOptions;
@@ -125,7 +133,9 @@ export class CommandContext {
             this.hasInteractionResponse = true;
             return this.sentMessage;
         } else if (this.message) {
-            this.sentMessage = (typeof options === "string" ? await this.message.reply(options) : await this.message.reply(options as MessageReplyOptions)) as unknown as SentMessage;
+            this.sentMessage = (typeof options === "string"
+                ? await this.message.reply(options)
+                : await this.message.reply(options as MessageReplyOptions)) as unknown as SentMessage;
             return this.sentMessage;
         }
         throw new Error("Command context cannot reply without interaction or message data");
@@ -133,7 +143,10 @@ export class CommandContext {
 
     async editReply(options: ReplyOptions): Promise<unknown> {
         if (this.interaction) {
-            const message = typeof options === "string" ? await this.interaction.editReply(options) : await this.interaction.editReply(options as InteractionReplyOptions);
+            const message =
+                typeof options === "string"
+                    ? await this.interaction.editReply(options)
+                    : await this.interaction.editReply(options as InteractionReplyOptions);
             this.hasInteractionResponse = true;
             return message;
         } else {

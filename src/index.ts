@@ -38,7 +38,9 @@ async function shutdown(reason: string, exitCode: number): Promise<void> {
 
         await clearReady().catch((error: unknown) => logger.error("Error clearing readiness marker", asError(error)));
         await withTimeout(closeRedis(), "Redis shutdown").catch((error: unknown) => logger.error("Error closing Redis", asError(error)));
-        await withTimeout(prisma.$disconnect(), "Prisma shutdown").catch((error: unknown) => logger.error("Error disconnecting Prisma", asError(error)));
+        await withTimeout(prisma.$disconnect(), "Prisma shutdown").catch((error: unknown) =>
+            logger.error("Error disconnecting Prisma", asError(error)),
+        );
         await withTimeout(logger.flush(), "Logger flush").catch((error: unknown) => console.error("Error flushing logs", error));
 
         process.exitCode = exitCode;

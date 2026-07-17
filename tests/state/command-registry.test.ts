@@ -1,5 +1,13 @@
 import { afterEach, describe, expect, test } from "bun:test";
-import { commandAliasesCache, commandsCache, getSlashCommandMention, registerCommand, registerSlashCommandId, resolveCommand, slashCommandIdsCache } from "../../src/state/command-registry";
+import {
+    commandAliasesCache,
+    commandsCache,
+    getSlashCommandMention,
+    registerCommand,
+    registerSlashCommandId,
+    resolveCommand,
+    slashCommandIdsCache,
+} from "../../src/state/command-registry";
 import type { CommandFileData } from "../../src/types/commands";
 
 describe("command registry", () => {

@@ -8,7 +8,10 @@ import { CommandData } from "@type/commands";
 import { ApplicationCommandOptionType, PermissionFlags } from "lilybird";
 import { CommandInteractionContext, CommandIntegrationType } from "@utils/command-context";
 
-const commands: Record<string, ({ prefix, interaction, guildId }: { prefix?: string; interaction: GuildInteraction<ApplicationCommandData>; guildId: string }) => Promise<void>> = {
+const commands: Record<
+    string,
+    ({ prefix, interaction, guildId }: { prefix?: string; interaction: GuildInteraction<ApplicationCommandData>; guildId: string }) => Promise<void>
+> = {
     add,
     remove,
     list,
@@ -50,7 +53,15 @@ async function checkForPermissions(interaction: GuildInteraction<ApplicationComm
     }
 }
 
-async function add({ prefix, interaction, guildId }: { prefix?: string; interaction: GuildInteraction<ApplicationCommandData>; guildId: string }): Promise<void> {
+async function add({
+    prefix,
+    interaction,
+    guildId,
+}: {
+    prefix?: string;
+    interaction: GuildInteraction<ApplicationCommandData>;
+    guildId: string;
+}): Promise<void> {
     const checkPerms = await checkForPermissions(interaction);
     if (checkPerms === false) return;
 
@@ -61,12 +72,16 @@ async function add({ prefix, interaction, guildId }: { prefix?: string; interact
     if (prefixes !== null && !Array.isArray(prefixes)) prefixes = JSON.parse(prefixes) as Array<string>;
 
     if (prefixes && prefixes.length >= MAX_AMOUNT_OF_PREFIXES) {
-        await interaction.editReply(`**The maximum amount of prefixes allowed is \`${MAX_AMOUNT_OF_PREFIXES}\`. You can remove a prefix using \`/prefix remove\`**`);
+        await interaction.editReply(
+            `**The maximum amount of prefixes allowed is \`${MAX_AMOUNT_OF_PREFIXES}\`. You can remove a prefix using \`/prefix remove\`**`,
+        );
         return;
     }
 
     if (prefixes?.some((pref) => pref === prefix)) {
-        await interaction.editReply(`**The prefix \`${prefix}\` is already in the prefixes list. You can look at current prefixes by using \`/prefix list\`**`);
+        await interaction.editReply(
+            `**The prefix \`${prefix}\` is already in the prefixes list. You can look at current prefixes by using \`/prefix list\`**`,
+        );
         return;
     }
 
@@ -79,7 +94,15 @@ async function add({ prefix, interaction, guildId }: { prefix?: string; interact
     return;
 }
 
-async function remove({ prefix, interaction, guildId }: { prefix?: string; interaction: GuildInteraction<ApplicationCommandData>; guildId: string }): Promise<void> {
+async function remove({
+    prefix,
+    interaction,
+    guildId,
+}: {
+    prefix?: string;
+    interaction: GuildInteraction<ApplicationCommandData>;
+    guildId: string;
+}): Promise<void> {
     const checkPerms = await checkForPermissions(interaction);
     if (checkPerms === false) return;
 
@@ -93,16 +116,23 @@ async function remove({ prefix, interaction, guildId }: { prefix?: string; inter
     }
 
     if (!prefixes.some((pref) => pref === prefix)) {
-        await interaction.editReply(`**The prefix \`${prefix}\` is not in the prefixes list. You can look at current prefixes by using \`/prefix list\`**`);
+        await interaction.editReply(
+            `**The prefix \`${prefix}\` is not in the prefixes list. You can look at current prefixes by using \`/prefix list\`**`,
+        );
         return;
     }
 
     const newPrefixes = prefixes.filter((item) => item !== prefix);
-    await insertData({ table: Tables.GUILD, id: guildId, data: [{ key: "prefixes", value: newPrefixes.length > 0 ? JSON.stringify(newPrefixes) : null }] });
+    await insertData({
+        table: Tables.GUILD,
+        id: guildId,
+        data: [{ key: "prefixes", value: newPrefixes.length > 0 ? JSON.stringify(newPrefixes) : null }],
+    });
     guildPrefixesCache.set(guildId, newPrefixes.length > 0 ? newPrefixes : DEFAULT_PREFIX);
 
     let message = `**The prefix \`${prefix}\` has been removed from the list.**`;
-    if (newPrefixes.length === 0) message = `**__Warning__:\nThere are no more custom prefixes on the guild left. The default prefix is \`${DEFAULT_PREFIX.join("")}\`**`;
+    if (newPrefixes.length === 0)
+        message = `**__Warning__:\nThere are no more custom prefixes on the guild left. The default prefix is \`${DEFAULT_PREFIX.join("")}\`**`;
 
     await interaction.editReply(message);
     return;

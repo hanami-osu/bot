@@ -4,7 +4,13 @@ import { CommandData } from "@type/commands";
 import { Mode, PlayType } from "@type/osu";
 import { parseCommandArgs } from "@utils/args";
 import { CommandContext } from "@utils/command-context";
-import { calculatePpRequirement, parsePpRequirementPrefixArgs, PpRequirementValidationError, validatePpRequirementInput, type PpRequirementInput } from "@utils/pp-requirement";
+import {
+    calculatePpRequirement,
+    parsePpRequirementPrefixArgs,
+    PpRequirementValidationError,
+    validatePpRequirementInput,
+    type PpRequirementInput,
+} from "@utils/pp-requirement";
 import { safeParse } from "@utils/safe-parse";
 import { getUserScores, USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
 import { ApplicationCommandOptionType } from "lilybird";
@@ -63,12 +69,16 @@ export async function run(ctx: CommandContext): Promise<void> {
         validatePpRequirementInput(input);
     } catch (error) {
         const message = error instanceof PpRequirementValidationError ? error.message : "The pp requirement could not be parsed.";
-        await ctx.editReply(`${message}\nExamples: \`${ctx.prefix ?? "/"}pp 10000 mrekk\`, \`${ctx.prefix ?? "/"}pp 10000 500pp mrekk\`, \`${ctx.prefix ?? "/"}pp 10000 plays=5 mrekk\``);
+        await ctx.editReply(
+            `${message}\nExamples: \`${ctx.prefix ?? "/"}pp 10000 mrekk\`, \`${ctx.prefix ?? "/"}pp 10000 500pp mrekk\`, \`${ctx.prefix ?? "/"}pp 10000 plays=5 mrekk\``,
+        );
         return;
     }
 
     const mode = ctx.isMessage ? getPrefixMode(ctx.commandName, remainingArgs) : undefined;
-    const parseCtx = ctx.isMessage ? new CommandContext(ctx.client, undefined, ctx.message, remainingArgs, ctx.prefix, ctx.commandName, ctx.channel, ctx.index) : ctx;
+    const parseCtx = ctx.isMessage
+        ? new CommandContext(ctx.client, undefined, ctx.message, remainingArgs, ctx.prefix, ctx.commandName, ctx.channel, ctx.index)
+        : ctx;
     const { user } = await parseCommandArgs(parseCtx, mode);
 
     if (user.type === UserType.FAIL) {

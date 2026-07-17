@@ -7,7 +7,16 @@ import type { Mode, ProfileInfo, ScoresInfo } from "@type/osu";
 import type { PlaysBuilderOptions } from "@type/builders";
 import type { Embed } from "lilybird";
 
-export async function playBuilder({ plays, profile, mode, index, isMultiple, page, authorDb, totalPlays }: PlaysBuilderOptions): Promise<Array<Embed.Structure>> {
+export async function playBuilder({
+    plays,
+    profile,
+    mode,
+    index,
+    isMultiple,
+    page,
+    authorDb,
+    totalPlays,
+}: PlaysBuilderOptions): Promise<Array<Embed.Structure>> {
     if (typeof page === "undefined" && typeof index === "undefined") {
         if (isMultiple) page = 0;
         else index = 0;
@@ -118,7 +127,11 @@ async function getSinglePlay({
 
     if (embedType === EmbedScoreType.Bathbot && isMaximized) {
         const fields = [
-            { name: "Grade", value: `${play.grade} ${play.percentagePassed !== null ? `@${play.percentagePassed}%` : ""} +${play.mods.join("")}`, inline: true },
+            {
+                name: "Grade",
+                value: `${play.grade} ${play.percentagePassed !== null ? `@${play.percentagePassed}%` : ""} +${play.mods.join("")}`,
+                inline: true,
+            },
             { name: "Score", value: play.score, inline: true },
             { name: "Acc", value: `${play.accuracy}%`, inline: true },
             { name: "PP", value: `${play.ppFormatted}`, inline: true },

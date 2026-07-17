@@ -23,7 +23,12 @@ export async function leaderboardBuilder({ scores, beatmap, authorDb, page = 0 }
     return getPlays(scores, beatmap, authorDb, page);
 }
 
-async function getPlays(plays: Array<LeaderboardScore>, beatmap: Beatmap, authorDb: LeaderboardBuilderOptions["authorDb"], page: number): Promise<Array<Embed.Structure>> {
+async function getPlays(
+    plays: Array<LeaderboardScore>,
+    beatmap: Beatmap,
+    authorDb: LeaderboardBuilderOptions["authorDb"],
+    page: number,
+): Promise<Array<Embed.Structure>> {
     const beatmapId = beatmap.id;
     const mode = beatmap.mode as Mode;
     const mapData = (await getEntry(Tables.MAP, beatmapId))?.data ?? (await downloadBeatmap(beatmapId)).contents;
@@ -32,7 +37,8 @@ async function getPlays(plays: Array<LeaderboardScore>, beatmap: Beatmap, author
     const pageEnd = pageStart + ITEMS_PER_PAGE;
 
     const playsTemp: Array<Promise<ScoresInfo>> = [];
-    for (let i = pageStart; pageEnd > i && i < plays.length; i++) playsTemp.push(getFormattedScore({ scores: plays, index: i, mode, beatmap, mapData, authorDb }));
+    for (let i = pageStart; pageEnd > i && i < plays.length; i++)
+        playsTemp.push(getFormattedScore({ scores: plays, index: i, mode, beatmap, mapData, authorDb }));
 
     let description = "";
     const playResults = await Promise.all(playsTemp);

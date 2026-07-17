@@ -37,14 +37,17 @@ export async function dispatchApplicationCommand(interaction: Interaction): Prom
                 guildName = guild.name;
             }
 
-            await logger.info(`[${guildName}] ${user.username} used slash command \`${command.data.name}\`${interaction.data.subCommand ? ` -> \`${interaction.data.subCommand}\`` : ""}`, {
-                guildId: ctx.guildId,
-                guildName,
-                userId: user.id,
-                username: user.username,
-                command: command.data.name,
-                subCommand: interaction.data.subCommand,
-            });
+            await logger.info(
+                `[${guildName}] ${user.username} used slash command \`${command.data.name}\`${interaction.data.subCommand ? ` -> \`${interaction.data.subCommand}\`` : ""}`,
+                {
+                    guildId: ctx.guildId,
+                    guildName,
+                    userId: user.id,
+                    username: user.username,
+                    command: command.data.name,
+                    subCommand: interaction.data.subCommand,
+                },
+            );
         } catch (logError) {
             await logger.warn("Could not write slash command usage log", { command: command.data.name, userId: user.id, error: logError });
         }

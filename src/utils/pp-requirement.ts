@@ -100,7 +100,12 @@ export function validatePpRequirementInput(input: PpRequirementInput): void {
     if (typeof playCount !== "undefined") validatePlayCount(playCount);
 }
 
-function calculateRequiredPlayCount(currentTotalPp: number, currentPlayPps: Array<number>, targetTotalPp: number, playPp: number): PpRequirementResult {
+function calculateRequiredPlayCount(
+    currentTotalPp: number,
+    currentPlayPps: Array<number>,
+    targetTotalPp: number,
+    playPp: number,
+): PpRequirementResult {
     validatePlayPp(playPp);
 
     let maxProjection: WhatIfProjection | null = null;
@@ -126,7 +131,12 @@ function calculateRequiredPlayCount(currentTotalPp: number, currentPlayPps: Arra
     return { kind: "unreachable", targetTotalPp, playPp, maxProjection };
 }
 
-function calculateRequiredPlayPp(currentTotalPp: number, currentPlayPps: Array<number>, targetTotalPp: number, playCount: number): PpRequirementResult {
+function calculateRequiredPlayPp(
+    currentTotalPp: number,
+    currentPlayPps: Array<number>,
+    targetTotalPp: number,
+    playCount: number,
+): PpRequirementResult {
     validatePlayCount(playCount);
 
     const maxProjection = calculateWhatIfProjection(currentTotalPp, currentPlayPps, repeatedPlayPps(MAX_WHATIF_PP, playCount));
@@ -183,7 +193,8 @@ export function parsePpRequirementPrefixArgs(args: Array<string>): { input: PpRe
             }
 
             const parsedPp = parsePositivePpToken(rawValue);
-            if (parsedPp === null) throw new PpRequirementValidationError(`${key === "target" ? "Target pp" : "Play pp"} must be a positive pp value.`);
+            if (parsedPp === null)
+                throw new PpRequirementValidationError(`${key === "target" ? "Target pp" : "Play pp"} must be a positive pp value.`);
 
             if (key === "target") targetTotalPp = parsedPp;
             else playPp = parsedPp;

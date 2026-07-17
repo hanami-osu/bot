@@ -82,7 +82,9 @@ export async function simulateBuilder({ beatmapId, mods, options }: SimulateBuil
 
     const scoreField = [
         `${grade} ${SPACE} **${current.pp.toFixed(2)}**/${perfect.pp.toFixed(2)}pp ${
-            (typeof current.effectiveMissCount !== "undefined" && current.effectiveMissCount > 1) || comboDifference < 0.99 ? `~~[**${fc.pp.toFixed(2)}**]~~` : ""
+            (typeof current.effectiveMissCount !== "undefined" && current.effectiveMissCount > 1) || comboDifference < 0.99
+                ? `~~[**${fc.pp.toFixed(2)}**]~~`
+                : ""
         } ${SPACE} ${accuracy.toFixed(2)}% `,
         `[${comboValues}] ${SPACE} {${hitValuesString}}`,
     ];
@@ -92,7 +94,10 @@ export async function simulateBuilder({ beatmapId, mods, options }: SimulateBuil
             title: `${mapset.artist} - ${mapset.title}`,
             url: `https://osu.ppy.sh/b/${beatmapId}`,
             thumbnail: { url: `https://assets.ppy.sh/beatmaps/${mapset.id}/covers/list.jpg` },
-            author: { name: `${mapset.status.charAt(0).toUpperCase()}${mapset.status.slice(1)} mapset by ${mapset.creator}`, icon_url: `https://a.ppy.sh/${mapset.user_id}` },
+            author: {
+                name: `${mapset.status.charAt(0).toUpperCase()}${mapset.status.slice(1)} mapset by ${mapset.creator}`,
+                icon_url: `https://a.ppy.sh/${mapset.user_id}`,
+            },
             fields: [
                 {
                     name: `${rulesets[mode as keyof typeof rulesets] ?? rulesets[Mode.OSU]} ${version}`,

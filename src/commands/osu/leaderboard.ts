@@ -102,7 +102,11 @@ async function getEmbeds(
     if (!scoresRequest.success) {
         return {
             reply: {
-                embeds: [simpleErrorEmbed("Failed to fetch top scores! If you were using mods or a country leaderboard, maybe my osu! supporter ran out? Support me at https://yorunoken.com#support :3")],
+                embeds: [
+                    simpleErrorEmbed(
+                        "Failed to fetch top scores! If you were using mods or a country leaderboard, maybe my osu! supporter ran out? Support me at https://yorunoken.com#support :3",
+                    ),
+                ],
             },
         };
     }

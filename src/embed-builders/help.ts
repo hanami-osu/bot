@@ -40,7 +40,10 @@ function displayCommandInfo(name: string, preferSlash?: boolean): Array<Embed.St
                     },
                     {
                         name: "Options",
-                        value: data.application?.options?.map((opt) => `\`${opt.name}\` - ${opt.description} ${opt.required ? "(required)" : ""}`).join("\n") ?? "No options",
+                        value:
+                            data.application?.options
+                                ?.map((opt) => `\`${opt.name}\` - ${opt.description} ${opt.required ? "(required)" : ""}`)
+                                .join("\n") ?? "No options",
                         inline: false,
                     },
                 ],
@@ -124,7 +127,22 @@ async function displayAllCommands(): Promise<Array<Embed.Structure>> {
         let category = "General";
         if (
             cmdName.includes("osu") ||
-            ["profile", "recent", "top", "compare", "map", "link", "unlink", "avatar", "banner", "background", "simulate", "leaderboard", "recentbest", "recentlist"].includes(cmdName)
+            [
+                "profile",
+                "recent",
+                "top",
+                "compare",
+                "map",
+                "link",
+                "unlink",
+                "avatar",
+                "banner",
+                "background",
+                "simulate",
+                "leaderboard",
+                "recentbest",
+                "recentlist",
+            ].includes(cmdName)
         ) {
             category = "osu!";
         } else if (["help", "ping", "invite", "vote", "config", "prefix"].includes(cmdName)) {
@@ -144,7 +162,22 @@ async function displayAllCommands(): Promise<Array<Embed.Structure>> {
         let category = "General";
         if (
             cmdName.includes("osu") ||
-            ["profile", "recent", "top", "compare", "map", "link", "unlink", "avatar", "banner", "background", "simulate", "leaderboard", "recentbest", "recentlist"].includes(cmdName)
+            [
+                "profile",
+                "recent",
+                "top",
+                "compare",
+                "map",
+                "link",
+                "unlink",
+                "avatar",
+                "banner",
+                "background",
+                "simulate",
+                "leaderboard",
+                "recentbest",
+                "recentlist",
+            ].includes(cmdName)
         ) {
             category = "osu!";
         } else if (["help", "ping", "invite", "vote", "config", "prefix"].includes(cmdName)) {

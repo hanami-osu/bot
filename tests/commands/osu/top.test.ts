@@ -22,14 +22,17 @@ function parseMockBigInt(value: string | number | bigint, fieldName = "value"): 
 }
 
 mock.module("@utils/database", () => ({
-    getEntry: mock((table: Tables, id: string) => Promise.resolve(table === Tables.USER && id === "123" ? { id, banchoId: null, mode: authorMode } : null)),
+    getEntry: mock((table: Tables, id: string) =>
+        Promise.resolve(table === Tables.USER && id === "123" ? { id, banchoId: null, mode: authorMode } : null),
+    ),
     insertData: mock(() => Promise.resolve()),
     bulkInsertData: mock(() => Promise.resolve()),
     removeEntry: mock(() => Promise.resolve(true)),
     getRowCount: mock(() => Promise.resolve(0)),
     getRowSum: mock(() => Promise.resolve(0)),
     parseBigIntValue: parseMockBigInt,
-    mapToPrismaValue: (key: string, value: unknown) => (["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value),
+    mapToPrismaValue: (key: string, value: unknown) =>
+        ["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value,
     mapFromPrismaValue: (value: unknown) => value,
     incrementCommandCount: mock(() => Promise.resolve()),
 }));

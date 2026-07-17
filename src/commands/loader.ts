@@ -11,7 +11,14 @@ const DEFAULT_APPLICATION_CONTEXTS = [CommandInteractionContext.Guild, CommandIn
 type ApplicationCommandPayload = ApplicationCommand.Create.ApplicationCommandJSONParams;
 
 function isCommandFileData(value: unknown): value is CommandFileData {
-    return typeof value === "object" && value !== null && "data" in value && typeof value.data === "object" && value.data !== null && "name" in value.data;
+    return (
+        typeof value === "object" &&
+        value !== null &&
+        "data" in value &&
+        typeof value.data === "object" &&
+        value.data !== null &&
+        "name" in value.data
+    );
 }
 
 export function buildApplicationCommandPayload(command: CommandFileData): ApplicationCommandPayload | null {
@@ -64,7 +71,11 @@ async function registerApplicationCommands(lilyClient: Client, applicationComman
         try {
             // lilybird's bulkOverwriteGuildApplicationCommand mistakenly uses PATCH instead of PUT, causing a 405 error.
             // We bypass it and make a direct PUT request.
-            const guildCommandIds = (await lilyClient.rest.makeAPIRequest("PUT", `applications/${lilyClient.user.id}/guilds/${process.env.DEV_GUILD_ID}/commands`, applicationCommands)) as Array<{
+            const guildCommandIds = (await lilyClient.rest.makeAPIRequest(
+                "PUT",
+                `applications/${lilyClient.user.id}/guilds/${process.env.DEV_GUILD_ID}/commands`,
+                applicationCommands,
+            )) as Array<{
                 name: string;
                 id: string;
             }>;
@@ -73,7 +84,10 @@ async function registerApplicationCommands(lilyClient: Client, applicationComman
                 registerSlashCommandId(commandId.name, commandId.id);
             }
         } catch (error) {
-            logger.error(`Failed to overwrite commands for DEV_GUILD_ID (${process.env.DEV_GUILD_ID}). Make sure it's a valid Server ID, not your User ID!`, error as Error);
+            logger.error(
+                `Failed to overwrite commands for DEV_GUILD_ID (${process.env.DEV_GUILD_ID}). Make sure it's a valid Server ID, not your User ID!`,
+                error as Error,
+            );
         }
         return;
     }

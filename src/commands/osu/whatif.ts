@@ -71,7 +71,9 @@ export async function run(ctx: CommandContext) {
     }
 
     const mode = ctx.isMessage ? getPrefixMode(ctx.commandName, remainingArgs) : undefined;
-    const parseCtx = ctx.isMessage ? new CommandContext(ctx.client, undefined, ctx.message, remainingArgs, ctx.prefix, ctx.commandName, ctx.channel, ctx.index) : ctx;
+    const parseCtx = ctx.isMessage
+        ? new CommandContext(ctx.client, undefined, ctx.message, remainingArgs, ctx.prefix, ctx.commandName, ctx.channel, ctx.index)
+        : ctx;
     const { user } = await parseCommandArgs(parseCtx, mode);
 
     if (user.type === UserType.FAIL) {
@@ -96,7 +98,8 @@ async function getEmbeds(user: SuccessUser, playPps: Array<number>, initiatorId:
     const currentPlayPps = scores.map((score) => score.pp).filter((pp): pp is number => typeof pp === "number");
     const currentTotalPp = osuUser.statistics.pp;
     const projection = calculateWhatIfProjection(currentTotalPp, currentPlayPps, playPps);
-    const projectedRank = projection.ppGain < 0.005 ? osuUser.statistics.global_rank : await estimateGlobalRankFromPp(projection.projectedTotalPp, user.mode);
+    const projectedRank =
+        projection.ppGain < 0.005 ? osuUser.statistics.global_rank : await estimateGlobalRankFromPp(projection.projectedTotalPp, user.mode);
 
     return {
         embeds: whatIfBuilder({

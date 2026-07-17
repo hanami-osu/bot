@@ -9,7 +9,16 @@ import crypto from "crypto";
 import type { Score as ScoreDatabase, User } from "@type/database";
 import type { Message } from "@lilybird/transformers";
 import type { Mod } from "@type/mods";
-import type { PerformanceInfo, Score, LeaderboardScore, GameMode, Rank, ScoreStatistics, Beatmap as BeatmapWeb, LeaderboardScoresRaw } from "@type/osu";
+import type {
+    PerformanceInfo,
+    Score,
+    LeaderboardScore,
+    GameMode,
+    Rank,
+    ScoreStatistics,
+    Beatmap as BeatmapWeb,
+    LeaderboardScoresRaw,
+} from "@type/osu";
 import type { Client, Embed } from "lilybird";
 
 const rulesetIds: Record<Mode, number> = {
@@ -352,7 +361,13 @@ export async function downloadBeatmap(
 
 export function isPlausibleBeatmap(contents: string): boolean {
     const trimmed = contents.trim();
-    return trimmed.startsWith("osu file format v") && trimmed.includes("[HitObjects]") && trimmed.includes("[Metadata]") && !/^<!doctype html/i.test(trimmed) && !/^<html/i.test(trimmed);
+    return (
+        trimmed.startsWith("osu file format v") &&
+        trimmed.includes("[HitObjects]") &&
+        trimmed.includes("[Metadata]") &&
+        !/^<!doctype html/i.test(trimmed) &&
+        !/^<html/i.test(trimmed)
+    );
 }
 
 export function formatDuration(totalSeconds: number): string {
@@ -469,7 +484,12 @@ export function hitValueCalculator(
     for (const order of orders) {
         const value = statistics[order as keyof typeof statistics];
 
-        if (order === "count_geki" || (order === "count_katu" && mode !== Mode.FRUITS && mode !== Mode.MANIA) || (order === "count_100" && mode === Mode.TAIKO)) continue;
+        if (
+            order === "count_geki" ||
+            (order === "count_katu" && mode !== Mode.FRUITS && mode !== Mode.MANIA) ||
+            (order === "count_100" && mode === Mode.TAIKO)
+        )
+            continue;
 
         if (value !== null) {
             if (hitValues.length > 0) hitValues += "/";
@@ -635,7 +655,15 @@ async function cycleThroughEmbeds({ client, message, channelId }: { message?: Me
     return beatmapId;
 }
 
-export async function getBeatmapIdFromContext({ client, message, channelId }: { message?: Message; client: Client; channelId?: string }): Promise<number | null> {
+export async function getBeatmapIdFromContext({
+    client,
+    message,
+    channelId,
+}: {
+    message?: Message;
+    client: Client;
+    channelId?: string;
+}): Promise<number | null> {
     return typeof message?.referencedMessage !== "undefined" ? getEmbedFromReply(message) : cycleThroughEmbeds({ message, client, channelId });
 }
 

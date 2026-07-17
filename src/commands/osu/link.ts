@@ -6,8 +6,13 @@ export async function run(ctx: CommandContext) {
     if (!ctx.isInteraction) return;
     await ctx.defer(true);
 
-    const authUrl = process.env.OSU_AUTH_URL;
-    await ctx.editReply(`You can [click here](<${authUrl}>) to sign into Hanami Web, and link your osu! account.. or manage your configurations!`);
+    await ctx.editReply(`You can [click here](<${hanamiUrl}>) to sign into Hanami Web, and link your osu! account.. or manage your configurations!`);
+}
+
+async function fetchTempLinkTicket() {
+    const res = await fetch(`${process.env.HANAMI_WEB_URL}/api/internal/discord-link-ticket`, {
+        headers: { Authorization: `Bearer ${1}`, "Content-Type": "application/json" },
+    });
 }
 
 export const data = {

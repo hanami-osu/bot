@@ -1,7 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import { ScoreData, type User } from "../../src/types/database";
 import { Mode } from "../../src/types/osu";
-import { getLegacyOnlyQueryValue, getScoreAccuracy, getScoreFetchAddons, getScoreValue, shouldUseLazerPerformance, type ScoreLike } from "../../src/utils/score-preference";
+import {
+    getLegacyOnlyQueryValue,
+    getScoreAccuracy,
+    getScoreFetchAddons,
+    getScoreValue,
+    shouldUseLazerPerformance,
+    type ScoreLike,
+} from "../../src/utils/score-preference";
 
 function createUser(scoreData: ScoreData | null): User {
     return {

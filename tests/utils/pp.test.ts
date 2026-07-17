@@ -40,6 +40,8 @@ describe("pp utilities", () => {
     });
 
     test("rejects specifying both play pp and play count", () => {
-        expect(() => validatePpRequirementInput({ targetTotalPp: 1400, playPp: 450, playCount: 2 })).toThrow("Provide either a play pp value or a play count, not both.");
+        expect(() => validatePpRequirementInput({ targetTotalPp: 1400, playPp: 450, playCount: 2 })).toThrow(
+            "Provide either a play pp value or a play count, not both.",
+        );
     });
 });

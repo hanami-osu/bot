@@ -68,7 +68,9 @@ export function calculateClassicAccuracy(mode: Mode, hits: AccuracyHits): number
             acc = (count300 + count100 + count50) / (count300 + count100 + count50 + countKatu + countMiss);
             break;
         case Mode.MANIA:
-            acc = (6 * countGeki + 6 * count300 + 4 * countKatu + 2 * count100 + count50) / (6 * (count50 + count100 + count300 + countMiss + countGeki + countKatu));
+            acc =
+                (6 * countGeki + 6 * count300 + 4 * countKatu + 2 * count100 + count50) /
+                (6 * (count50 + count100 + count300 + countMiss + countGeki + countKatu));
             break;
     }
 

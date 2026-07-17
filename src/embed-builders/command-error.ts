@@ -19,7 +19,17 @@ export function commandErrorDisplayName(commandName: string, subCommand: string 
     return isInteraction && subCommand ? `${commandName} -> ${subCommand}` : commandName;
 }
 
-export function commandErrorLogEmbed({ commandName, subCommand, isInteraction, user, guildName, guildId, channelId, content, error }: CommandErrorLogEmbedOptions): Embed.Structure {
+export function commandErrorLogEmbed({
+    commandName,
+    subCommand,
+    isInteraction,
+    user,
+    guildName,
+    guildId,
+    channelId,
+    content,
+    error,
+}: CommandErrorLogEmbedOptions): Embed.Structure {
     const fields = [
         { name: "User", value: `<@${user.id}> (${user.username})` },
         { name: "Guild", value: guildId && channelId ? `[${guildName}](https://discord.com/channels/${guildId}/${channelId})` : guildName },

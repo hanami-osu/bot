@@ -49,7 +49,12 @@ export async function getUserScores(userId: number, type: PlayType, options: Use
 }
 
 // Gets beatmap user scores using V2 unified format
-export async function getBeatmapUserScores(beatmapId: number, userId: number, options: { query: { mode: Mode } }, authorDb: User | null): Promise<Array<Score>> {
+export async function getBeatmapUserScores(
+    beatmapId: number,
+    userId: number,
+    options: { query: { mode: Mode } },
+    authorDb: User | null,
+): Promise<Array<Score>> {
     const scores = await v2.scores.list(
         {
             type: "user_beatmap_all",

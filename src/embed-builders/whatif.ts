@@ -53,7 +53,10 @@ export function whatIfBuilder({ user, mode, projection, projectedRank }: WhatIfB
             fields: [
                 {
                     name: "Projected",
-                    value: [`**PP:** \`${formatPp(projection.projectedTotalPp)}pp\` (+\`${formatPp(projection.ppGain)}pp\`)`, `**Rank:** \`${formatRank(projectedRank)}\`${rankGain}`].join("\n"),
+                    value: [
+                        `**PP:** \`${formatPp(projection.projectedTotalPp)}pp\` (+\`${formatPp(projection.ppGain)}pp\`)`,
+                        `**Rank:** \`${formatRank(projectedRank)}\`${rankGain}`,
+                    ].join("\n"),
                     inline: true,
                 },
                 {

@@ -27,7 +27,8 @@ mock.module("@utils/database", () => ({
     getRowCount: mock(() => Promise.resolve(0)),
     getRowSum: mock(() => Promise.resolve(0)),
     parseBigIntValue: parseMockBigInt,
-    mapToPrismaValue: (key: string, value: unknown) => (["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value),
+    mapToPrismaValue: (key: string, value: unknown) =>
+        ["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value,
     mapFromPrismaValue: (value: unknown) => value,
     incrementCommandCount: mock(() => Promise.resolve()),
 }));

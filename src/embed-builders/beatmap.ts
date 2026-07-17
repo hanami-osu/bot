@@ -57,7 +57,13 @@ export async function beatmapBuilder({ beatmapId, mods }: BeatmapBuilderOptions)
         `\n:heart: **${mapset.favourite_count.toLocaleString()}** :play_pause: **${mapset.play_count.toLocaleString()}**`,
     ];
 
-    const ppField = ["```Acc  |  PP", `100%   ${a98.perfect.pp.toFixed(2)}`, `98%    ${a98.current.pp.toFixed(2)}`, `97%    ${a97.current.pp.toFixed(2)}`, `95%    ${a95.current.pp.toFixed(2)}\`\`\``];
+    const ppField = [
+        "```Acc  |  PP",
+        `100%   ${a98.perfect.pp.toFixed(2)}`,
+        `98%    ${a98.current.pp.toFixed(2)}`,
+        `97%    ${a97.current.pp.toFixed(2)}`,
+        `95%    ${a95.current.pp.toFixed(2)}\`\`\``,
+    ];
 
     const linksField = [
         `<:chimu:1117792339549761576>[Chimu](https://chimu.moe/d/${map.beatmapset_id})`,
@@ -71,7 +77,10 @@ export async function beatmapBuilder({ beatmapId, mods }: BeatmapBuilderOptions)
             title: `${mapset.artist} - ${mapset.title}`,
             url: `https://osu.ppy.sh/b/${beatmapId}`,
             thumbnail: { url: `https://assets.ppy.sh/beatmaps/${mapset.id}/covers/list.jpg` },
-            author: { name: `${mapset.status.charAt(0).toUpperCase()}${mapset.status.slice(1)} mapset by ${mapset.creator}`, icon_url: `https://a.ppy.sh/${mapset.user_id}` },
+            author: {
+                name: `${mapset.status.charAt(0).toUpperCase()}${mapset.status.slice(1)} mapset by ${mapset.creator}`,
+                icon_url: `https://a.ppy.sh/${mapset.user_id}`,
+            },
             fields: [
                 {
                     name: `${rulesets[mode as keyof typeof rulesets] ?? rulesets[Mode.OSU]} ${version}`,

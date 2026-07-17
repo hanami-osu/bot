@@ -30,4 +30,8 @@ async function getOsuResponseTime() {
     return osuEnd - osuStart;
 }
 
-export const data = { name: "ping", description: "Replies with a pong followed by latency information", hasPrefixVariant: true } satisfies CommandData;
+export const data = {
+    name: "ping",
+    description: "Replies with a pong followed by latency information",
+    hasPrefixVariant: true,
+} satisfies CommandData;

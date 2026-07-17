@@ -134,7 +134,9 @@ export function parsePrefixIntegerFlag(value: string | undefined, label: string,
     }
 
     if (parsed < min || (typeof max !== "undefined" && parsed > max)) {
-        throw new CommandValidationError(typeof max === "undefined" ? `${label} must be at least ${min}.` : `${label} must be between ${min} and ${max}.`);
+        throw new CommandValidationError(
+            typeof max === "undefined" ? `${label} must be at least ${min}.` : `${label} must be between ${min} and ${max}.`,
+        );
     }
 
     return parsed;
@@ -200,13 +202,31 @@ function parseSlashIntegerOption(value: number | null | undefined, label: string
     return value - 1;
 }
 
-async function parseSlashCommandArgs(interaction: Interaction<ApplicationCommandData>, fallbackMode?: Mode, getAttributes?: boolean): Promise<SlashCommandArgs> {
+async function parseSlashCommandArgs(
+    interaction: Interaction<ApplicationCommandData>,
+    fallbackMode?: Mode,
+    getAttributes?: boolean,
+): Promise<SlashCommandArgs> {
     const { data } = interaction;
 
     // This is so fucking annoying holy shit I can't get it right
     let difficultySettings: DifficultyOptions | undefined;
     if (getAttributes === true) {
-        const attributes: Array<keyof DifficultyOptions> = ["combo", "acc", "clock_rate", "bpm", "n300", "n100", "n50", "nmisses", "ngeki", "nkatu", "ar", "cs", "od"];
+        const attributes: Array<keyof DifficultyOptions> = [
+            "combo",
+            "acc",
+            "clock_rate",
+            "bpm",
+            "n300",
+            "n100",
+            "n50",
+            "nmisses",
+            "ngeki",
+            "nkatu",
+            "ar",
+            "cs",
+            "od",
+        ];
         difficultySettings = {} as DifficultyOptions;
 
         for (const attribute of attributes) {
@@ -222,7 +242,9 @@ async function parseSlashCommandArgs(interaction: Interaction<ApplicationCommand
     const mode = resolveMode(data.getString("mode"), fallbackMode, userAuthor?.mode);
 
     const modsValue = data.getString("mods");
-    const modsAction = data.getString("mods_action") ?? (data.getBoolean("force_include") ? "force_include" : data.getBoolean("exclude") ? "exclude" : data.getBoolean("include") ? "include" : null);
+    const modsAction =
+        data.getString("mods_action") ??
+        (data.getBoolean("force_include") ? "force_include" : data.getBoolean("exclude") ? "exclude" : data.getBoolean("include") ? "include" : null);
     const mods = buildMods(parseModsString(modsValue), modsAction);
 
     const beatmapId = getBeatmapId(parseBeatmapUrl(data.getString("map") ?? ""));
@@ -238,7 +260,9 @@ async function parseSlashCommandArgs(interaction: Interaction<ApplicationCommand
                   type: UserType.FAIL,
                   beatmapId,
                   authorDb: userAuthor,
-                  failMessage: discordUserId ? `The user <@${discordUserId}> hasn't linked their account to the bot yet!` : `Please link your account to the bot using ${getSlashCommandMention("link")}!`,
+                  failMessage: discordUserId
+                      ? `The user <@${discordUserId}> hasn't linked their account to the bot yet!`
+                      : `Please link your account to the bot using ${getSlashCommandMention("link")}!`,
               }
         : userArg
           ? { type: UserType.SUCCESS, banchoId: userArg, mode, beatmapId, authorDb: userAuthor }

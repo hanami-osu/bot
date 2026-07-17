@@ -3,7 +3,21 @@ import { grades, rulesets } from "@utils/constants";
 import { insertData } from "@utils/database";
 import { getScoreAccuracy, getScoreValue } from "@utils/score-preference";
 import { Tables, type User } from "@type/database";
-import type { Mode, UserScore, Beatmap, LeaderboardScore, ScoresInfo, Score, UserBestScore, UserBestScoreV2, UserScoreV2, ScoreV2, ProfileInfo, ScoreStatistics, UserExtended } from "@type/osu";
+import type {
+    Mode,
+    UserScore,
+    Beatmap,
+    LeaderboardScore,
+    ScoresInfo,
+    Score,
+    UserBestScore,
+    UserBestScoreV2,
+    UserScoreV2,
+    ScoreV2,
+    ProfileInfo,
+    ScoreStatistics,
+    UserExtended,
+} from "@type/osu";
 
 const rulesetModes: Record<number, Mode> = {
     0: "osu" as Mode,
@@ -218,7 +232,9 @@ export async function getFormattedScore({
         stars: performance ? `${performance.current.difficulty.stars.toFixed(2).toLocaleString()}★` : getFallbackStars(beatmap),
         rulesetEmote: rulesets[scoreMode],
         pp,
-        ppFormatted: performance ? `**${performance.current.pp.toFixed(2).toLocaleString()}**/${performance.perfect.pp.toFixed(2).toLocaleString()}pp` : "PP unavailable",
+        ppFormatted: performance
+            ? `**${performance.current.pp.toFixed(2).toLocaleString()}**/${performance.perfect.pp.toFixed(2).toLocaleString()}pp`
+            : "PP unavailable",
         playSubmitted: `<t:${new Date(createdAt).getTime() / 1000}:R>`,
         ifFcHanami,
         ifFcBathbot,

@@ -9,7 +9,15 @@ import type { CompareBuilderOptions } from "@type/builders";
 import type { Embed } from "lilybird";
 import type { Beatmap, Mode, ProfileInfo, Score, ScoreV2 } from "@type/osu";
 
-export async function compareBuilder({ beatmap, plays, user, mode, authorDb, mods, page = 0 }: CompareBuilderOptions): Promise<Array<Embed.Structure>> {
+export async function compareBuilder({
+    beatmap,
+    plays,
+    user,
+    mode,
+    authorDb,
+    mods,
+    page = 0,
+}: CompareBuilderOptions): Promise<Array<Embed.Structure>> {
     saveScoreDatas(plays, mode, beatmap);
 
     const profile = getFormattedProfile(user, mode);
@@ -63,7 +71,9 @@ async function getMultiplePlays({
 
     const pageStart = page * ITEMS_PER_PAGE;
     const pageEnd = pageStart + ITEMS_PER_PAGE;
-    const formattedPlays = await Promise.all(plays.map((_play, index) => getFormattedScore({ scores: plays, index, mode, beatmap, mapData, authorDb })));
+    const formattedPlays = await Promise.all(
+        plays.map((_play, index) => getFormattedScore({ scores: plays, index, mode, beatmap, mapData, authorDb })),
+    );
     const playResults = formattedPlays
         .map((play, index) => ({ play, index }))
         .sort((a, b) => b.play.pp - a.play.pp || a.index - b.index)

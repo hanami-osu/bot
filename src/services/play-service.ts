@@ -114,7 +114,18 @@ export async function buildPlayPaginationMessageOptions(options: PlayPaginationO
     };
 }
 
-async function getPlayBuilderOptions({ plays: rawPlays, user, mode, index, mods, isMultiple, page, authorDb, sortByDate, titleFilter }: PlayPaginationOptions): Promise<PlaysBuilderOptions> {
+async function getPlayBuilderOptions({
+    plays: rawPlays,
+    user,
+    mode,
+    index,
+    mods,
+    isMultiple,
+    page,
+    authorDb,
+    sortByDate,
+    titleFilter,
+}: PlayPaginationOptions): Promise<PlaysBuilderOptions> {
     await saveScoreDatas(rawPlays, mode);
 
     if (typeof page === "undefined" && typeof index === "undefined") {

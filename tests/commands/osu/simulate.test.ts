@@ -10,7 +10,12 @@ const whatIfBuilderMock = mock(({ user, projection, projectedRank }: any) => [
     {
         author: { name: user.username },
         description: `${projection.projectedTotalPp.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}pp #${projectedRank}`,
-        fields: [{ name: "Projected", value: `+\`${projection.ppGain.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}pp\`` }],
+        fields: [
+            {
+                name: "Projected",
+                value: `+\`${projection.ppGain.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}pp\``,
+            },
+        ],
     },
 ]);
 interface ReplyPayload {
@@ -32,7 +37,8 @@ mock.module("@utils/database", () => ({
     getRowCount: mock(() => Promise.resolve(0)),
     getRowSum: mock(() => Promise.resolve(0)),
     parseBigIntValue: parseMockBigInt,
-    mapToPrismaValue: (key: string, value: unknown) => (["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value),
+    mapToPrismaValue: (key: string, value: unknown) =>
+        ["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value,
     mapFromPrismaValue: (value: unknown) => value,
     incrementCommandCount: mock(() => Promise.resolve()),
 }));
@@ -79,7 +85,14 @@ describe("simulate command", () => {
             channelId: "channel123",
             reply,
         } as unknown as Message;
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["https://osu.ppy.sh/b/72727", "+HDHR", "combo=1234", "acc=98.5"], "!", "simulate");
+        const ctx = new CommandContext(
+            mockClient,
+            undefined,
+            mockMessage,
+            ["https://osu.ppy.sh/b/72727", "+HDHR", "combo=1234", "acc=98.5"],
+            "!",
+            "simulate",
+        );
         ctx.defer = mock(() => Promise.resolve());
 
         await run(ctx);

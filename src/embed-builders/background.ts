@@ -5,7 +5,11 @@ export function backgroundBuilder({ beatmap }: BackgroundBuilderOptions): Array<
     const { beatmapset } = beatmap;
     return [
         {
-            author: { name: `${beatmapset.artist} - ${beatmapset.title} by ${beatmapset.creator}`, icon_url: `https://s.ppy.sh/a/${beatmapset.user_id}`, url: `https://osu.ppy.sh/b/${beatmap.id}` },
+            author: {
+                name: `${beatmapset.artist} - ${beatmapset.title} by ${beatmapset.creator}`,
+                icon_url: `https://s.ppy.sh/a/${beatmapset.user_id}`,
+                url: `https://osu.ppy.sh/b/${beatmap.id}`,
+            },
             image: { url: `https://catboy.best/preview/background/${beatmapset.id}/set` },
         },
     ];

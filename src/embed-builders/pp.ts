@@ -23,7 +23,10 @@ export function ppRequirementEmbed(user: UserExtended, mode: Mode, result: PpReq
     }
 
     if (result.kind === "unreachable") {
-        const limitText = typeof result.playPp === "number" ? `with up to 100 **${formatPp(result.playPp)}pp** plays` : `with ${result.playCount} ${pluralizePlay(result.playCount ?? 0)} up to 100,000.00pp`;
+        const limitText =
+            typeof result.playPp === "number"
+                ? `with up to 100 **${formatPp(result.playPp)}pp** plays`
+                : `with ${result.playCount} ${pluralizePlay(result.playCount ?? 0)} up to 100,000.00pp`;
 
         return {
             type: EmbedType.Rich,

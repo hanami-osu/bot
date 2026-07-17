@@ -104,7 +104,8 @@ export function calculateWeightedPp(playPps: Array<number>): number {
 export function calculateWhatIfProjection(currentTotalPp: number, currentPlayPps: Array<number>, playPps: Array<number>): WhatIfProjection {
     if (playPps.length === 0) throw new WhatIfValidationError("Please provide at least one pp value.");
     if (playPps.length > MAX_WHATIF_PLAYS) throw new WhatIfValidationError(`Please provide ${MAX_WHATIF_PLAYS} or fewer pp values.`);
-    if (!playPps.every(isValidPpValue)) throw new WhatIfValidationError(`PP values must be positive numbers up to ${MAX_WHATIF_PP.toLocaleString()}pp.`);
+    if (!playPps.every(isValidPpValue))
+        throw new WhatIfValidationError(`PP values must be positive numbers up to ${MAX_WHATIF_PP.toLocaleString()}pp.`);
 
     const rankedCurrentPps = currentPlayPps.filter(isValidPpValue);
     const currentWeightedPp = calculateWeightedPp(rankedCurrentPps);

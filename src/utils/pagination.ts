@@ -118,7 +118,13 @@ export class PaginationManager {
         return type === PaginationType.PAGE ? Math.ceil(totalItems / itemsPerPage) : totalItems;
     }
 
-    static calculateNewValue(action: PaginationAction, currentValue: number, totalItems: number, type: PaginationType, itemsPerPage: number = ITEMS_PER_PAGE): number {
+    static calculateNewValue(
+        action: PaginationAction,
+        currentValue: number,
+        totalItems: number,
+        type: PaginationType,
+        itemsPerPage: number = ITEMS_PER_PAGE,
+    ): number {
         const maxValue = this.getTotalValues(totalItems, type, itemsPerPage) - 1;
 
         switch (action) {

@@ -24,7 +24,10 @@ async function handleButton(interaction: Interaction): Promise<void> {
 
     const builderOptions = await ButtonStateCache.get(interaction.message.id);
     if (builderOptions === null || builderOptions === undefined) {
-        await interaction.reply({ ephemeral: true, content: "This button will not work because the message was created before a bot restart, so its data has been lost." });
+        await interaction.reply({
+            ephemeral: true,
+            content: "This button will not work because the message was created before a bot restart, so its data has been lost.",
+        });
         return;
     }
 
@@ -32,7 +35,10 @@ async function handleButton(interaction: Interaction): Promise<void> {
     if (!user) return;
 
     if (builderOptions.initiatorId !== user.id) {
-        await interaction.reply({ ephemeral: true, content: "You need to be the person who initialized the command to be able to interact with this." });
+        await interaction.reply({
+            ephemeral: true,
+            content: "You need to be the person who initialized the command to be able to interact with this.",
+        });
         return;
     }
 
@@ -85,7 +91,10 @@ async function handlePaginationModal(interaction: Interaction): Promise<boolean>
 
     const builderOptions = await ButtonStateCache.get(modalData.messageId);
     if (builderOptions === null || builderOptions === undefined) {
-        await interaction.reply({ ephemeral: true, content: "This page picker will not work because the message was created before a bot restart, so its data has been lost." });
+        await interaction.reply({
+            ephemeral: true,
+            content: "This page picker will not work because the message was created before a bot restart, so its data has been lost.",
+        });
         return true;
     }
 
@@ -93,7 +102,10 @@ async function handlePaginationModal(interaction: Interaction): Promise<boolean>
     if (!user) return true;
 
     if (builderOptions.initiatorId !== user.id) {
-        await interaction.reply({ ephemeral: true, content: "You need to be the person who initialized the command to be able to interact with this." });
+        await interaction.reply({
+            ephemeral: true,
+            content: "You need to be the person who initialized the command to be able to interact with this.",
+        });
         return true;
     }
 
@@ -128,7 +140,11 @@ function disablePaginationComponents(components: Array<Message.Component.Structu
     });
 }
 
-export function createPaginationJumpModalComponents(type: PaginationType, totalValues: number, currentValue: number): Array<Message.Component.ActionRowStructure> {
+export function createPaginationJumpModalComponents(
+    type: PaginationType,
+    totalValues: number,
+    currentValue: number,
+): Array<Message.Component.ActionRowStructure> {
     const label = type === "page" ? `Page (1-${totalValues})` : `Entry (1-${totalValues})`;
 
     return [

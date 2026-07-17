@@ -20,7 +20,12 @@ export async function run(ctx: CommandContext): Promise<void> {
     const embedTypeData = data.getString("embed_type");
     const scoreDataValue = data.getNumber("score_data");
 
-    if (typeof modeData === "undefined" && typeof scoreEmbedData === "undefined" && typeof embedTypeData === "undefined" && typeof scoreDataValue === "undefined") {
+    if (
+        typeof modeData === "undefined" &&
+        typeof scoreEmbedData === "undefined" &&
+        typeof embedTypeData === "undefined" &&
+        typeof scoreDataValue === "undefined"
+    ) {
         await list(ctx, userId);
         return;
     }

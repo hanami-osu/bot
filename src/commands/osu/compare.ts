@@ -44,7 +44,12 @@ export async function run(ctx: CommandContext) {
     }
 }
 
-async function getEmbeds(user: SuccessUser, authorId: string, mods: any, context: CommandContext): Promise<{ reply: MessageReplyOptions; embedOptions?: CompareBuilderOptions }> {
+async function getEmbeds(
+    user: SuccessUser,
+    authorId: string,
+    mods: any,
+    context: CommandContext,
+): Promise<{ reply: MessageReplyOptions; embedOptions?: CompareBuilderOptions }> {
     const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
     if (!osuUserRequest.success) {
         return {
