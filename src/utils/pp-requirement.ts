@@ -1,4 +1,10 @@
-import { calculateWhatIfProjection, MAX_WHATIF_PLAYS, MAX_WHATIF_PP, WhatIfValidationError, type WhatIfProjection } from "@utils/whatif";
+import {
+    calculateWhatIfProjection,
+    MAX_WHATIF_PLAYS,
+    MAX_WHATIF_PP,
+    WhatIfValidationError,
+    type WhatIfProjection,
+} from "@utils/whatif";
 
 export const MAX_PP_REQUIREMENT_PLAYS = MAX_WHATIF_PLAYS;
 
@@ -73,7 +79,11 @@ function repeatedPlayPps(playPp: number, playCount: number): Array<number> {
     return Array.from({ length: playCount }, () => playPp);
 }
 
-export function calculatePpRequirement(currentTotalPp: number, currentPlayPps: Array<number>, input: PpRequirementInput): PpRequirementResult {
+export function calculatePpRequirement(
+    currentTotalPp: number,
+    currentPlayPps: Array<number>,
+    input: PpRequirementInput,
+): PpRequirementResult {
     const { targetTotalPp, playPp, playCount } = input;
     validatePpRequirementInput(input);
 

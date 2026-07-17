@@ -9,7 +9,12 @@ import type { LeaderboardBuilderOptions } from "@type/builders";
 import type { Embed } from "lilybird";
 import type { Beatmap, LeaderboardScore, Mode, ScoresInfo } from "@type/osu";
 
-export async function leaderboardBuilder({ scores, beatmap, authorDb, page = 0 }: LeaderboardBuilderOptions): Promise<Array<Embed.Structure>> {
+export async function leaderboardBuilder({
+    scores,
+    beatmap,
+    authorDb,
+    page = 0,
+}: LeaderboardBuilderOptions): Promise<Array<Embed.Structure>> {
     if (scores.length === 0) {
         return [
             {

@@ -20,7 +20,9 @@ export async function dispatchApplicationCommand(interaction: Interaction): Prom
         } else if (command.runApplication && interaction.inGuild()) {
             await command.runApplication({ interaction });
         } else {
-            await ctx.respondUnavailable(command.data.availability?.unavailableMessage ?? "This command is not available in this context.");
+            await ctx.respondUnavailable(
+                command.data.availability?.unavailableMessage ?? "This command is not available in this context.",
+            );
             return;
         }
 
@@ -49,7 +51,11 @@ export async function dispatchApplicationCommand(interaction: Interaction): Prom
                 },
             );
         } catch (logError) {
-            await logger.warn("Could not write slash command usage log", { command: command.data.name, userId: user.id, error: logError });
+            await logger.warn("Could not write slash command usage log", {
+                command: command.data.name,
+                userId: user.id,
+                error: logError,
+            });
         }
     } catch (error) {
         await handleCommandError(error as Error, {

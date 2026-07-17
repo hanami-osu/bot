@@ -45,7 +45,13 @@ describe("score API utilities", () => {
         expect(listScoresMock).toHaveBeenCalledTimes(2);
         expect(listScoresMock.mock.calls[0]?.[0]).toMatchObject({ type: "user_best", user_id: 1, mode: "osu", limit: 100 });
         expect(listScoresMock.mock.calls[0]?.[0].offset).toBeUndefined();
-        expect(listScoresMock.mock.calls[1]?.[0]).toMatchObject({ type: "user_best", user_id: 1, mode: "osu", limit: 100, offset: 100 });
+        expect(listScoresMock.mock.calls[1]?.[0]).toMatchObject({
+            type: "user_best",
+            user_id: 1,
+            mode: "osu",
+            limit: 100,
+            offset: 100,
+        });
     });
 
     test("passes legacy_only true for stable user scores", async () => {
@@ -78,7 +84,12 @@ describe("score API utilities", () => {
         await getBeatmapUserScores(72727, 1, { query: { mode: Mode.OSU } }, null);
 
         expect(listScoresMock).toHaveBeenCalledTimes(4);
-        expect(listScoresMock.mock.calls[0]?.[0]).toMatchObject({ type: "user_beatmap_all", beatmap_id: 72727, user_id: 1, mode: "osu" });
+        expect(listScoresMock.mock.calls[0]?.[0]).toMatchObject({
+            type: "user_beatmap_all",
+            beatmap_id: 72727,
+            user_id: 1,
+            mode: "osu",
+        });
         expect(listScoresMock.mock.calls[0]?.[1]).toEqual({ legacy_only: true });
         expect(listScoresMock.mock.calls[1]?.[1]).toEqual({ legacy_only: false });
         expect(listScoresMock.mock.calls[2]?.[1]).toBeUndefined();

@@ -43,7 +43,9 @@ export function isRedisAvailable(): boolean {
 }
 
 export function stringifyForCache(value: unknown): string {
-    return JSON.stringify(value, (_key, nestedValue: unknown) => (typeof nestedValue === "bigint" ? nestedValue.toString() : nestedValue));
+    return JSON.stringify(value, (_key, nestedValue: unknown) =>
+        typeof nestedValue === "bigint" ? nestedValue.toString() : nestedValue,
+    );
 }
 
 export class RedisCache {

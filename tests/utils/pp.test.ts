@@ -1,6 +1,8 @@
 import { describe, expect, test } from "bun:test";
 
-const { calculatePpRequirement, parsePpRequirementPrefixArgs, validatePpRequirementInput } = await import("../../src/utils/pp-requirement");
+const { calculatePpRequirement, parsePpRequirementPrefixArgs, validatePpRequirementInput } = await import(
+    "../../src/utils/pp-requirement"
+);
 
 describe("pp utilities", () => {
     test("parses target, play pp, count, and remaining user args from prefix input", () => {

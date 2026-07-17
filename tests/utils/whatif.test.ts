@@ -1,8 +1,14 @@
 import { describe, expect, mock, test } from "bun:test";
 import { Mode } from "../../src/types/osu";
 
-const { calculateWhatIfProjection, calculateWeightedPp, clearWhatIfRankCache, estimateGlobalRankFromPp, extractWhatIfPlayPps, parseWhatIfPlayPps } =
-    await import("../../src/utils/whatif");
+const {
+    calculateWhatIfProjection,
+    calculateWeightedPp,
+    clearWhatIfRankCache,
+    estimateGlobalRankFromPp,
+    extractWhatIfPlayPps,
+    parseWhatIfPlayPps,
+} = await import("../../src/utils/whatif");
 
 describe("whatif utilities", () => {
     test("parses pp values from slash input", () => {

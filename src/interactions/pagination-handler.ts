@@ -53,7 +53,11 @@ async function handleButton(interaction: Interaction): Promise<void> {
         await interaction.showModal({
             id: PaginationManager.createJumpModalId(jumpType, interaction.message.channelId, interaction.message.id),
             title: jumpType === "page" ? "Jump to page" : "Jump to entry",
-            components: createPaginationJumpModalComponents(jumpType, totalValues, PaginationManager.getCurrentValue(builderOptions, jumpType)),
+            components: createPaginationJumpModalComponents(
+                jumpType,
+                totalValues,
+                PaginationManager.getCurrentValue(builderOptions, jumpType),
+            ),
         });
         return;
     }
@@ -135,7 +139,9 @@ function disablePaginationComponents(components: Array<Message.Component.Structu
 
         return {
             ...row,
-            components: row.components.map((component) => (component.type === ComponentType.Button ? { ...component, disabled: true } : component)),
+            components: row.components.map((component) =>
+                component.type === ComponentType.Button ? { ...component, disabled: true } : component,
+            ),
         };
     });
 }

@@ -1,6 +1,13 @@
 import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
-import { accuracyCalculator, downloadBeatmap, formatDuration, getPerformanceResults, gradeCalculator, hitValueCalculator } from "@utils/osu";
+import {
+    accuracyCalculator,
+    downloadBeatmap,
+    formatDuration,
+    getPerformanceResults,
+    gradeCalculator,
+    hitValueCalculator,
+} from "@utils/osu";
 import { getEntry } from "@utils/database";
 import { grades, rulesets, SPACE } from "@utils/constants";
 import { Tables } from "@type/database";
@@ -59,7 +66,8 @@ export async function simulateBuilder({ beatmapId, mods, options }: SimulateBuil
         count_geki: current.state?.nGeki,
         count_katu: current.state?.nKatu,
     };
-    const grade = grades[gradeCalculator(map.mode as Mode, hitValues, mods?.map((m) => (typeof m === "string" ? m : m.acronym)) ?? [""])];
+    const grade =
+        grades[gradeCalculator(map.mode as Mode, hitValues, mods?.map((m) => (typeof m === "string" ? m : m.acronym)) ?? [""])];
 
     const hitValuesString = hitValueCalculator(map.mode as Mode, hitValues);
 

@@ -15,7 +15,12 @@ interface UserScoresOptions {
 }
 
 // Gets user scores using V2 unified format
-export async function getUserScores(userId: number, type: PlayType, options: UserScoresOptions, authorDb: User | null): Promise<Array<Score>> {
+export async function getUserScores(
+    userId: number,
+    type: PlayType,
+    options: UserScoresOptions,
+    authorDb: User | null,
+): Promise<Array<Score>> {
     const apiType = type === "best" ? "user_best" : type === "recent" ? "user_recent" : "user_firsts";
     const requestedLimit = options.query.limit;
     const scores: Array<Score> = [];

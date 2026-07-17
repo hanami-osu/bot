@@ -4,17 +4,41 @@ import { PaginationManager, PaginationType, PaginationAction } from "../../src/u
 describe("PaginationManager", () => {
     describe("parseButtonAction", () => {
         test("correctly parses page buttons", () => {
-            expect(PaginationManager.parseButtonAction("min-page")).toEqual({ type: PaginationType.PAGE, action: PaginationAction.FIRST });
-            expect(PaginationManager.parseButtonAction("decrement-page")).toEqual({ type: PaginationType.PAGE, action: PaginationAction.PREV });
-            expect(PaginationManager.parseButtonAction("increment-page")).toEqual({ type: PaginationType.PAGE, action: PaginationAction.NEXT });
-            expect(PaginationManager.parseButtonAction("max-page")).toEqual({ type: PaginationType.PAGE, action: PaginationAction.LAST });
+            expect(PaginationManager.parseButtonAction("min-page")).toEqual({
+                type: PaginationType.PAGE,
+                action: PaginationAction.FIRST,
+            });
+            expect(PaginationManager.parseButtonAction("decrement-page")).toEqual({
+                type: PaginationType.PAGE,
+                action: PaginationAction.PREV,
+            });
+            expect(PaginationManager.parseButtonAction("increment-page")).toEqual({
+                type: PaginationType.PAGE,
+                action: PaginationAction.NEXT,
+            });
+            expect(PaginationManager.parseButtonAction("max-page")).toEqual({
+                type: PaginationType.PAGE,
+                action: PaginationAction.LAST,
+            });
         });
 
         test("correctly parses index buttons", () => {
-            expect(PaginationManager.parseButtonAction("min-index")).toEqual({ type: PaginationType.INDEX, action: PaginationAction.FIRST });
-            expect(PaginationManager.parseButtonAction("decrement-index")).toEqual({ type: PaginationType.INDEX, action: PaginationAction.PREV });
-            expect(PaginationManager.parseButtonAction("increment-index")).toEqual({ type: PaginationType.INDEX, action: PaginationAction.NEXT });
-            expect(PaginationManager.parseButtonAction("max-index")).toEqual({ type: PaginationType.INDEX, action: PaginationAction.LAST });
+            expect(PaginationManager.parseButtonAction("min-index")).toEqual({
+                type: PaginationType.INDEX,
+                action: PaginationAction.FIRST,
+            });
+            expect(PaginationManager.parseButtonAction("decrement-index")).toEqual({
+                type: PaginationType.INDEX,
+                action: PaginationAction.PREV,
+            });
+            expect(PaginationManager.parseButtonAction("increment-index")).toEqual({
+                type: PaginationType.INDEX,
+                action: PaginationAction.NEXT,
+            });
+            expect(PaginationManager.parseButtonAction("max-index")).toEqual({
+                type: PaginationType.INDEX,
+                action: PaginationAction.LAST,
+            });
         });
 
         test("returns null for invalid button ids", () => {

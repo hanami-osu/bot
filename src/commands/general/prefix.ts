@@ -10,7 +10,15 @@ import { CommandInteractionContext, CommandIntegrationType } from "@utils/comman
 
 const commands: Record<
     string,
-    ({ prefix, interaction, guildId }: { prefix?: string; interaction: GuildInteraction<ApplicationCommandData>; guildId: string }) => Promise<void>
+    ({
+        prefix,
+        interaction,
+        guildId,
+    }: {
+        prefix?: string;
+        interaction: GuildInteraction<ApplicationCommandData>;
+        guildId: string;
+    }) => Promise<void>
 > = {
     add,
     remove,
@@ -138,14 +146,22 @@ async function remove({
     return;
 }
 
-async function list({ interaction, guildId }: { interaction: GuildInteraction<ApplicationCommandData>; guildId: string }): Promise<void> {
+async function list({
+    interaction,
+    guildId,
+}: {
+    interaction: GuildInteraction<ApplicationCommandData>;
+    guildId: string;
+}): Promise<void> {
     const guild = await getEntry(Tables.GUILD, guildId);
     if (guild === null) return;
 
     const { prefixes } = guild;
 
     if (prefixes === null) {
-        await interaction.editReply(`**There aren't any custom prefixes on this guild. The default is \`${DEFAULT_PREFIX.join("")}\`**`);
+        await interaction.editReply(
+            `**There aren't any custom prefixes on this guild. The default is \`${DEFAULT_PREFIX.join("")}\`**`,
+        );
         return;
     }
 

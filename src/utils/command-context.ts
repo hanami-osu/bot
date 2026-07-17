@@ -182,13 +182,22 @@ export class CommandContext {
         const { ButtonStateCache } = await import("../state/button-state-cache");
         const sentMessage = await this.editReply(options);
 
-        if (this.isMessage && typeof sentMessage === "object" && sentMessage !== null && "id" in sentMessage && typeof sentMessage.id === "string") {
+        if (
+            this.isMessage &&
+            typeof sentMessage === "object" &&
+            sentMessage !== null &&
+            "id" in sentMessage &&
+            typeof sentMessage.id === "string"
+        ) {
             await ButtonStateCache.set(sentMessage.id, embedOptions);
         } else if (this.interaction) {
             setTimeout(async () => {
                 try {
                     if (!this.interaction) return;
-                    const message = await this.client.rest.getOriginalInteractionResponse(this.interaction.applicationId, this.interaction.token);
+                    const message = await this.client.rest.getOriginalInteractionResponse(
+                        this.interaction.applicationId,
+                        this.interaction.token,
+                    );
                     if (message && message.id) {
                         await ButtonStateCache.set(message.id, embedOptions);
                     }

@@ -26,7 +26,10 @@ const rulesetModes: Record<number, Mode> = {
     3: "mania" as Mode,
 };
 
-function getScoreMode(play: UserBestScore | UserBestScoreV2 | UserScore | UserScoreV2 | Score | ScoreV2 | LeaderboardScore, fallback: Mode): Mode {
+function getScoreMode(
+    play: UserBestScore | UserBestScoreV2 | UserScore | UserScoreV2 | Score | ScoreV2 | LeaderboardScore,
+    fallback: Mode,
+): Mode {
     if (typeof play.mode_int === "number" && rulesetModes[play.mode_int]) return rulesetModes[play.mode_int];
     if (typeof play.ruleset_id === "number" && rulesetModes[play.ruleset_id]) return rulesetModes[play.ruleset_id];
     if (play.mode === "osu" || play.mode === "taiko" || play.mode === "fruits" || play.mode === "mania") return play.mode as Mode;
@@ -38,7 +41,10 @@ function getScoreMods(mods: UserBestScore["mods"]): Array<string> {
     return mods.map((mod) => (typeof mod === "string" ? mod : mod.acronym));
 }
 
-function getBeatmapObjectCount(beatmap: { count_circles?: number; count_sliders?: number; count_spinners?: number }, fallback: number): number {
+function getBeatmapObjectCount(
+    beatmap: { count_circles?: number; count_sliders?: number; count_spinners?: number },
+    fallback: number,
+): number {
     const objects = (beatmap.count_circles ?? 0) + (beatmap.count_sliders ?? 0) + (beatmap.count_spinners ?? 0);
     return objects > 0 ? objects : Math.max(fallback, 1);
 }

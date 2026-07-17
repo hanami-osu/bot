@@ -33,7 +33,9 @@ function parseCommandName(rawCommandName: string): { commandName: string; index:
 
 async function handleNonCommandMessage(message: Message, content: string): Promise<void> {
     if ((content === ":3" || content === "3:") && Math.random() < CHANCE_TO_SEND_CUTE_KITTY_CAT_I_LOVE_CATS) {
-        await message.reply(message.content === ":3" ? "3:" : ":3", { allowed_mentions: { replied_user: false, parse: [], roles: [], users: [] } });
+        await message.reply(message.content === ":3" ? "3:" : ":3", {
+            allowed_mentions: { replied_user: false, parse: [], roles: [], users: [] },
+        });
         return;
     }
 

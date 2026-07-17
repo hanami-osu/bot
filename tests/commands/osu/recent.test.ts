@@ -15,7 +15,8 @@ let authorMode: Mode | null = null;
 
 function parseMockBigInt(value: string | number | bigint, fieldName = "value"): bigint {
     if (typeof value === "bigint") return value;
-    if (typeof value === "number" && !Number.isSafeInteger(value)) throw new Error(`${fieldName} must be a safe integer or decimal string`);
+    if (typeof value === "number" && !Number.isSafeInteger(value))
+        throw new Error(`${fieldName} must be a safe integer or decimal string`);
     if (typeof value === "string" && !/^-?\d+$/.test(value)) throw new Error(`${fieldName} must be a decimal integer string`);
     return BigInt(value);
 }
@@ -213,6 +214,8 @@ describe("recent command", () => {
         await run(ctx);
 
         const [serviceOptions] = getFetchedPlayReplyMock.mock.calls[0] as Array<{ emptyMessage?: (username: string) => string }>;
-        expect(serviceOptions.emptyMessage?.("yorunoken")).toBe("It seems like `yorunoken` hasn't set any recent plays in `mania`! :(");
+        expect(serviceOptions.emptyMessage?.("yorunoken")).toBe(
+            "It seems like `yorunoken` hasn't set any recent plays in `mania`! :(",
+        );
     });
 });

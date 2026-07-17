@@ -17,7 +17,8 @@ function playMatchesMods(play: FilterablePlay, mods: ModStructure): boolean {
     const requestedMods = modName.toUpperCase().match(/.{1,2}/g) ?? [];
 
     if (exclude) return !requestedMods.every((requestedMod) => playMods.includes(requestedMod));
-    if (forceInclude) return playMods.length === requestedMods.length && requestedMods.every((requestedMod) => playMods.includes(requestedMod));
+    if (forceInclude)
+        return playMods.length === requestedMods.length && requestedMods.every((requestedMod) => playMods.includes(requestedMod));
     if (include) return requestedMods.every((requestedMod) => playMods.includes(requestedMod));
 
     return true;
@@ -27,12 +28,16 @@ function playMatchesTitle(play: FilterablePlay, titleFilter: string): boolean {
     const normalizedFilter = titleFilter.trim().toLocaleLowerCase();
     if (!normalizedFilter) return true;
 
-    const titles = [play.beatmapset.title, play.beatmapset.title_unicode].filter((title): title is string => typeof title === "string");
+    const titles = [play.beatmapset.title, play.beatmapset.title_unicode].filter(
+        (title): title is string => typeof title === "string",
+    );
     return titles.some((title) => title.toLocaleLowerCase().includes(normalizedFilter));
 }
 
 export function filterPlays(plays: Array<FilterablePlay>, { mods, titleFilter }: PlayFilterOptions): Array<FilterablePlay> {
     if (!mods?.name && !titleFilter) return plays;
 
-    return plays.filter((play) => (!mods?.name || playMatchesMods(play, mods)) && (!titleFilter || playMatchesTitle(play, titleFilter)));
+    return plays.filter(
+        (play) => (!mods?.name || playMatchesMods(play, mods)) && (!titleFilter || playMatchesTitle(play, titleFilter)),
+    );
 }

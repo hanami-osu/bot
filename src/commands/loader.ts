@@ -6,7 +6,11 @@ import type { CommandFileData } from "@type/commands";
 import { commandsCache, registerCommand, registerSlashCommandId } from "../state/command-registry";
 
 const DEFAULT_APPLICATION_INTEGRATION_TYPES = [CommandIntegrationType.GuildInstall, CommandIntegrationType.UserInstall];
-const DEFAULT_APPLICATION_CONTEXTS = [CommandInteractionContext.Guild, CommandInteractionContext.BotDM, CommandInteractionContext.PrivateChannel];
+const DEFAULT_APPLICATION_CONTEXTS = [
+    CommandInteractionContext.Guild,
+    CommandInteractionContext.BotDM,
+    CommandInteractionContext.PrivateChannel,
+];
 
 type ApplicationCommandPayload = ApplicationCommand.Create.ApplicationCommandJSONParams;
 
@@ -29,7 +33,8 @@ export function buildApplicationCommandPayload(command: CommandFileData): Applic
         ...(data.application || {}),
         name: data.name,
         description: data.description,
-        integration_types: data.availability?.integrationTypes ?? data.application?.integration_types ?? DEFAULT_APPLICATION_INTEGRATION_TYPES,
+        integration_types:
+            data.availability?.integrationTypes ?? data.application?.integration_types ?? DEFAULT_APPLICATION_INTEGRATION_TYPES,
         contexts: data.availability?.contexts ?? data.application?.contexts ?? DEFAULT_APPLICATION_CONTEXTS,
     };
 }

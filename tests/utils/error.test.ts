@@ -126,7 +126,9 @@ describe("handleCommandError", () => {
         const createMessageArgs = mockClient.rest.createMessage.mock.calls[0];
         expect(createMessageArgs[0]).toBe("123456789");
         expect(createMessageArgs[1].embeds[0].title).toBe("Runtime error on command: top");
-        expect(createMessageArgs[1].embeds[0].fields.some((f: any) => f.name === "Message" && f.value === ";top yorunoken")).toBe(true);
+        expect(createMessageArgs[1].embeds[0].fields.some((f: any) => f.name === "Message" && f.value === ";top yorunoken")).toBe(
+            true,
+        );
 
         // Verifies file logging
         expect(logger.error).toHaveBeenCalled();
@@ -145,6 +147,8 @@ describe("handleCommandError", () => {
         expect(mockClient.rest.createMessage).toHaveBeenCalled();
         const createMessageArgs = mockClient.rest.createMessage.mock.calls[0];
         // Uses "Unknown Guild" fallback
-        expect(createMessageArgs[1].embeds[0].fields.some((f: any) => f.name === "Guild" && f.value.includes("Unknown Guild"))).toBe(true);
+        expect(createMessageArgs[1].embeds[0].fields.some((f: any) => f.name === "Guild" && f.value.includes("Unknown Guild"))).toBe(
+            true,
+        );
     });
 });

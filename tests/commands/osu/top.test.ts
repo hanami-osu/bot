@@ -16,7 +16,8 @@ let authorMode: Mode | null = null;
 
 function parseMockBigInt(value: string | number | bigint, fieldName = "value"): bigint {
     if (typeof value === "bigint") return value;
-    if (typeof value === "number" && !Number.isSafeInteger(value)) throw new Error(`${fieldName} must be a safe integer or decimal string`);
+    if (typeof value === "number" && !Number.isSafeInteger(value))
+        throw new Error(`${fieldName} must be a safe integer or decimal string`);
     if (typeof value === "string" && !/^-?\d+$/.test(value)) throw new Error(`${fieldName} must be a decimal integer string`);
     return BigInt(value);
 }
@@ -120,7 +121,9 @@ function createSlashContext(options: Record<string, string | number | boolean | 
         inGuild: () => true,
         inDM: () => false,
         deferReply: mock(() => Promise.resolve()),
-        editReply: mock((_options: ReplyPayload) => Promise.resolve({ id: "interaction-message", edit: mock(() => Promise.resolve({})) })),
+        editReply: mock((_options: ReplyPayload) =>
+            Promise.resolve({ id: "interaction-message", edit: mock(() => Promise.resolve({})) }),
+        ),
     } as unknown as Interaction<ApplicationCommandData>;
 
     return new CommandContext(mockClient, interaction);

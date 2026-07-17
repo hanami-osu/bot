@@ -99,7 +99,12 @@ async function getEmbeds(user: SuccessUser, input: PpRequirementInput): Promise<
     }
 
     const osuUser = osuUserRequest.data as UserExtended;
-    const scores = await getUserScores(osuUser.id, PlayType.BEST, { query: { mode: user.mode, limit: USER_SCORE_FETCH_LIMIT } }, user.authorDb);
+    const scores = await getUserScores(
+        osuUser.id,
+        PlayType.BEST,
+        { query: { mode: user.mode, limit: USER_SCORE_FETCH_LIMIT } },
+        user.authorDb,
+    );
     const currentPlayPps = scores.map((score) => score.pp).filter((pp): pp is number => typeof pp === "number");
     const result = calculatePpRequirement(osuUser.statistics.pp, currentPlayPps, input);
 

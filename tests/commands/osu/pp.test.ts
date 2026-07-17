@@ -14,13 +14,16 @@ interface ReplyPayload {
 
 function parseMockBigInt(value: string | number | bigint, fieldName = "value"): bigint {
     if (typeof value === "bigint") return value;
-    if (typeof value === "number" && !Number.isSafeInteger(value)) throw new Error(`${fieldName} must be a safe integer or decimal string`);
+    if (typeof value === "number" && !Number.isSafeInteger(value))
+        throw new Error(`${fieldName} must be a safe integer or decimal string`);
     if (typeof value === "string" && !/^-?\d+$/.test(value)) throw new Error(`${fieldName} must be a decimal integer string`);
     return BigInt(value);
 }
 
 mock.module("@utils/database", () => ({
-    getEntry: mock((table: Tables, id: string) => Promise.resolve(table === Tables.USER && id === "123" ? { id, banchoId: null } : null)),
+    getEntry: mock((table: Tables, id: string) =>
+        Promise.resolve(table === Tables.USER && id === "123" ? { id, banchoId: null } : null),
+    ),
     insertData: mock(() => Promise.resolve()),
     bulkInsertData: mock(() => Promise.resolve()),
     removeEntry: mock(() => Promise.resolve(true)),

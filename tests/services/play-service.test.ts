@@ -152,7 +152,9 @@ describe("play service", () => {
         });
 
         expect(result.embedOptions).toBeUndefined();
-        expect(result.reply.embeds?.[0]?.description).toBe("It seems like `peppy` doesn't have any plays, maybe they should go set some :)");
+        expect(result.reply.embeds?.[0]?.description).toBe(
+            "It seems like `peppy` doesn't have any plays, maybe they should go set some :)",
+        );
     });
 
     test("fetches recent scores with the expected mode, limit, and include-fails flag", async () => {
@@ -169,7 +171,12 @@ describe("play service", () => {
         });
 
         expect(result.embedOptions).toBeDefined();
-        expect(getUserScoresMock).toHaveBeenCalledWith(1, PlayType.RECENT, { query: { mode: Mode.OSU, limit: 200, include_fails: false } }, null);
+        expect(getUserScoresMock).toHaveBeenCalledWith(
+            1,
+            PlayType.RECENT,
+            { query: { mode: Mode.OSU, limit: 200, include_fails: false } },
+            null,
+        );
         expect(result.reply.components).toBeDefined();
         expect(result.reply.embeds?.[0]?.title).toBe("Artist - Recent Song");
     });
@@ -213,7 +220,9 @@ describe("play service", () => {
     });
 
     test("formats the page view when both page and index are present", async () => {
-        const plays = Array.from({ length: 6 }, (_value, index) => play(index + 1, `Song ${index + 1}`, ["HR"], "2024-01-01T00:00:00Z"));
+        const plays = Array.from({ length: 6 }, (_value, index) =>
+            play(index + 1, `Song ${index + 1}`, ["HR"], "2024-01-01T00:00:00Z"),
+        );
 
         await buildPlayPaginationMessageOptions({
             type: EmbedBuilderType.PLAYS,

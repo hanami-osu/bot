@@ -17,7 +17,9 @@ interface CommandErrorContext {
 
 const GENERIC_COMMAND_ERROR = "Something went wrong while running that command. The error has been logged, so please try again later.";
 
-function isGuildInteraction(interaction: Interaction<ApplicationCommandData>): interaction is GuildInteraction<ApplicationCommandData> {
+function isGuildInteraction(
+    interaction: Interaction<ApplicationCommandData>,
+): interaction is GuildInteraction<ApplicationCommandData> {
     return typeof interaction.inGuild === "function" ? interaction.inGuild() : "member" in interaction;
 }
 
@@ -78,7 +80,9 @@ export async function handleCommandError(error: Error, ctx: CommandErrorContext)
 
         await client.rest.createMessage(errorChannelId, {
             content: process.env.OWNER_ID ? `<@${process.env.OWNER_ID}> command error logged` : "Command error logged",
-            embeds: [commandErrorLogEmbed({ commandName, subCommand, isInteraction, user, guildName, guildId, channelId, content, error })],
+            embeds: [
+                commandErrorLogEmbed({ commandName, subCommand, isInteraction, user, guildName, guildId, channelId, content, error }),
+            ],
         });
     } catch (logChannelError) {
         logger.error("Failed to send error to log channel", logChannelError as Error);

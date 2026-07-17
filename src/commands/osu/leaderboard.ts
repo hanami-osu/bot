@@ -45,7 +45,15 @@ export async function run(ctx: CommandContext) {
     }
 
     const { user, mods, page = 0 } = parsedArgs;
-    const { reply, embedOptions } = await getEmbeds(user.beatmapId ?? undefined, ctx.user.id, user.authorDb, mods, isGlobal, page, ctx);
+    const { reply, embedOptions } = await getEmbeds(
+        user.beatmapId ?? undefined,
+        ctx.user.id,
+        user.authorDb,
+        mods,
+        isGlobal,
+        page,
+        ctx,
+    );
     if (embedOptions) {
         await ctx.sendWithPagination(reply, embedOptions);
     } else {
@@ -95,7 +103,9 @@ async function getEmbeds(
             mode: beatmap.mode as GameMode,
             isGlobal,
             authorDb,
-            mods: mods.name ? ((typeof mods.name === "string" ? mods.name : mods.name.acronym).match(/.{1,2}/g) as Array<string>) : undefined,
+            mods: mods.name
+                ? ((typeof mods.name === "string" ? mods.name : mods.name.acronym).match(/.{1,2}/g) as Array<string>)
+                : undefined,
         }),
     );
 

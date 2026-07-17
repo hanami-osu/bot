@@ -159,7 +159,9 @@ function getBeatmapId(urlMatch: BeatMapSetURL | BeatMapURL | null): string | nul
     return "id" in urlMatch ? urlMatch.id : urlMatch.difficultyId;
 }
 
-function isGuildInteraction(interaction: Interaction<ApplicationCommandData>): interaction is GuildInteraction<ApplicationCommandData> {
+function isGuildInteraction(
+    interaction: Interaction<ApplicationCommandData>,
+): interaction is GuildInteraction<ApplicationCommandData> {
     return typeof interaction.inGuild === "function" ? interaction.inGuild() : "member" in interaction;
 }
 
@@ -191,7 +193,11 @@ function normalizeMode(value: string | null | undefined): Mode | undefined {
     }
 }
 
-function resolveMode(explicitMode: string | null | undefined, fallbackMode: Mode | undefined, savedMode: string | null | undefined): Mode {
+function resolveMode(
+    explicitMode: string | null | undefined,
+    fallbackMode: Mode | undefined,
+    savedMode: string | null | undefined,
+): Mode {
     return normalizeMode(explicitMode) ?? fallbackMode ?? normalizeMode(savedMode) ?? Mode.OSU;
 }
 
@@ -244,7 +250,13 @@ async function parseSlashCommandArgs(
     const modsValue = data.getString("mods");
     const modsAction =
         data.getString("mods_action") ??
-        (data.getBoolean("force_include") ? "force_include" : data.getBoolean("exclude") ? "exclude" : data.getBoolean("include") ? "include" : null);
+        (data.getBoolean("force_include")
+            ? "force_include"
+            : data.getBoolean("exclude")
+              ? "exclude"
+              : data.getBoolean("include")
+                ? "include"
+                : null);
     const mods = buildMods(parseModsString(modsValue), modsAction);
 
     const beatmapId = getBeatmapId(parseBeatmapUrl(data.getString("map") ?? ""));
@@ -268,7 +280,12 @@ async function parseSlashCommandArgs(
           ? { type: UserType.SUCCESS, banchoId: userArg, mode, beatmapId, authorDb: userAuthor }
           : userAuthor?.banchoId
             ? { type: UserType.SUCCESS, banchoId: userAuthor.banchoId, mode, beatmapId, authorDb: userAuthor }
-            : { type: UserType.FAIL, beatmapId, authorDb: userAuthor, failMessage: "Please link your account to the bot using /link!" };
+            : {
+                  type: UserType.FAIL,
+                  beatmapId,
+                  authorDb: userAuthor,
+                  failMessage: "Please link your account to the bot using /link!",
+              };
 
     return { user, mods, difficultySettings, flags: {}, titleFilter, page, index, grade };
 }

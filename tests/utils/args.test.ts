@@ -12,7 +12,8 @@ const linkedUsers = new Map<string, { id: string; banchoId: string | null; mode?
 
 function parseMockBigInt(value: string | number | bigint, fieldName = "value"): bigint {
     if (typeof value === "bigint") return value;
-    if (typeof value === "number" && !Number.isSafeInteger(value)) throw new Error(`${fieldName} must be a safe integer or decimal string`);
+    if (typeof value === "number" && !Number.isSafeInteger(value))
+        throw new Error(`${fieldName} must be a safe integer or decimal string`);
     if (typeof value === "string" && !/^-?\d+$/.test(value)) throw new Error(`${fieldName} must be a decimal integer string`);
     return BigInt(value);
 }
@@ -83,7 +84,10 @@ function createMockInteraction(
     } as unknown as Interaction<ApplicationCommandData>;
 }
 
-function createInteractionContext(options: Record<string, string | number | boolean | null>, includeRawOptions = true): CommandContext {
+function createInteractionContext(
+    options: Record<string, string | number | boolean | null>,
+    includeRawOptions = true,
+): CommandContext {
     return new CommandContext(mockClient, createMockInteraction(options, "0000", includeRawOptions));
 }
 
@@ -98,17 +102,21 @@ describe("args parser", () => {
             expect(parsed && ("id" in parsed ? parsed.id : parsed.difficultyId)).toBe(expected);
         });
 
-        test.each(["https://example.com/b/72727", "https://osu.ppy.sh/users/72727", "https://osu.ppy.sh/beatmapsets/123456#osu/not-a-number"])(
-            "rejects unrelated URL %s",
-            (url) => {
-                expect(parseBeatmapUrl(url)).toBeNull();
-            },
-        );
+        test.each([
+            "https://example.com/b/72727",
+            "https://osu.ppy.sh/users/72727",
+            "https://osu.ppy.sh/beatmapsets/123456#osu/not-a-number",
+        ])("rejects unrelated URL %s", (url) => {
+            expect(parseBeatmapUrl(url)).toBeNull();
+        });
     });
 
     describe("parseCommandArgs prefix input", () => {
         test("parses explicit user, map, flags, and force-excluded mods", async () => {
-            const result = await parseCommandArgs(createPrefixContext(["peppy", "https://osu.ppy.sh/b/72727", "p=3", "-HDHR!"]), Mode.OSU);
+            const result = await parseCommandArgs(
+                createPrefixContext(["peppy", "https://osu.ppy.sh/b/72727", "p=3", "-HDHR!"]),
+                Mode.OSU,
+            );
 
             expect(result.user.type).toBe(UserType.SUCCESS);
             if (result.user.type === UserType.SUCCESS) expect(result.user.banchoId).toBe("peppy");
@@ -152,8 +160,12 @@ describe("args parser", () => {
         });
 
         test("rejects unknown and contradictory mods", async () => {
-            await expect(parseCommandArgs(createPrefixContext(["peppy", "+ZZ"]), Mode.OSU)).rejects.toBeInstanceOf(CommandValidationError);
-            await expect(parseCommandArgs(createPrefixContext(["peppy", "+DTNC"]), Mode.OSU)).rejects.toBeInstanceOf(CommandValidationError);
+            await expect(parseCommandArgs(createPrefixContext(["peppy", "+ZZ"]), Mode.OSU)).rejects.toBeInstanceOf(
+                CommandValidationError,
+            );
+            await expect(parseCommandArgs(createPrefixContext(["peppy", "+DTNC"]), Mode.OSU)).rejects.toBeInstanceOf(
+                CommandValidationError,
+            );
         });
 
         test("uses prefix command suffix indexes as zero-based indexes", async () => {
@@ -204,7 +216,10 @@ describe("args parser", () => {
         });
 
         test("normalizes slash filter without relying on raw data options", async () => {
-            const result = await parseCommandArgs(createInteractionContext({ username: "peppy", filter: "sidetracked" }, false), Mode.OSU);
+            const result = await parseCommandArgs(
+                createInteractionContext({ username: "peppy", filter: "sidetracked" }, false),
+                Mode.OSU,
+            );
             expect(result.titleFilter).toBe("sidetracked");
             expect(result.flags.filter).toBeUndefined();
         });
@@ -218,7 +233,10 @@ describe("args parser", () => {
         });
 
         test("parses slash mods", async () => {
-            const result = await parseCommandArgs(createInteractionContext({ username: "peppy", mods: "HDHR", mods_action: "exclude" }), Mode.OSU);
+            const result = await parseCommandArgs(
+                createInteractionContext({ username: "peppy", mods: "HDHR", mods_action: "exclude" }),
+                Mode.OSU,
+            );
 
             expect(result.mods.name).toBe("HDHR");
             expect(result.mods.exclude).toBe(true);

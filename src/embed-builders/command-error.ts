@@ -32,7 +32,10 @@ export function commandErrorLogEmbed({
 }: CommandErrorLogEmbedOptions): Embed.Structure {
     const fields = [
         { name: "User", value: `<@${user.id}> (${user.username})` },
-        { name: "Guild", value: guildId && channelId ? `[${guildName}](https://discord.com/channels/${guildId}/${channelId})` : guildName },
+        {
+            name: "Guild",
+            value: guildId && channelId ? `[${guildName}](https://discord.com/channels/${guildId}/${channelId})` : guildName,
+        },
     ];
 
     if (!isInteraction && content) {

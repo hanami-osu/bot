@@ -34,8 +34,10 @@ export function getLegacyOnlyQueryValue(authorDb: User | null): "0" | "1" | unde
 }
 
 export function getScoreValue(play: ScoreLike, authorDb: User | null): number {
-    const legacyTotalScore = typeof play.legacy_total_score === "number" && play.legacy_total_score > 0 ? play.legacy_total_score : undefined;
-    const classicTotalScore = typeof play.classic_total_score === "number" && play.classic_total_score > 0 ? play.classic_total_score : undefined;
+    const legacyTotalScore =
+        typeof play.legacy_total_score === "number" && play.legacy_total_score > 0 ? play.legacy_total_score : undefined;
+    const classicTotalScore =
+        typeof play.classic_total_score === "number" && play.classic_total_score > 0 ? play.classic_total_score : undefined;
     const totalScore = typeof play.total_score === "number" ? play.total_score : undefined;
     const score = typeof play.score === "number" ? play.score : undefined;
 
@@ -47,7 +49,14 @@ export function getScoreValue(play: ScoreLike, authorDb: User | null): number {
 }
 
 export function calculateClassicAccuracy(mode: Mode, hits: AccuracyHits): number {
-    let { count_100: count100, count_300: count300, count_50: count50, count_geki: countGeki, count_katu: countKatu, count_miss: countMiss } = hits;
+    let {
+        count_100: count100,
+        count_300: count300,
+        count_50: count50,
+        count_geki: countGeki,
+        count_katu: countKatu,
+        count_miss: countMiss,
+    } = hits;
     count100 ??= 0;
     count300 ??= 0;
     count50 ??= 0;

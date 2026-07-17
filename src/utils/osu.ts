@@ -239,7 +239,8 @@ export async function getPerformanceResults({
     // For completed plays, rosu-pp determines object count from the beatmap.
     let passedObjects: number | undefined;
     if (passed === false && hitValues) {
-        passedObjects = (hitValues.count_300 ?? 0) + (hitValues.count_100 ?? 0) + (hitValues.count_50 ?? 0) + (hitValues.count_miss ?? 0);
+        passedObjects =
+            (hitValues.count_300 ?? 0) + (hitValues.count_100 ?? 0) + (hitValues.count_50 ?? 0) + (hitValues.count_miss ?? 0);
     }
 
     let current: PerformanceAttributes;
@@ -634,7 +635,15 @@ function getEmbedFromReply(message: Message): number | null {
     return foundId;
 }
 
-async function cycleThroughEmbeds({ client, message, channelId }: { message?: Message; channelId?: string; client: Client }): Promise<number | null> {
+async function cycleThroughEmbeds({
+    client,
+    message,
+    channelId,
+}: {
+    message?: Message;
+    channelId?: string;
+    client: Client;
+}): Promise<number | null> {
     const sourceChannelId = message?.channelId ?? channelId;
     if (!sourceChannelId) return null;
 
@@ -664,7 +673,9 @@ export async function getBeatmapIdFromContext({
     client: Client;
     channelId?: string;
 }): Promise<number | null> {
-    return typeof message?.referencedMessage !== "undefined" ? getEmbedFromReply(message) : cycleThroughEmbeds({ message, client, channelId });
+    return typeof message?.referencedMessage !== "undefined"
+        ? getEmbedFromReply(message)
+        : cycleThroughEmbeds({ message, client, channelId });
 }
 
 export function getRetryCount(beatmapIds: Array<number>, mapId: number): number {

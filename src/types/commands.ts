@@ -18,7 +18,10 @@ export interface CommandAvailability {
     unavailableMessage?: string;
 }
 
-export type ApplicationCommandRegistrationData = Omit<LilybirdApplicationCommand.Create.ApplicationCommandJSONParams, "name" | "description"> & {
+export type ApplicationCommandRegistrationData = Omit<
+    LilybirdApplicationCommand.Create.ApplicationCommandJSONParams,
+    "name" | "description"
+> & {
     integration_types?: Array<CommandIntegrationType>;
     contexts?: Array<CommandInteractionContext>;
 };

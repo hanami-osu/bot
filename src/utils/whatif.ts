@@ -101,7 +101,11 @@ export function calculateWeightedPp(playPps: Array<number>): number {
         .reduce((total, pp, index) => total + pp * Math.pow(PP_DECAY, index), 0);
 }
 
-export function calculateWhatIfProjection(currentTotalPp: number, currentPlayPps: Array<number>, playPps: Array<number>): WhatIfProjection {
+export function calculateWhatIfProjection(
+    currentTotalPp: number,
+    currentPlayPps: Array<number>,
+    playPps: Array<number>,
+): WhatIfProjection {
     if (playPps.length === 0) throw new WhatIfValidationError("Please provide at least one pp value.");
     if (playPps.length > MAX_WHATIF_PLAYS) throw new WhatIfValidationError(`Please provide ${MAX_WHATIF_PLAYS} or fewer pp values.`);
     if (!playPps.every(isValidPpValue))
