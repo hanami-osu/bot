@@ -5,7 +5,6 @@ import { UserType } from "../../src/types/command-args";
 import { Tables } from "../../src/types/database";
 import type { Client } from "lilybird";
 import type { ApplicationCommandData, Interaction, Message } from "@lilybird/transformers";
-import type { HanamiIdentityResolution } from "../../src/types/identity";
 
 const linkedUsers = new Map<string, { id: string; banchoId: string | null; mode?: string | null }>([["123456789012345678", { id: "123456789012345678", banchoId: "yorunoken" }]]);
 
@@ -44,16 +43,6 @@ mock.module("@utils/database", () => ({
     incrementCommandCount: mock(() => Promise.resolve()),
 }));
 
-class MockIdentityUnavailableError extends Error {}
-const identityResolutionEnabledMock = mock(() => false);
-const resolveHanamiIdentityMock = mock((_discordId: string): Promise<HanamiIdentityResolution> => Promise.resolve({ status: "not_found" }));
-
-mock.module("@services/identity-resolver", () => ({
-    HanamiIdentityUnavailableError: MockIdentityUnavailableError,
-    isBotIdentityResolutionEnabled: identityResolutionEnabledMock,
-    resolveHanamiIdentity: resolveHanamiIdentityMock,
-}));
-
 const { CommandValidationError, parseBeatmapUrl, parseCommandArgs, parsePrefixPageFlag } = await import("../../src/utils/args");
 
 const mockClient = {} as unknown as Client;
@@ -61,9 +50,6 @@ const mockClient = {} as unknown as Client;
 beforeEach(() => {
     linkedUsers.clear();
     linkedUsers.set("123456789012345678", { id: "123456789012345678", banchoId: "yorunoken" });
-    identityResolutionEnabledMock.mockImplementation(() => false);
-    resolveHanamiIdentityMock.mockClear();
-    resolveHanamiIdentityMock.mockImplementation(() => Promise.resolve({ status: "not_found" }));
 });
 
 function createPrefixContext(args: Array<string>, index?: number, commandName = "top"): CommandContext {
@@ -276,77 +262,6 @@ describe("args parser", () => {
 
             expect(result.user.type).toBe(UserType.SUCCESS);
             if (result.user.type === UserType.SUCCESS) expect(result.user.mode).toBe(Mode.TAIKO);
-        });
-    });
-
-    describe("unified Hanami identity resolution", () => {
-        test("uses the shared resolver for the invoking Discord user instead of cached banchoId", async () => {
-            identityResolutionEnabledMock.mockImplementation(() => true);
-            linkedUsers.set("0000", { id: "0000", banchoId: "stale-local-value", mode: Mode.OSU });
-            resolveHanamiIdentityMock.mockImplementationOnce(() =>
-                Promise.resolve({
-                    status: "active",
-                    identity: { hanamiUserId: "hanami-user-1", discordId: "0000", osuId: "54321", identityVersion: 2 },
-                    source: "web",
-                }),
-            );
-
-            const result = await parseCommandArgs(createInteractionContext({}));
-
-            expect(resolveHanamiIdentityMock).toHaveBeenCalledWith("0000");
-            expect(result.user.type).toBe(UserType.SUCCESS);
-            if (result.user.type === UserType.SUCCESS) expect(result.user.banchoId).toBe("54321");
-        });
-
-        test("keeps explicit public osu username lookups independent of account ownership", async () => {
-            identityResolutionEnabledMock.mockImplementation(() => true);
-
-            const result = await parseCommandArgs(createInteractionContext({ username: "peppy" }));
-
-            expect(resolveHanamiIdentityMock).not.toHaveBeenCalled();
-            expect(result.user.type).toBe(UserType.SUCCESS);
-            if (result.user.type === UserType.SUCCESS) expect(result.user.banchoId).toBe("peppy");
-        });
-
-        test("resolves an explicit Discord target through Hanami Web", async () => {
-            identityResolutionEnabledMock.mockImplementation(() => true);
-            resolveHanamiIdentityMock.mockImplementationOnce(() =>
-                Promise.resolve({
-                    status: "active",
-                    identity: { hanamiUserId: "hanami-user-2", discordId: "123456789012345678", osuId: "67890", identityVersion: 1 },
-                    source: "web",
-                }),
-            );
-
-            const result = await parseCommandArgs(createInteractionContext({ discord: "123456789012345678" }));
-
-            expect(resolveHanamiIdentityMock).toHaveBeenCalledWith("123456789012345678");
-            expect(result.user.type).toBe(UserType.SUCCESS);
-            if (result.user.type === UserType.SUCCESS) expect(result.user.banchoId).toBe("67890");
-        });
-
-        test.each([
-            ["incomplete", "/account/complete"],
-            ["not_found", "/register"],
-            ["conflict", "contact Hanami support"],
-        ] as const)("fails safely for a %s account response", async (status, expectedMessage) => {
-            identityResolutionEnabledMock.mockImplementation(() => true);
-            resolveHanamiIdentityMock.mockImplementationOnce(() => Promise.resolve({ status }));
-
-            const result = await parseCommandArgs(createInteractionContext({}));
-
-            expect(result.user.type).toBe(UserType.FAIL);
-            if (result.user.type === UserType.FAIL) expect(result.user.failMessage).toContain(expectedMessage);
-        });
-
-        test("fails usefully when identity verification is unavailable", async () => {
-            identityResolutionEnabledMock.mockImplementation(() => true);
-            resolveHanamiIdentityMock.mockImplementationOnce(() => Promise.reject(new MockIdentityUnavailableError()));
-
-            const result = await parseCommandArgs(createInteractionContext({}));
-
-            expect(result.user.type).toBe(UserType.FAIL);
-            if (result.user.type === UserType.FAIL) expect(result.user.failMessage).toContain("temporarily unavailable");
         });
     });
 });

@@ -9,8 +9,6 @@ import type { ApplicationCommandData, DMInteraction, GuildInteraction, Interacti
 import { getSlashCommandMention } from "../state/command-registry";
 import { USER_SCORE_FETCH_LIMIT } from "./score-api";
 import { ITEMS_PER_PAGE } from "./pagination";
-import { HanamiIdentityUnavailableError, isBotIdentityResolutionEnabled, resolveHanamiIdentity } from "@services/identity-resolver";
-import { getHanamiAccountUrl } from "./hanami-account-url";
 
 interface BeatMapSetURL {
     url: string;
@@ -195,57 +193,6 @@ function resolveMode(explicitMode: string | null | undefined, fallbackMode: Mode
     return normalizeMode(explicitMode) ?? fallbackMode ?? normalizeMode(savedMode) ?? Mode.OSU;
 }
 
-function identityFailureMessage(status: "incomplete" | "not_found" | "conflict", discordUserId?: string): string {
-    const subject = discordUserId ? `The user <@${discordUserId}>` : "Your Hanami account";
-    switch (status) {
-        case "incomplete":
-            return `${subject} must finish account setup at ${getHanamiAccountUrl("complete")} before using linked osu! commands.`;
-        case "not_found":
-            return `${subject} is not registered. Verify Discord and osu! at ${getHanamiAccountUrl("register")}.`;
-        case "conflict":
-            return "This Hanami identity has a conflict and cannot be used automatically. Please contact Hanami support.";
-    }
-}
-
-async function resolveDiscordCommandUser({
-    discordId,
-    cachedBanchoId,
-    authorDb,
-    mode,
-    beatmapId,
-    legacyFailureMessage,
-    targetDiscordId,
-}: {
-    discordId: string;
-    cachedBanchoId: string | null | undefined;
-    authorDb: SlashCommandArgs["user"]["authorDb"];
-    mode: Mode;
-    beatmapId: string | null;
-    legacyFailureMessage: string;
-    targetDiscordId?: string;
-}): Promise<User> {
-    if (!isBotIdentityResolutionEnabled()) {
-        return cachedBanchoId
-            ? { type: UserType.SUCCESS, banchoId: cachedBanchoId, authorDb, mode, beatmapId }
-            : { type: UserType.FAIL, beatmapId, authorDb, failMessage: legacyFailureMessage };
-    }
-
-    try {
-        const resolution = await resolveHanamiIdentity(discordId);
-        return resolution.status === "active"
-            ? { type: UserType.SUCCESS, banchoId: resolution.identity.osuId, authorDb, mode, beatmapId }
-            : { type: UserType.FAIL, beatmapId, authorDb, failMessage: identityFailureMessage(resolution.status, targetDiscordId) };
-    } catch (error) {
-        if (!(error instanceof HanamiIdentityUnavailableError)) throw error;
-        return {
-            type: UserType.FAIL,
-            beatmapId,
-            authorDb,
-            failMessage: "Hanami account verification is temporarily unavailable. Please try again shortly.",
-        };
-    }
-}
-
 function parseSlashIntegerOption(value: number | null | undefined, label: string): number | undefined {
     if (value === null || typeof value === "undefined") return undefined;
     if (!Number.isInteger(value)) throw new CommandValidationError(`${label} must be a whole number.`);
@@ -271,7 +218,7 @@ async function parseSlashCommandArgs(interaction: Interaction<ApplicationCommand
     const userArg = data.getString("username");
     const userAuthor = await getEntry(Tables.USER, getInteractionUserId(interaction));
     const discordUserId = data.getUser("discord");
-    const discordUser = discordUserId ? await getEntry(Tables.USER, discordUserId) : null;
+    const discordUser = await getEntry(Tables.USER, discordUserId ?? "");
     const mode = resolveMode(data.getString("mode"), fallbackMode, userAuthor?.mode);
 
     const modsValue = data.getString("mods");
@@ -284,30 +231,20 @@ async function parseSlashCommandArgs(interaction: Interaction<ApplicationCommand
     const index = parseSlashIntegerOption(data.getInteger("index"), "index");
     const grade = normalizeStringOption(data.getString("grade"));
 
-    let user: User;
-    if (discordUserId) {
-        user = await resolveDiscordCommandUser({
-            discordId: discordUserId,
-            cachedBanchoId: discordUser?.banchoId,
-            authorDb: userAuthor,
-            mode,
-            beatmapId,
-            legacyFailureMessage: `The user <@${discordUserId}> hasn't linked their account to the bot yet!`,
-            targetDiscordId: discordUserId,
-        });
-    } else if (userArg) {
-        user = { type: UserType.SUCCESS, banchoId: userArg, mode, beatmapId, authorDb: userAuthor };
-    } else {
-        const authorDiscordId = getInteractionUserId(interaction);
-        user = await resolveDiscordCommandUser({
-            discordId: authorDiscordId,
-            cachedBanchoId: userAuthor?.banchoId,
-            authorDb: userAuthor,
-            mode,
-            beatmapId,
-            legacyFailureMessage: "Please link your account to the bot using /link!",
-        });
-    }
+    const user: User = discordUserId
+        ? discordUser?.banchoId
+            ? { type: UserType.SUCCESS, banchoId: discordUser.banchoId, authorDb: userAuthor, mode, beatmapId }
+            : {
+                  type: UserType.FAIL,
+                  beatmapId,
+                  authorDb: userAuthor,
+                  failMessage: discordUserId ? `The user <@${discordUserId}> hasn't linked their account to the bot yet!` : `Please link your account to the bot using ${getSlashCommandMention("link")}!`,
+              }
+        : userArg
+          ? { type: UserType.SUCCESS, banchoId: userArg, mode, beatmapId, authorDb: userAuthor }
+          : userAuthor?.banchoId
+            ? { type: UserType.SUCCESS, banchoId: userAuthor.banchoId, mode, beatmapId, authorDb: userAuthor }
+            : { type: UserType.FAIL, beatmapId, authorDb: userAuthor, failMessage: "Please link your account to the bot using /link!" };
 
     return { user, mods, difficultySettings, flags: {}, titleFilter, page, index, grade };
 }
@@ -390,35 +327,33 @@ async function parsePrefixCommandArgs(message: Message, args: Array<string>, fal
     const userAuthor = await getEntry(Tables.USER, message.author.id);
     const mode = resolveMode(undefined, fallbackMode, userAuthor?.mode);
 
-    if (!result.tempUser) {
-        result.user = await resolveDiscordCommandUser({
-            discordId: message.author.id,
-            cachedBanchoId: userAuthor?.banchoId,
+    if (!result.tempUser && userAuthor?.banchoId) {
+        result.user = {
+            beatmapId: result.user.beatmapId,
+            type: UserType.SUCCESS,
+            banchoId: userAuthor.banchoId,
             authorDb: userAuthor,
             mode,
-            beatmapId: result.user.beatmapId,
-            legacyFailureMessage: `Please link your account to the bot using ${getSlashCommandMention("link")}!`,
-        });
+        };
     } else if (result.tempUser) {
         const [userArg] = result.tempUser;
 
         const discordUserId = /<@(\d+)>/.exec(userArg)?.[1];
         const discordUser = discordUserId ? await getEntry(Tables.USER, discordUserId) : null;
-        if (discordUserId) {
-            result.user = await resolveDiscordCommandUser({
-                discordId: discordUserId,
-                cachedBanchoId: discordUser?.banchoId,
-                authorDb: userAuthor,
-                mode,
+        const discordId = discordUserId ? discordUser?.banchoId : null;
+
+        if (discordUserId && !discordId) {
+            result.user = {
                 beatmapId: result.user.beatmapId,
-                legacyFailureMessage: `The user <@${discordUserId}> hasn't linked their account to the bot yet!`,
-                targetDiscordId: discordUserId,
-            });
+                type: UserType.FAIL,
+                authorDb: userAuthor,
+                failMessage: `The user <@${discordUserId}> hasn't linked their account to the bot yet!`,
+            };
         } else {
             result.user = {
                 beatmapId: result.user.beatmapId,
                 type: UserType.SUCCESS,
-                banchoId: userArg,
+                banchoId: discordId ?? userArg,
                 authorDb: userAuthor,
                 mode,
             };
