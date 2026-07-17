@@ -1,10 +1,9 @@
 import { configListEmbed, configUpdatedEmbed, type ConfigChange } from "@builders";
-import { CommandData } from "@type/commands";
-import { ApplicationCommandOptionType } from "lilybird";
-import { getEntry, insertData } from "@utils/database";
+import type { CommandData } from "@type/commands";
 import { ScoreEmbed, Tables } from "@type/database";
-
+import { ApplicationCommandOptionType } from "lilybird";
 import { CommandContext } from "@utils/command-context";
+import { getEntry, insertData } from "@utils/database";
 
 export async function run(ctx: CommandContext): Promise<void> {
     await ctx.defer();
@@ -20,50 +19,110 @@ export async function run(ctx: CommandContext): Promise<void> {
     const embedTypeData = data.getString("embed_type");
     const scoreDataValue = data.getNumber("score_data");
 
-    if (
+    const hasNoChanges =
         typeof modeData === "undefined" &&
         typeof scoreEmbedData === "undefined" &&
         typeof embedTypeData === "undefined" &&
-        typeof scoreDataValue === "undefined"
-    ) {
+        typeof scoreDataValue === "undefined";
+
+    if (hasNoChanges) {
         await list(ctx, userId);
         return;
     }
 
     const changes: Array<ConfigChange> = [];
+
     if (typeof modeData !== "undefined") {
-        await insertData({ table: Tables.USER, id: userId, data: [{ key: "mode", value: modeData }] });
-        changes.push({ type: "mode", data: modeData });
+        await insertData({
+            table: Tables.USER,
+            id: userId,
+            data: [{ key: "mode", value: modeData }],
+        });
+
+        changes.push({
+            type: "mode",
+            data: modeData,
+        });
     }
 
     if (typeof scoreEmbedData !== "undefined") {
-        await insertData({ table: Tables.USER, id: userId, data: [{ key: "score_embeds", value: scoreEmbedData }] });
-        changes.push({ type: "score_embeds", data: ScoreEmbed[scoreEmbedData] });
+        await insertData({
+            table: Tables.USER,
+            id: userId,
+            data: [{ key: "score_embeds", value: scoreEmbedData }],
+        });
+
+        changes.push({
+            type: "score_embeds",
+            data: ScoreEmbed[scoreEmbedData],
+        });
     }
 
     if (typeof embedTypeData !== "undefined") {
-        await insertData({ table: Tables.USER, id: userId, data: [{ key: "embed_type", value: embedTypeData }] });
-        changes.push({ type: "embed_type", data: embedTypeData });
+        await insertData({
+            table: Tables.USER,
+            id: userId,
+            data: [{ key: "embed_type", value: embedTypeData }],
+        });
+
+        changes.push({
+            type: "embed_type",
+            data: embedTypeData,
+        });
     }
 
     if (typeof scoreDataValue !== "undefined") {
-        await insertData({ table: Tables.USER, id: userId, data: [{ key: "score_data", value: scoreDataValue }] });
-        changes.push({ type: "score_data", data: scoreDataValue === 0 ? "Stable" : "Lazer" });
+        await insertData({
+            table: Tables.USER,
+            id: userId,
+            data: [{ key: "score_data", value: scoreDataValue }],
+        });
+
+        changes.push({
+            type: "score_data",
+            data: scoreDataValue === 0 ? "Stable" : "Lazer",
+        });
     }
 
     await interaction.editReply({
+        content: getWebConfigNotice(),
         embeds: [configUpdatedEmbed(username, changes)],
     });
 }
 
 async function list(ctx: CommandContext, userId: string): Promise<void> {
     let user = await getEntry(Tables.USER, userId);
+
     if (!user) {
-        await insertData({ table: Tables.USER, id: userId, data: [{ key: "banchoId", value: null }] });
-        user = { banchoId: null, mode: null, score_embeds: null, embed_type: null, score_data: null, id: userId };
+        await insertData({
+            table: Tables.USER,
+            id: userId,
+            data: [{ key: "banchoId", value: null }],
+        });
+
+        user = {
+            id: userId,
+            banchoId: null,
+            mode: null,
+            score_embeds: null,
+            embed_type: null,
+            score_data: null,
+        };
     }
 
-    await ctx.editReply({ embeds: [configListEmbed(ctx.user.username, user)] });
+    await ctx.editReply({
+        content: getWebConfigNotice(),
+        embeds: [configListEmbed(ctx.user.username, user)],
+    });
+}
+
+function getWebConfigNotice(): string | undefined {
+    const webUrl = process.env.HANAMI_WEB_URL;
+    if (!webUrl) return undefined;
+
+    const profileUrl = new URL("/profile", webUrl);
+
+    return `You can also manage your bot preferences on [Hanami Web](<${profileUrl.toString()}>).`;
 }
 
 export const data = {
@@ -77,8 +136,14 @@ export const data = {
                 name: "score_embeds",
                 description: "Specify the size of recent/top/firsts score embeds.",
                 choices: [
-                    { name: "Maximized", value: 1 },
-                    { name: "Minimized", value: 0 },
+                    {
+                        name: "Maximized",
+                        value: 1,
+                    },
+                    {
+                        name: "Minimized",
+                        value: 0,
+                    },
                 ],
                 required: false,
             },
@@ -87,21 +152,42 @@ export const data = {
                 name: "mode",
                 description: "Specify an osu! mode. osu!standard is the default.",
                 choices: [
-                    { name: "osu", value: "osu" },
-                    { name: "mania", value: "mania" },
-                    { name: "taiko", value: "taiko" },
-                    { name: "ctb", value: "fruits" },
+                    {
+                        name: "osu",
+                        value: "osu",
+                    },
+                    {
+                        name: "mania",
+                        value: "mania",
+                    },
+                    {
+                        name: "taiko",
+                        value: "taiko",
+                    },
+                    {
+                        name: "ctb",
+                        value: "fruits",
+                    },
                 ],
                 required: false,
             },
             {
                 type: ApplicationCommandOptionType.STRING,
                 name: "embed_type",
-                description: "Specify the style of recent/top/firsts score embeds. Default: Hanami",
+                description: "Specify the score embed style. Default: Hanami",
                 choices: [
-                    { name: "Bathbot", value: "bathbot" },
-                    { name: "owo", value: "owobot" },
-                    { name: "Hanami", value: "hanami" },
+                    {
+                        name: "Bathbot",
+                        value: "bathbot",
+                    },
+                    {
+                        name: "owo",
+                        value: "owobot",
+                    },
+                    {
+                        name: "Hanami",
+                        value: "hanami",
+                    },
                 ],
                 required: false,
             },
@@ -110,8 +196,14 @@ export const data = {
                 name: "score_data",
                 description: "Specify score data source. Stable: old osu!, Lazer: new osu!lazer",
                 choices: [
-                    { name: "Stable", value: 0 },
-                    { name: "Lazer", value: 1 },
+                    {
+                        name: "Stable",
+                        value: 0,
+                    },
+                    {
+                        name: "Lazer",
+                        value: 1,
+                    },
                 ],
                 required: false,
             },
