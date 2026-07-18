@@ -7,7 +7,7 @@ declare module "bun" {
         OSU_ACCESS_TOKEN: string;
         OSU_DAILY_API: string;
         HANAMI_WEB_URL: string;
-        HANAMI_LINK_SECRET: string;
+        BOT_LINK_SECRET: string;
         REDIS_URL: string;
         ERROR_CHANNEL_ID: string;
         DEV_GUILD_ID: string;
