@@ -10,9 +10,9 @@
         "start": "DEV=false bun src/index.ts",
         "check": "tsc --noEmit && eslint",
         "format": "prettier --write .",
-        "test": "bun test",
-        "test:unit": "bun test tests/utils tests/commands tests/embed-builders --timeout 5000",
-        "test:integration": "bun test tests/integration --timeout 30000",
+        "test": "bun test --isolate",
+        "test:unit": "bun test tests/utils tests/commands tests/embed-builders --timeout 5000 --isolate",
+        "test:integration": "bun test tests/integration --timeout 30000 --isolate",
         "test:all": "bun run test:unit && bun run test:integration"
     },
     "dependencies": {

@@ -21,6 +21,7 @@ function parseMockBigInt(value: string | number | bigint, fieldName = "value"): 
 }
 
 mock.module("@utils/database", () => ({
+    prisma: {},
     getEntry: mock((table: Tables, id: string) =>
         Promise.resolve(table === Tables.USER && id === "123" ? { id, banchoId: null } : null),
     ),

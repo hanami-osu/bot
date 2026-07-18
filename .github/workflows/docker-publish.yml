@@ -29,7 +29,7 @@ jobs:
               run: bun run check
 
             - name: Test
-              run: bun test
+              run: bun run test
 
     push_to_registry:
         name: Push Docker image to Docker Hub
