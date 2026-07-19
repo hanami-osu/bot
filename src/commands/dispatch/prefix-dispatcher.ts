@@ -106,7 +106,7 @@ export async function dispatchPrefixCommand(message: Message): Promise<void> {
     const channel = await message.fetchChannel();
     if (!channel.isText()) return;
 
-    client.rest.triggerTypingIndicator(channel.id);
+    client.rest.triggerTypingIndicator(channel.id).catch(() => null);
 
     let commandContext: CommandContext | undefined;
 
