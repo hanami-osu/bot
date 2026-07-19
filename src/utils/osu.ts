@@ -4,7 +4,6 @@ import { Tables, type ScoreData } from "@type/database";
 import { calculateClassicAccuracy, getLegacyOnlyQueryValue, shouldUseLazerPerformance } from "@utils/score-preference";
 import { Beatmap, BeatmapAttributesBuilder, Performance, type BeatmapAttributes, type PerformanceAttributes } from "rosu-pp-js";
 import { ChannelType } from "lilybird";
-import https from "https";
 import crypto from "crypto";
 import type { Score as ScoreDatabase, User } from "@type/database";
 import type { Message } from "@lilybird/transformers";
@@ -324,40 +323,29 @@ export async function downloadBeatmap(
     contents: string;
 }> {
     const url = `https://osu.ppy.sh/osu/${id}`;
+    const signal = AbortSignal.timeout(timeoutMs);
 
-    return new Promise(function (resolve, reject) {
-        const req = https
-            .request(url, { method: "GET" }, function (response) {
-                const chunks: Array<Uint8Array> = [];
+    let response: Response;
+    try {
+        response = await fetch(url, { signal });
+    } catch (error) {
+        if (signal.aborted) {
+            throw new Error(`Request to ${url} timed out after ${timeoutMs}ms`, { cause: error });
+        }
+        throw error;
+    }
 
-                response.on("data", function (chunk: Uint8Array) {
-                    chunks.push(chunk);
-                });
-                response.on("end", async function () {
-                    const data = Buffer.concat(chunks).toString();
-                    if (!response.statusCode || response.statusCode < 200 || response.statusCode >= 300) {
-                        reject(new Error(`Beatmap download failed with HTTP ${response.statusCode ?? "unknown"}`));
-                        return;
-                    }
+    if (!response.ok) {
+        throw new Error(`Beatmap download failed with HTTP ${response.status}`);
+    }
 
-                    if (!isPlausibleBeatmap(data)) {
-                        reject(new Error("Beatmap download returned invalid .osu content"));
-                        return;
-                    }
+    const contents = await response.text();
+    if (!isPlausibleBeatmap(contents)) {
+        throw new Error("Beatmap download returned invalid .osu content");
+    }
 
-                    await insertData({ table: Tables.MAP, id, data: [{ key: "data", value: data }] });
-                    resolve({ id, contents: data });
-                });
-            })
-            .on("error", reject);
-
-        req.setTimeout(timeoutMs, function () {
-            req.destroy();
-            reject(new Error(`Request to ${url} timed out after ${timeoutMs}ms`));
-        });
-
-        req.end();
-    });
+    await insertData({ table: Tables.MAP, id, data: [{ key: "data", value: contents }] });
+    return { id, contents };
 }
 
 export function isPlausibleBeatmap(contents: string): boolean {

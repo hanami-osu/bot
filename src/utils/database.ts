@@ -13,20 +13,29 @@ interface PrismaModel {
     upsert(args: { where: { id: string | bigint }; create: Record<string, unknown>; update: Record<string, unknown> }): unknown;
 }
 
-function getPrismaModel(table: string): PrismaModel {
+interface PrismaModelClient {
+    user: unknown;
+    guild: unknown;
+    map: unknown;
+    command: unknown;
+    score: unknown;
+    scorePp: unknown;
+}
+
+function getPrismaModel(table: string, client: PrismaModelClient = prisma): PrismaModel {
     switch (table) {
         case "users":
-            return prisma.user as unknown as PrismaModel;
+            return client.user as PrismaModel;
         case "guilds":
-            return prisma.guild as unknown as PrismaModel;
+            return client.guild as PrismaModel;
         case "maps":
-            return prisma.map as unknown as PrismaModel;
+            return client.map as PrismaModel;
         case "commands":
-            return prisma.command as unknown as PrismaModel;
+            return client.command as PrismaModel;
         case "osu_scores":
-            return prisma.score as unknown as PrismaModel;
+            return client.score as PrismaModel;
         case "osu_scores_pp":
-            return prisma.scorePp as unknown as PrismaModel;
+            return client.scorePp as PrismaModel;
         default:
             throw new Error(`Unknown table ${table}`);
     }
@@ -93,6 +102,16 @@ export function mapFromPrismaValue(data: unknown): unknown {
         res.prefixes = parsePrefixes(res.prefixes);
     }
     return res;
+}
+
+function mapToPrismaData(
+    data: Array<{ key: string; value: string | number | boolean | bigint | null }>,
+): Record<string, unknown> {
+    const obj: Record<string, unknown> = {};
+    for (const item of data) {
+        obj[item.key] = mapToPrismaValue(item.key, item.value);
+    }
+    return obj;
 }
 
 async function withPerfMonitoring<T>(operation: string, fn: () => Promise<T>): Promise<T> {
@@ -166,10 +185,7 @@ export async function insertData<T extends Tables>(
     const model = getPrismaModel(table);
     const prismaId = getPrismaId(table, id);
 
-    const obj: Record<string, unknown> = {};
-    for (const item of data) {
-        obj[item.key as string] = mapToPrismaValue(item.key as string, item.value);
-    }
+    const obj = mapToPrismaData(data);
 
     if (ignore) {
         await model.createMany({
@@ -193,36 +209,26 @@ export async function bulkInsertData<T extends Tables>(
         ignore?: boolean;
     }>,
 ): Promise<void> {
-    // We execute these sequentially in a transaction to avoid race conditions
-    // Prisma doesn't support bulk upsert directly in createMany for MySQL, so we use transaction array
-    const transactions = entries.map((entry) => {
-        const model = getPrismaModel(entry.table);
-        const prismaId = getPrismaId(entry.table, entry.id);
+    await prisma.$transaction(async (tx) => {
+        for (const entry of entries) {
+            const model = getPrismaModel(entry.table, tx);
+            const prismaId = getPrismaId(entry.table, entry.id);
+            const obj = mapToPrismaData(entry.data);
 
-        const obj: Record<string, unknown> = {};
-        for (const item of entry.data) {
-            obj[item.key as string] = mapToPrismaValue(item.key as string, item.value);
-        }
-
-        if (entry.ignore) {
-            return Promise.resolve(
-                model.createMany({
+            if (entry.ignore) {
+                await model.createMany({
                     data: { id: prismaId, ...obj },
                     skipDuplicates: true,
-                }),
-            );
-        } else {
-            return Promise.resolve(
-                model.upsert({
+                });
+            } else {
+                await model.upsert({
                     where: { id: prismaId },
                     create: { id: prismaId, ...obj },
                     update: obj,
-                }),
-            );
+                });
+            }
         }
     });
-
-    await Promise.all(transactions);
 }
 
 export async function incrementCommandCount(id: string): Promise<void> {
