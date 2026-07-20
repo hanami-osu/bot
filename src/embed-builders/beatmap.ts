@@ -1,6 +1,7 @@
 import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
-import { downloadBeatmap, getPerformanceResults } from "@utils/osu";
+import { downloadBeatmap } from "../services/beatmap-service";
+import { getPerformanceResults } from "../services/performance-service";
 import { getEntry } from "@utils/database";
 import { rulesets } from "@utils/constants";
 import { Mode } from "@type/osu";

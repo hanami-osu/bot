@@ -4,7 +4,7 @@ import { EmbedBuilderType } from "@type/builders";
 import { CommandData } from "@type/commands";
 import { Mode } from "@type/osu";
 import { CommandValidationError, parseCommandArgs } from "@utils/args";
-import { getBeatmapIdFromContext } from "@utils/osu";
+import { getBeatmapIdFromContext } from "../../discord/beatmap-context";
 import { ApplicationCommandOptionType } from "lilybird";
 
 import { CommandContext } from "@utils/command-context";

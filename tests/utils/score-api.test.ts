@@ -6,12 +6,18 @@ const listScoresMock = mock(({ offset }: { offset?: number }, _addons?: { legacy
     const start = offset ?? 0;
     return Promise.resolve(Array.from({ length: 100 }, (_value, index) => ({ id: start + index + 1 })));
 });
+const userDetailsMock = mock(({ user }: { user: string | number }) =>
+    Promise.resolve(user === "missing" ? { error: { message: "not found" } } : { id: 1, username: String(user) }),
+);
 
 mock.module("osu-api-extended", () => ({
     enums: {
         ModsEnum: { HD: 8, HR: 16, DT: 64, NC: 512 },
     },
     v2: {
+        users: {
+            details: userDetailsMock,
+        },
         scores: {
             list: listScoresMock,
         },
@@ -19,6 +25,7 @@ mock.module("osu-api-extended", () => ({
 }));
 
 const { getBeatmapUserScores, getUserScores } = await import("../../src/utils/score-api");
+const { banchoProvider } = await import("../../src/providers/bancho-provider");
 
 function createUser(scoreData: ScoreData | null): User {
     return {
@@ -34,6 +41,16 @@ function createUser(scoreData: ScoreData | null): User {
 describe("score API utilities", () => {
     beforeEach(() => {
         listScoresMock.mockClear();
+        userDetailsMock.mockClear();
+        listScoresMock.mockImplementation(({ offset }: { offset?: number }) => {
+            const start = offset ?? 0;
+            return Promise.resolve(Array.from({ length: 100 }, (_value, index) => ({ id: start + index + 1 })));
+        });
+    });
+
+    test("looks up users through the provider and returns null for API failures", async () => {
+        await expect(banchoProvider.getUser("peppy", Mode.OSU)).resolves.toMatchObject({ id: 1, username: "peppy" });
+        await expect(banchoProvider.getUser("missing", Mode.OSU)).resolves.toBeNull();
     });
 
     test("fetches user scores in offset pages when more than 100 are requested", async () => {
@@ -94,5 +111,12 @@ describe("score API utilities", () => {
         expect(listScoresMock.mock.calls[1]?.[1]).toEqual({ legacy_only: false });
         expect(listScoresMock.mock.calls[2]?.[1]).toBeUndefined();
         expect(listScoresMock.mock.calls[3]?.[1]).toBeUndefined();
+    });
+
+    test("surfaces score API failures", async () => {
+        listScoresMock.mockImplementationOnce((() => Promise.resolve({ error: { message: "upstream unavailable" } })) as never);
+        await expect(getUserScores(1, PlayType.BEST, { query: { mode: Mode.OSU, limit: 1 } }, null)).rejects.toThrow(
+            "upstream unavailable",
+        );
     });
 });

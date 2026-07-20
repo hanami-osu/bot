@@ -76,6 +76,10 @@ mock.module("@utils/osu", () => ({
     isPlausibleBeatmap: mock(() => true),
 }));
 
+mock.module("../../../src/discord/beatmap-context", () => ({
+    getBeatmapIdFromContext: mock(() => Promise.resolve(72727)),
+}));
+
 const { run } = await import("../../../src/commands/osu/simulate");
 
 describe("simulate command", () => {

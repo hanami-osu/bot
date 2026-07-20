@@ -11,10 +11,10 @@ import {
     validatePpRequirementInput,
     type PpRequirementInput,
 } from "@utils/pp-requirement";
-import { safeParse } from "@utils/safe-parse";
-import { getUserScores, USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
+import { USER_SCORE_FETCH_LIMIT } from "../../providers/score-provider";
+import { scoreQueryService } from "../../services/score-query-service";
 import { ApplicationCommandOptionType } from "lilybird";
-import { v2 } from "osu-api-extended";
+import { userService } from "../../services/user-service";
 import type { SuccessUser } from "@type/command-args";
 import { UserType } from "@type/command-args";
 import type { UserExtended } from "@type/osu";
@@ -91,25 +91,25 @@ export async function run(ctx: CommandContext): Promise<void> {
 }
 
 async function getEmbeds(user: SuccessUser, input: PpRequirementInput): Promise<MessageReplyOptions> {
-    const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
-    if (!osuUserRequest.success) {
+    const osuUser = await userService.getUser(user.banchoId, user.mode);
+    if (!osuUser) {
         return {
             embeds: [userNotFoundEmbed(user.banchoId)],
         };
     }
 
-    const osuUser = osuUserRequest.data as UserExtended;
-    const scores = await getUserScores(
-        osuUser.id,
+    const resolvedUser = osuUser as UserExtended;
+    const scores = await scoreQueryService.getUserScores(
+        resolvedUser.id,
         PlayType.BEST,
         { query: { mode: user.mode, limit: USER_SCORE_FETCH_LIMIT } },
         user.authorDb,
     );
     const currentPlayPps = scores.map((score) => score.pp).filter((pp): pp is number => typeof pp === "number");
-    const result = calculatePpRequirement(osuUser.statistics.pp, currentPlayPps, input);
+    const result = calculatePpRequirement(resolvedUser.statistics.pp, currentPlayPps, input);
 
     return {
-        embeds: [ppRequirementEmbed(osuUser, user.mode, result)],
+        embeds: [ppRequirementEmbed(resolvedUser, user.mode, result)],
     };
 }
 

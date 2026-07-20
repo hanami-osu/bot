@@ -5,10 +5,11 @@ import { SuccessUser, UserType } from "@type/command-args";
 import { CommandData } from "@type/commands";
 import { Mode, type Beatmap } from "@type/osu";
 import { parseCommandArgs } from "@utils/args";
-import { getBeatmapIdFromContext } from "@utils/osu";
-import { getBeatmapUserScores } from "@utils/score-api";
+import { getBeatmapIdFromContext } from "../../discord/beatmap-context";
+import { scoreQueryService } from "../../services/score-query-service";
 import { createPaginationActionRow } from "@utils/pagination";
 import { v2 } from "osu-api-extended";
+import { userService } from "../../services/user-service";
 import { safeParse } from "@utils/safe-parse";
 import { ApplicationCommandOptionType } from "lilybird";
 
@@ -50,16 +51,14 @@ async function getEmbeds(
     mods: any,
     context: CommandContext,
 ): Promise<{ reply: MessageReplyOptions; embedOptions?: CompareBuilderOptions }> {
-    const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
-    if (!osuUserRequest.success) {
+    const osuUser = await userService.getUser(user.banchoId, user.mode);
+    if (!osuUser) {
         return {
             reply: {
                 embeds: [userNotFoundEmbed(user.banchoId)],
             },
         };
     }
-    const osuUser = osuUserRequest.data;
-
     const beatmapId = user.beatmapId ?? (await getBeatmapIdFromContext(context.beatmapLookupContext));
     if (typeof beatmapId === "undefined" || beatmapId === null) {
         return {
@@ -87,7 +86,7 @@ async function getEmbeds(
         };
     }
 
-    const plays = await getBeatmapUserScores(beatmap.id, osuUser.id, { query: { mode: user.mode } }, user.authorDb);
+    const plays = await scoreQueryService.getBeatmapUserScores(beatmap.id, osuUser.id, { query: { mode: user.mode } }, user.authorDb);
 
     if (plays.length === 0) {
         return {

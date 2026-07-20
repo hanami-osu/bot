@@ -76,13 +76,21 @@ mock.module("osu-api-extended", () => ({
     },
 }));
 
-mock.module("@utils/score-api", () => ({
+mock.module("../../src/providers/bancho-provider", () => ({
     USER_SCORE_FETCH_LIMIT: 200,
-    getUserScores: getUserScoresMock,
+    banchoProvider: {
+        id: "bancho",
+        getUser: async (identity: string) => {
+            const result = await userDetailsMock({ user: identity });
+            return "error" in result ? null : result;
+        },
+        getUserScores: getUserScoresMock,
+        getBeatmapUserScores: mock(() => Promise.resolve([])),
+    },
 }));
 
-mock.module("@utils/osu", () => ({
-    saveScoreDatas: saveScoreDatasMock,
+mock.module("../../src/services/score-persistence", () => ({
+    scorePersistence: { saveScoreDatas: saveScoreDatasMock },
 }));
 
 mock.module("@utils/formatter", () => ({

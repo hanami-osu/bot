@@ -4,12 +4,11 @@ import { type Mode, PlayType, type Score, type ScoresInfo } from "@type/osu";
 import { simpleErrorEmbed, userNotFoundEmbed } from "../embed-builders/common";
 import { playBuilder } from "../embed-builders/plays";
 import { getFormattedProfile, getFormattedScore } from "@utils/formatter";
-import { saveScoreDatas } from "@utils/osu";
+import { scorePersistence } from "./score-persistence";
 import { createPaginationActionRow, ITEMS_PER_PAGE } from "@utils/pagination";
 import { filterPlays } from "@utils/play-filters";
-import { safeParse } from "@utils/safe-parse";
-import { getUserScores, USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
-import { v2 } from "osu-api-extended";
+import { USER_SCORE_FETCH_LIMIT, banchoProvider } from "../providers/bancho-provider";
+import type { ScoreProvider } from "../providers/score-provider";
 import type { Message, Embed } from "lilybird";
 import type { MessageReplyOptions } from "@lilybird/transformers";
 import { User } from "@type/database";
@@ -39,161 +38,174 @@ export interface PlayPaginationMessageOptions {
     components: Array<Message.Component.Structure>;
 }
 
-export async function getFetchedPlayReply({
-    user,
-    authorId,
-    playType,
-    emptyMessage,
-    index,
-    page,
-    isPage,
-    includeFails,
-    isMultiple,
-    sortByDate,
-    mods,
-    titleFilter,
-}: FetchedPlayReplyOptions): Promise<FetchedPlayReply> {
-    const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
-    if (!osuUserRequest.success) {
-        return {
-            reply: {
-                embeds: [userNotFoundEmbed(user.banchoId)],
-            },
-        };
-    }
-
-    const osuUser = osuUserRequest.data;
-    const plays = await getUserScores(
-        osuUser.id,
+export function createPlayService({
+    scoreProvider = banchoProvider,
+    saveScores = scorePersistence.saveScoreDatas,
+}: {
+    scoreProvider?: ScoreProvider;
+    saveScores?: typeof scorePersistence.saveScoreDatas;
+} = {}) {
+    async function getFetchedPlayReply({
+        user,
+        authorId,
         playType,
-        {
-            query: {
-                mode: user.mode,
-                limit: USER_SCORE_FETCH_LIMIT,
-                include_fails: includeFails,
-            },
-        },
-        user.authorDb,
-    );
-
-    if (plays.length === 0) {
-        return {
-            reply: {
-                embeds: [simpleErrorEmbed(emptyMessage(osuUser.username))],
-            },
-        };
-    }
-
-    const embedOptions: PlayPaginationOptions = {
-        type: EmbedBuilderType.PLAYS,
-        initiatorId: authorId,
-        user: osuUser,
-        mode: user.mode,
-        authorDb: user.authorDb,
-        plays,
+        emptyMessage,
         index,
         page,
         isPage,
+        includeFails,
         isMultiple,
         sortByDate,
         mods,
         titleFilter,
-    };
+    }: FetchedPlayReplyOptions): Promise<FetchedPlayReply> {
+        const osuUser = await scoreProvider.getUser(user.banchoId, user.mode);
+        if (!osuUser) {
+            return {
+                reply: {
+                    embeds: [userNotFoundEmbed(user.banchoId)],
+                },
+            };
+        }
 
-    return {
-        reply: await buildPlayPaginationMessageOptions(embedOptions),
-        embedOptions,
-    };
-}
+        const plays = await scoreProvider.getUserScores(
+            osuUser.id,
+            playType,
+            {
+                query: {
+                    mode: user.mode,
+                    limit: USER_SCORE_FETCH_LIMIT,
+                    include_fails: includeFails,
+                },
+            },
+            user.authorDb,
+        );
 
-export async function buildPlayPaginationMessageOptions(options: PlayPaginationOptions): Promise<PlayPaginationMessageOptions> {
-    const builderOptions = await getPlayBuilderOptions(options);
-    return {
-        embeds: await playBuilder(builderOptions),
-        components: createPaginationActionRow(options),
-    };
-}
+        if (plays.length === 0) {
+            return {
+                reply: {
+                    embeds: [simpleErrorEmbed(emptyMessage(osuUser.username))],
+                },
+            };
+        }
 
-async function getPlayBuilderOptions({
-    plays: rawPlays,
-    user,
-    mode,
-    index,
-    mods,
-    isMultiple,
-    page,
-    authorDb,
-    sortByDate,
-    titleFilter,
-}: PlayPaginationOptions): Promise<PlaysBuilderOptions> {
-    await saveScoreDatas(rawPlays, mode);
+        const embedOptions: PlayPaginationOptions = {
+            type: EmbedBuilderType.PLAYS,
+            initiatorId: authorId,
+            user: osuUser,
+            mode: user.mode,
+            authorDb: user.authorDb,
+            plays,
+            index,
+            page,
+            isPage,
+            isMultiple,
+            sortByDate,
+            mods,
+            titleFilter,
+        };
 
-    if (typeof page === "undefined" && typeof index === "undefined") {
-        if (isMultiple) page = 0;
-        else index = 0;
+        return {
+            reply: await buildPlayPaginationMessageOptions(embedOptions),
+            embedOptions,
+        };
     }
 
-    let plays = filterPlays(rawPlays, { mods, titleFilter }) as Array<Score>;
-
-    if (sortByDate) {
-        plays = [...plays].sort((a, b) => {
-            const dateA = ("created_at" in a ? a.created_at : a.ended_at) ?? "";
-            const dateB = ("created_at" in b ? b.created_at : b.ended_at) ?? "";
-            return new Date(dateB).getTime() - new Date(dateA).getTime();
-        });
+    async function buildPlayPaginationMessageOptions(options: PlayPaginationOptions): Promise<PlayPaginationMessageOptions> {
+        const builderOptions = await getPlayBuilderOptions(options);
+        return {
+            embeds: await playBuilder(builderOptions),
+            components: createPaginationActionRow(options),
+        };
     }
 
-    const profile = getFormattedProfile(user, mode);
-    const totalPlays = plays.length;
-    const formattedPlays = await getFormattedPlaysForView({ plays, mode, index, page, totalPlays, authorDb });
-
-    return {
-        profile,
-        plays: formattedPlays,
+    async function getPlayBuilderOptions({
+        plays: rawPlays,
+        user,
         mode,
         index,
+        mods,
         isMultiple,
         page,
         authorDb,
-        totalPlays,
-    };
-}
+        sortByDate,
+        titleFilter,
+    }: PlayPaginationOptions): Promise<PlaysBuilderOptions> {
+        await saveScores(rawPlays, mode);
 
-async function getFormattedPlaysForView({
-    plays,
-    mode,
-    index,
-    page,
-    totalPlays,
-    authorDb,
-}: {
-    plays: Array<Score>;
-    mode: Mode;
-    index?: number;
-    page?: number;
-    totalPlays: number;
-    authorDb: User | null;
-}): Promise<Array<ScoresInfo>> {
-    if (totalPlays === 0) return [];
-
-    if (typeof index !== "undefined" && (index < 0 || index >= totalPlays)) return [];
-    if (typeof page !== "undefined" && (page < 0 || page * ITEMS_PER_PAGE >= totalPlays)) return [];
-
-    if (typeof page !== "undefined") {
-        const pageStart = page * ITEMS_PER_PAGE;
-        const pageEnd = pageStart + ITEMS_PER_PAGE;
-        const formattedPlays: Array<Promise<ScoresInfo>> = [];
-
-        for (let i = pageStart; pageEnd > i && i < plays.length; i++) {
-            formattedPlays.push(getFormattedScore({ scores: plays, index: i, mode, authorDb }));
+        if (typeof page === "undefined" && typeof index === "undefined") {
+            if (isMultiple) page = 0;
+            else index = 0;
         }
 
-        return Promise.all(formattedPlays);
+        let plays = filterPlays(rawPlays, { mods, titleFilter }) as Array<Score>;
+
+        if (sortByDate) {
+            plays = [...plays].sort((a, b) => {
+                const dateA = ("created_at" in a ? a.created_at : a.ended_at) ?? "";
+                const dateB = ("created_at" in b ? b.created_at : b.ended_at) ?? "";
+                return new Date(dateB).getTime() - new Date(dateA).getTime();
+            });
+        }
+
+        const profile = getFormattedProfile(user, mode);
+        const totalPlays = plays.length;
+        const formattedPlays = await getFormattedPlaysForView({ plays, mode, index, page, totalPlays, authorDb });
+
+        return {
+            profile,
+            plays: formattedPlays,
+            mode,
+            index,
+            isMultiple,
+            page,
+            authorDb,
+            totalPlays,
+        };
     }
 
-    if (typeof index !== "undefined") {
-        return [await getFormattedScore({ scores: plays, index, mode, authorDb })];
+    async function getFormattedPlaysForView({
+        plays,
+        mode,
+        index,
+        page,
+        totalPlays,
+        authorDb,
+    }: {
+        plays: Array<Score>;
+        mode: Mode;
+        index?: number;
+        page?: number;
+        totalPlays: number;
+        authorDb: User | null;
+    }): Promise<Array<ScoresInfo>> {
+        if (totalPlays === 0) return [];
+
+        if (typeof index !== "undefined" && (index < 0 || index >= totalPlays)) return [];
+        if (typeof page !== "undefined" && (page < 0 || page * ITEMS_PER_PAGE >= totalPlays)) return [];
+
+        if (typeof page !== "undefined") {
+            const pageStart = page * ITEMS_PER_PAGE;
+            const pageEnd = pageStart + ITEMS_PER_PAGE;
+            const formattedPlays: Array<Promise<ScoresInfo>> = [];
+
+            for (let i = pageStart; pageEnd > i && i < plays.length; i++) {
+                formattedPlays.push(getFormattedScore({ scores: plays, index: i, mode, authorDb }));
+            }
+
+            return Promise.all(formattedPlays);
+        }
+
+        if (typeof index !== "undefined") {
+            return [await getFormattedScore({ scores: plays, index, mode, authorDb })];
+        }
+
+        return [];
     }
 
-    return [];
+    return { getFetchedPlayReply, buildPlayPaginationMessageOptions };
 }
+
+const defaultPlayService = createPlayService();
+export const getFetchedPlayReply = defaultPlayService.getFetchedPlayReply;
+export const buildPlayPaginationMessageOptions = defaultPlayService.buildPlayPaginationMessageOptions;

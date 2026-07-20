@@ -20,7 +20,12 @@ Core technologies:
 - `src/listeners/`: Lilybird event listeners, discovered automatically at startup
 - `src/commands/`: command implementations grouped by feature area
 - `src/utils/command-context.ts`: shared abstraction for application and prefix commands
-- `src/utils/`: API, database, Redis, parsing, logging, error handling, and shared command helpers
+- `src/services/`: application orchestration for identity, beatmaps, performance, play rendering, and persistence
+- `src/providers/`: score-provider boundaries and external score implementations
+- `src/clients/`: HTTP clients such as Hanami Web and osu! leaderboard access
+- `src/parsing/` and `src/domain/`: pure input normalization and calculations
+- `src/discord/`: Discord-specific adapters such as beatmap context lookup
+- `src/utils/`: compatibility helpers, database, Redis, logging, and shared low-level utilities; do not add business logic here
 - `src/embed-builders/`: Discord embed construction
 - `src/types/`: shared project types
 - `prisma/schema.prisma`: MariaDB/MySQL schema

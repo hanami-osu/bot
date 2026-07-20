@@ -4,7 +4,7 @@ import { Mods } from "@type/command-args";
 import { CommandData } from "@type/commands";
 import { Mode } from "@type/osu";
 import { parseCommandArgs } from "@utils/args";
-import { getBeatmapIdFromContext } from "@utils/osu";
+import { getBeatmapIdFromContext } from "../../discord/beatmap-context";
 import { ApplicationCommandOptionType } from "lilybird";
 import type { Mod } from "@type/mods";
 

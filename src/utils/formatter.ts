@@ -1,4 +1,5 @@
-import { accuracyCalculator, formatDuration, getPerformanceResults, getRetryCount, hitValueCalculator } from "@utils/osu";
+import { accuracyCalculator, formatDuration, getRetryCount, hitValueCalculator } from "../domain/score-calculations";
+import { getPerformanceResults } from "../services/performance-service";
 import { grades, rulesets } from "@utils/constants";
 import { insertData } from "@utils/database";
 import { getScoreAccuracy, getScoreValue } from "@utils/score-preference";

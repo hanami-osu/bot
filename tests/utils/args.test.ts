@@ -112,6 +112,12 @@ describe("args parser", () => {
     });
 
     describe("parseCommandArgs prefix input", () => {
+        test("does not mutate the caller's prefix argument array", async () => {
+            const args = ["peppy", "https://osu.ppy.sh/b/72727"];
+            await parseCommandArgs(createPrefixContext(args), Mode.OSU);
+            expect(args).toEqual(["peppy", "https://osu.ppy.sh/b/72727"]);
+        });
+
         test("parses explicit user, map, flags, and force-excluded mods", async () => {
             const result = await parseCommandArgs(
                 createPrefixContext(["peppy", "https://osu.ppy.sh/b/72727", "p=3", "-HDHR!"]),

@@ -4,7 +4,7 @@ import { Mode, PlayType } from "@type/osu";
 import { getFetchedPlayReply } from "@services/play-service";
 import { CommandValidationError, parseCommandArgs, validatePage } from "@utils/args";
 import { ITEMS_PER_PAGE } from "@utils/pagination";
-import { USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
+import { USER_SCORE_FETCH_LIMIT } from "../../providers/score-provider";
 import { ApplicationCommandOptionType } from "lilybird";
 import { discordOption, filterOption, gradeOption, modeOption, modsActionOption, modsOption, usernameOption } from "./options";
 

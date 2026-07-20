@@ -66,9 +66,8 @@ const getUserScoresMock = mock((_userId: number, _type: unknown, _options: unkno
     ]),
 );
 
-mock.module("@utils/score-api", () => ({
-    USER_SCORE_FETCH_LIMIT: 200,
-    getUserScores: getUserScoresMock,
+mock.module("../../../src/services/score-query-service", () => ({
+    scoreQueryService: { getUserScores: getUserScoresMock },
 }));
 
 const { run, data } = await import("../../../src/commands/osu/whatif");

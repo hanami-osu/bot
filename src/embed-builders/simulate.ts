@@ -1,13 +1,8 @@
 import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
-import {
-    accuracyCalculator,
-    downloadBeatmap,
-    formatDuration,
-    getPerformanceResults,
-    gradeCalculator,
-    hitValueCalculator,
-} from "@utils/osu";
+import { accuracyCalculator, formatDuration, gradeCalculator, hitValueCalculator } from "../domain/score-calculations";
+import { downloadBeatmap } from "../services/beatmap-service";
+import { getPerformanceResults } from "../services/performance-service";
 import { getEntry } from "@utils/database";
 import { grades, rulesets, SPACE } from "@utils/constants";
 import { Tables } from "@type/database";

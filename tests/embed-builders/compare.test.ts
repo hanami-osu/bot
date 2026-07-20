@@ -6,6 +6,8 @@ import type { Score } from "../../src/types/osu";
 
 mock.module("@utils/database", () => ({
     getEntry: mock(() => Promise.resolve({ data: "osu file format v14\n[Metadata]\nTitle:Test\n[HitObjects]\n" })),
+    insertData: mock(() => Promise.resolve()),
+    bulkInsertData: mock(() => Promise.resolve()),
 }));
 
 mock.module("@utils/osu", () => ({

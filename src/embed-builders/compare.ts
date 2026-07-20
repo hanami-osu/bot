@@ -1,7 +1,8 @@
 import { getFormattedProfile, getFormattedScore } from "@utils/formatter";
 import { SPACE } from "@utils/constants";
 import { getEntry } from "@utils/database";
-import { downloadBeatmap, saveScoreDatas } from "@utils/osu";
+import { downloadBeatmap } from "../services/beatmap-service";
+import { saveScoreDatas } from "../services/score-persistence";
 import { ITEMS_PER_PAGE } from "@utils/pagination";
 import { Tables } from "@type/database";
 import { EmbedType } from "lilybird";

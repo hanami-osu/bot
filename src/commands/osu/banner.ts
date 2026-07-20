@@ -3,8 +3,7 @@ import { EmbedBuilderType } from "@type/builders";
 import { SuccessUser, UserType } from "@type/command-args";
 import { CommandData } from "@type/commands";
 import { parseCommandArgs } from "@utils/args";
-import { v2 } from "osu-api-extended";
-import { safeParse } from "@utils/safe-parse";
+import { userService } from "../../services/user-service";
 import { ApplicationCommandOptionType } from "lilybird";
 
 import { CommandContext } from "@utils/command-context";
@@ -23,12 +22,10 @@ export async function run(ctx: CommandContext) {
 }
 
 async function getEmbeds(user: SuccessUser, authorId: string) {
-    const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
-    if (!osuUserRequest.success) {
+    const osuUser = await userService.getUser(user.banchoId, user.mode);
+    if (!osuUser) {
         return [userNotFoundEmbed(user.banchoId)];
     }
-    const osuUser = osuUserRequest.data;
-
     const embeds = bannerBuilder({
         type: EmbedBuilderType.BANNER,
         initiatorId: authorId,
