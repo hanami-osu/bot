@@ -1,6 +1,6 @@
 import type { User } from "@type/database";
 import type { Mode, PlayType, Score, UserExtended } from "@type/osu";
-import type { ProviderId } from "./provider-id";
+import type { ProviderId } from "@type/provider";
 
 export const USER_SCORE_FETCH_LIMIT = 200;
 

@@ -2,7 +2,6 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { EmbedBuilderType, type ModStructure, type PlayPaginationOptions } from "../../src/types/builders";
 import { Mode, PlayType } from "../../src/types/osu";
 import type { Score, UserExtended } from "../../src/types/osu";
-import { createProviderRegistry } from "../../src/providers/provider-registry";
 
 const userDetailsMock = mock(({ user }: { user: string }) => {
     if (user === "missing") return Promise.resolve({ error: { message: "not found" } });
@@ -209,16 +208,11 @@ describe("play service", () => {
     });
 
     test("uses the provider represented by the resolved identity for both lookups", async () => {
-        const gatari = {
-            id: "gatari" as const,
+        const users = {
             getUser: mock(() => Promise.resolve({ id: 2, username: "gatari-user", statistics: {}, country: {}, cover: {} } as never)),
-            getUserScores: mock(() => Promise.resolve([])),
-            getBeatmapUserScores: mock(() => Promise.resolve([])),
         };
-        const users = { getUser: mock(gatari.getUser) };
-        const scores = { getUserScores: mock(gatari.getUserScores) };
+        const scores = { getUserScores: mock(() => Promise.resolve([])) };
         const service = createPlayService({
-            registry: createProviderRegistry([gatari]),
             users: users as never,
             scores: scores as never,
         });
@@ -233,9 +227,9 @@ describe("play service", () => {
         const userCalls = users.getUser.mock.calls as Array<Array<unknown>>;
         const scoreCalls = scores.getUserScores.mock.calls as Array<Array<unknown>>;
         expect(userCalls[0]?.[0]).toEqual({ provider: "gatari", externalId: "gatari-user" });
-        expect(userCalls[0]?.[2]).toBe(gatari);
+        expect(userCalls[0]).toHaveLength(2);
         expect(scoreCalls[0]?.[0]).toEqual({ provider: "gatari", externalId: "gatari-user" });
-        expect(scoreCalls[0]?.[5]).toBe(gatari);
+        expect(scoreCalls[0]).toHaveLength(5);
     });
 
     test("filters and sorts raw plays before formatting the current page", async () => {

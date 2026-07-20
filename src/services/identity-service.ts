@@ -4,7 +4,7 @@ import { Mode } from "@type/osu";
 import { Tables } from "@type/database";
 import { UserType, type User as CommandUser } from "@type/command-args";
 import type { User } from "@type/database";
-import { DEFAULT_PROVIDER_ID } from "../providers/provider-id";
+import { DEFAULT_PROVIDER_ID } from "@type/provider";
 import type { ExternalIdentity } from "@type/external-identity";
 
 export type ResolvedExternalIdentity = ExternalIdentity;

@@ -13,7 +13,6 @@ import type { MessageReplyOptions } from "@lilybird/transformers";
 import { User } from "@type/database";
 import { userService } from "./user-service";
 import { scoreQueryService } from "./score-query-service";
-import { providerRegistry, type ProviderRegistry } from "../providers/provider-registry";
 
 interface FetchedPlayReplyOptions {
     user: SuccessUser;
@@ -43,12 +42,10 @@ export interface PlayPaginationMessageOptions {
 export function createPlayService({
     users = userService,
     scores = scoreQueryService,
-    registry = providerRegistry,
     saveScores = scorePersistence.saveScoreDatas,
 }: {
     users?: Pick<typeof userService, "getUser">;
     scores?: Pick<typeof scoreQueryService, "getUserScores">;
-    registry?: ProviderRegistry;
     saveScores?: typeof scorePersistence.saveScoreDatas;
 } = {}) {
     async function getFetchedPlayReply({
@@ -65,8 +62,7 @@ export function createPlayService({
         mods,
         titleFilter,
     }: FetchedPlayReplyOptions): Promise<FetchedPlayReply> {
-        const provider = registry.get(user.identity.provider);
-        const osuUser = await users.getUser(user.identity, user.mode, provider);
+        const osuUser = await users.getUser(user.identity, user.mode);
         if (!osuUser) {
             return {
                 reply: {
@@ -87,7 +83,6 @@ export function createPlayService({
                 },
             },
             user.authorDb,
-            provider,
         );
 
         if (plays.length === 0) {

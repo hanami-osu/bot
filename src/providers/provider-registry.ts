@@ -1,5 +1,5 @@
 import { banchoProvider } from "./bancho-provider";
-import { DEFAULT_PROVIDER_ID, type ProviderId } from "./provider-id";
+import { DEFAULT_PROVIDER_ID, type ProviderId } from "@type/provider";
 import type { ScoreProvider } from "./score-provider";
 
 export interface ProviderRegistry {

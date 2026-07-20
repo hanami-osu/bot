@@ -1,4 +1,4 @@
-import type { BeatmapScoreQuery, ScorePreferences, ScoreProvider, UserScoreQuery } from "../providers/score-provider";
+import type { BeatmapScoreQuery, ScorePreferences, UserScoreQuery } from "../providers/score-provider";
 import type { PlayType, Score } from "@type/osu";
 import { providerRegistry, type ProviderRegistry } from "../providers/provider-registry";
 import type { ExternalIdentity } from "@type/external-identity";
@@ -12,8 +12,8 @@ export function createScoreQueryService(registry: ProviderRegistry = providerReg
             type: PlayType,
             options: UserScoreQuery,
             preferences: ScorePreferences,
-            provider: ScoreProvider = registry.get(identity.provider),
         ): Promise<Array<Score>> {
+            const provider = registry.get(identity.provider);
             return provider.getUserScores(userId, type, options, preferences);
         },
         getBeatmapUserScores(
@@ -22,8 +22,8 @@ export function createScoreQueryService(registry: ProviderRegistry = providerReg
             userId: number,
             options: BeatmapScoreQuery,
             preferences: ScorePreferences,
-            provider: ScoreProvider = registry.get(identity.provider),
         ): Promise<Array<Score>> {
+            const provider = registry.get(identity.provider);
             return provider.getBeatmapUserScores(beatmapId, userId, options, preferences);
         },
     };
