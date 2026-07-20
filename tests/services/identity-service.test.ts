@@ -19,14 +19,18 @@ describe("identity service", () => {
             fallbackMode: Mode.OSU,
             beatmapId: null,
         });
-        expect(result).toMatchObject({ type: UserType.SUCCESS, banchoId: "peppy", mode: Mode.TAIKO });
+        expect(result).toMatchObject({
+            type: UserType.SUCCESS,
+            identity: { externalId: "peppy" },
+            mode: Mode.TAIKO,
+        });
     });
 
     test("resolves mentioned Discord users and reports unlinked mentions", async () => {
         const resolver = service(new Map([["mentioned", { id: "mentioned", banchoId: "cookiezi" }]]));
         await expect(
             resolver.resolve({ authorDiscordUserId: "author", mentionedDiscordUserId: "mentioned", beatmapId: null }),
-        ).resolves.toMatchObject({ banchoId: "cookiezi" });
+        ).resolves.toMatchObject({ identity: { provider: "bancho", externalId: "cookiezi" } });
         await expect(
             resolver.resolve({ authorDiscordUserId: "author", mentionedDiscordUserId: "missing", beatmapId: null }),
         ).resolves.toMatchObject({
@@ -41,15 +45,15 @@ describe("identity service", () => {
             fallbackMode: Mode.OSU,
             beatmapId: null,
         });
-        expect(linked).toMatchObject({ banchoId: "linked", mode: Mode.OSU });
-        const guildService = service(new Map(), { resolve: async () => ({ provider: "bancho", externalId: "guild-name" }) });
+        expect(linked).toMatchObject({ identity: { provider: "bancho", externalId: "linked" }, mode: Mode.OSU });
+        const guildService = service(new Map(), { resolve: async () => ({ provider: "gatari", externalId: "guild-name" }) });
         const guild = await guildService.resolve({
             authorDiscordUserId: "author",
             authorDiscordUsername: "Name",
             guildId: "guild",
             beatmapId: null,
         });
-        expect(guild).toMatchObject({ type: UserType.SUCCESS, banchoId: "guild-name" });
+        expect(guild).toMatchObject({ type: UserType.SUCCESS, identity: { provider: "gatari", externalId: "guild-name" } });
     });
 
     test("default trusted-guild resolution is a no-op", async () => {

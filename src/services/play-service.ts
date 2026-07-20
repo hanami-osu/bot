@@ -7,11 +7,13 @@ import { getFormattedProfile, getFormattedScore } from "@utils/formatter";
 import { scorePersistence } from "./score-persistence";
 import { createPaginationActionRow, ITEMS_PER_PAGE } from "@utils/pagination";
 import { filterPlays } from "@utils/play-filters";
-import { USER_SCORE_FETCH_LIMIT, banchoProvider } from "../providers/bancho-provider";
-import type { ScoreProvider } from "../providers/score-provider";
+import { USER_SCORE_FETCH_LIMIT } from "../providers/score-provider";
 import type { Message, Embed } from "lilybird";
 import type { MessageReplyOptions } from "@lilybird/transformers";
 import { User } from "@type/database";
+import { userService } from "./user-service";
+import { scoreQueryService } from "./score-query-service";
+import { providerRegistry, type ProviderRegistry } from "../providers/provider-registry";
 
 interface FetchedPlayReplyOptions {
     user: SuccessUser;
@@ -39,10 +41,14 @@ export interface PlayPaginationMessageOptions {
 }
 
 export function createPlayService({
-    scoreProvider = banchoProvider,
+    users = userService,
+    scores = scoreQueryService,
+    registry = providerRegistry,
     saveScores = scorePersistence.saveScoreDatas,
 }: {
-    scoreProvider?: ScoreProvider;
+    users?: Pick<typeof userService, "getUser">;
+    scores?: Pick<typeof scoreQueryService, "getUserScores">;
+    registry?: ProviderRegistry;
     saveScores?: typeof scorePersistence.saveScoreDatas;
 } = {}) {
     async function getFetchedPlayReply({
@@ -59,16 +65,18 @@ export function createPlayService({
         mods,
         titleFilter,
     }: FetchedPlayReplyOptions): Promise<FetchedPlayReply> {
-        const osuUser = await scoreProvider.getUser(user.banchoId, user.mode);
+        const provider = registry.get(user.identity.provider);
+        const osuUser = await users.getUser(user.identity, user.mode, provider);
         if (!osuUser) {
             return {
                 reply: {
-                    embeds: [userNotFoundEmbed(user.banchoId)],
+                    embeds: [userNotFoundEmbed(user.identity.externalId)],
                 },
             };
         }
 
-        const plays = await scoreProvider.getUserScores(
+        const plays = await scores.getUserScores(
+            user.identity,
             osuUser.id,
             playType,
             {
@@ -79,6 +87,7 @@ export function createPlayService({
                 },
             },
             user.authorDb,
+            provider,
         );
 
         if (plays.length === 0) {

@@ -125,7 +125,7 @@ describe("args parser", () => {
             );
 
             expect(result.user.type).toBe(UserType.SUCCESS);
-            if (result.user.type === UserType.SUCCESS) expect(result.user.banchoId).toBe("peppy");
+            if (result.user.type === UserType.SUCCESS) expect(result.user.identity.externalId).toBe("peppy");
             expect(result.user.beatmapId).toBe("72727");
             expect(result.flags.p).toBe("3");
             expect(result.page).toBe(2);
@@ -142,7 +142,7 @@ describe("args parser", () => {
             const result = await parseCommandArgs(createPrefixContext(["peppy", modArg]), Mode.OSU);
 
             expect(result.user.type).toBe(UserType.SUCCESS);
-            if (result.user.type === UserType.SUCCESS) expect(result.user.banchoId).toBe("peppy");
+            if (result.user.type === UserType.SUCCESS) expect(result.user.identity.externalId).toBe("peppy");
             expect(result.mods.include).toBe(include);
             expect(result.mods.exclude).toBe(exclude);
             expect(result.mods.forceInclude).toBe(forceInclude);
@@ -153,7 +153,7 @@ describe("args parser", () => {
             const result = await parseCommandArgs(createPrefixContext(["peppy", 'filter="Yami', "no", 'Uta"']), Mode.OSU);
 
             expect(result.user.type).toBe(UserType.SUCCESS);
-            if (result.user.type === UserType.SUCCESS) expect(result.user.banchoId).toBe("peppy");
+            if (result.user.type === UserType.SUCCESS) expect(result.user.identity.externalId).toBe("peppy");
             expect(result.flags.filter).toBe("Yami no Uta");
             expect(result.titleFilter).toBe("Yami no Uta");
         });
@@ -162,7 +162,9 @@ describe("args parser", () => {
             const result = await parseCommandArgs(createPrefixContext(["<@123456789012345678>"]), Mode.OSU);
 
             expect(result.user.type).toBe(UserType.SUCCESS);
-            if (result.user.type === UserType.SUCCESS) expect(result.user.banchoId).toBe("yorunoken");
+            if (result.user.type === UserType.SUCCESS) {
+                expect(result.user.identity).toEqual({ provider: "bancho", externalId: "yorunoken" });
+            }
         });
 
         test("rejects unknown and contradictory mods", async () => {
@@ -210,7 +212,7 @@ describe("args parser", () => {
             const result = await parseCommandArgs(ctx, Mode.OSU, true);
             expect(result.user.type).toBe(UserType.SUCCESS);
             if (result.user.type === UserType.SUCCESS) {
-                expect(result.user.banchoId).toBe("peppy");
+                expect(result.user.identity.externalId).toBe("peppy");
                 expect(result.user.mode).toBe(Mode.TAIKO);
                 expect(result.user.beatmapId).toBe("72727");
             }

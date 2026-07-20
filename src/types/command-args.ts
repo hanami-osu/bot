@@ -1,6 +1,7 @@
 import type { User as UserDb } from "./database";
 import type { Mod } from "./mods";
 import type { Mode } from "./osu";
+import type { ExternalIdentity } from "./external-identity";
 
 export const enum UserType {
     SUCCESS = "success",
@@ -16,7 +17,7 @@ interface BaseUser {
 
 export interface SuccessUser extends BaseUser {
     type: UserType.SUCCESS;
-    banchoId: string;
+    identity: ExternalIdentity;
     mode: Mode;
 }
 

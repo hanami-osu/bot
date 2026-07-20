@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { EmbedBuilderType, type ModStructure, type PlayPaginationOptions } from "../../src/types/builders";
 import { Mode, PlayType } from "../../src/types/osu";
 import type { Score, UserExtended } from "../../src/types/osu";
+import { createProviderRegistry } from "../../src/providers/provider-registry";
 
 const userDetailsMock = mock(({ user }: { user: string }) => {
     if (user === "missing") return Promise.resolve({ error: { message: "not found" } });
@@ -14,7 +15,9 @@ const userDetailsMock = mock(({ user }: { user: string }) => {
     });
 });
 
-const getUserScoresMock = mock((): Promise<Array<Score>> => Promise.resolve([]));
+const getUserScoresMock = mock(
+    (_userId?: number, _type?: unknown, _options?: unknown, _preferences?: unknown): Promise<Array<Score>> => Promise.resolve([]),
+);
 const saveScoreDatasMock = mock(() => Promise.resolve());
 const getFormattedProfileMock = mock((user: UserExtended) => ({
     username: user.username,
@@ -89,6 +92,22 @@ mock.module("../../src/providers/bancho-provider", () => ({
     },
 }));
 
+mock.module("../../src/services/user-service", () => ({
+    userService: {
+        getUser: async (identity: { externalId: string }) => {
+            const result = await userDetailsMock({ user: identity.externalId });
+            return "error" in result ? null : result;
+        },
+    },
+}));
+
+mock.module("../../src/services/score-query-service", () => ({
+    scoreQueryService: {
+        getUserScores: (_identity: unknown, userId: number, type: unknown, options: unknown, preferences: unknown) =>
+            getUserScoresMock(userId, type, options, preferences),
+    },
+}));
+
 mock.module("../../src/services/score-persistence", () => ({
     scorePersistence: { saveScoreDatas: saveScoreDatasMock },
 }));
@@ -98,12 +117,12 @@ mock.module("@utils/formatter", () => ({
     getFormattedScore: getFormattedScoreMock,
 }));
 
-const { buildPlayPaginationMessageOptions, getFetchedPlayReply } = await import("../../src/services/play-service");
+const { buildPlayPaginationMessageOptions, createPlayService, getFetchedPlayReply } = await import("../../src/services/play-service");
 
-function commandUser(banchoId: string) {
+function commandUser(externalId: string, provider: "bancho" | "gatari" = "bancho") {
     return {
         type: "success",
-        banchoId,
+        identity: { provider, externalId },
         mode: Mode.OSU,
         authorDb: null,
     } as never;
@@ -187,6 +206,36 @@ describe("play service", () => {
         );
         expect(result.reply.components).toBeDefined();
         expect(result.reply.embeds?.[0]?.title).toBe("Artist - Recent Song");
+    });
+
+    test("uses the provider represented by the resolved identity for both lookups", async () => {
+        const gatari = {
+            id: "gatari" as const,
+            getUser: mock(() => Promise.resolve({ id: 2, username: "gatari-user", statistics: {}, country: {}, cover: {} } as never)),
+            getUserScores: mock(() => Promise.resolve([])),
+            getBeatmapUserScores: mock(() => Promise.resolve([])),
+        };
+        const users = { getUser: mock(gatari.getUser) };
+        const scores = { getUserScores: mock(gatari.getUserScores) };
+        const service = createPlayService({
+            registry: createProviderRegistry([gatari]),
+            users: users as never,
+            scores: scores as never,
+        });
+
+        await service.getFetchedPlayReply({
+            user: commandUser("gatari-user", "gatari"),
+            authorId: "123",
+            playType: PlayType.RECENT,
+            emptyMessage: (username) => `empty ${username}`,
+        });
+
+        const userCalls = users.getUser.mock.calls as Array<Array<unknown>>;
+        const scoreCalls = scores.getUserScores.mock.calls as Array<Array<unknown>>;
+        expect(userCalls[0]?.[0]).toEqual({ provider: "gatari", externalId: "gatari-user" });
+        expect(userCalls[0]?.[2]).toBe(gatari);
+        expect(scoreCalls[0]?.[0]).toEqual({ provider: "gatari", externalId: "gatari-user" });
+        expect(scoreCalls[0]?.[5]).toBe(gatari);
     });
 
     test("filters and sorts raw plays before formatting the current page", async () => {

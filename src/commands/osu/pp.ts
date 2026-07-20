@@ -91,15 +91,16 @@ export async function run(ctx: CommandContext): Promise<void> {
 }
 
 async function getEmbeds(user: SuccessUser, input: PpRequirementInput): Promise<MessageReplyOptions> {
-    const osuUser = await userService.getUser(user.banchoId, user.mode);
+    const osuUser = await userService.getUser(user.identity, user.mode);
     if (!osuUser) {
         return {
-            embeds: [userNotFoundEmbed(user.banchoId)],
+            embeds: [userNotFoundEmbed(user.identity.externalId)],
         };
     }
 
     const resolvedUser = osuUser as UserExtended;
     const scores = await scoreQueryService.getUserScores(
+        user.identity,
         resolvedUser.id,
         PlayType.BEST,
         { query: { mode: user.mode, limit: USER_SCORE_FETCH_LIMIT } },

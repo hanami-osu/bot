@@ -24,7 +24,7 @@ async function getOsuResponseTime(): Promise<number> {
     const userId = 17279598;
 
     const osuStart = Date.now();
-    await userService.getUser(userId, Mode.OSU);
+    await userService.getUser({ externalId: String(userId) }, Mode.OSU);
     const osuEnd = Date.now();
 
     return osuEnd - osuStart;

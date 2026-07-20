@@ -25,10 +25,10 @@ export async function run(ctx: CommandContext) {
 }
 
 async function getEmbeds(user: SuccessUser, authorId: string): Promise<MessageReplyOptions> {
-    const osuUser = await userService.getUser(user.banchoId, user.mode);
+    const osuUser = await userService.getUser(user.identity, user.mode);
     if (!osuUser) {
         return {
-            embeds: [userNotFoundEmbed(user.banchoId)],
+            embeds: [userNotFoundEmbed(user.identity.externalId)],
         };
     }
     const embeds = profileBuilder({

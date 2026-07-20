@@ -51,11 +51,11 @@ async function getEmbeds(
     mods: any,
     context: CommandContext,
 ): Promise<{ reply: MessageReplyOptions; embedOptions?: CompareBuilderOptions }> {
-    const osuUser = await userService.getUser(user.banchoId, user.mode);
+    const osuUser = await userService.getUser(user.identity, user.mode);
     if (!osuUser) {
         return {
             reply: {
-                embeds: [userNotFoundEmbed(user.banchoId)],
+                embeds: [userNotFoundEmbed(user.identity.externalId)],
             },
         };
     }
@@ -86,7 +86,13 @@ async function getEmbeds(
         };
     }
 
-    const plays = await scoreQueryService.getBeatmapUserScores(beatmap.id, osuUser.id, { query: { mode: user.mode } }, user.authorDb);
+    const plays = await scoreQueryService.getBeatmapUserScores(
+        user.identity,
+        beatmap.id,
+        osuUser.id,
+        { query: { mode: user.mode } },
+        user.authorDb,
+    );
 
     if (plays.length === 0) {
         return {

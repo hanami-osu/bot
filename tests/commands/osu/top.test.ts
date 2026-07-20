@@ -48,32 +48,33 @@ mock.module("@utils/score-api", () => ({
     USER_SCORE_FETCH_LIMIT: 200,
 }));
 
-const getFetchedPlayReplyMock = mock(({ user, titleFilter }: { user: { banchoId: string; mode: Mode }; titleFilter?: string }) =>
-    Promise.resolve(
-        user.banchoId === "missing"
-            ? {
-                  reply: {
-                      embeds: [{ title: "Uh oh! :x:", description: "It seems like `missing` doesn't exist :(" }],
+const getFetchedPlayReplyMock = mock(
+    ({ user, titleFilter }: { user: { identity: { externalId: string }; mode: Mode }; titleFilter?: string }) =>
+        Promise.resolve(
+            user.identity.externalId === "missing"
+                ? {
+                      reply: {
+                          embeds: [{ title: "Uh oh! :x:", description: "It seems like `missing` doesn't exist :(" }],
+                      },
+                  }
+                : {
+                      reply: {
+                          embeds: [{ title: "top play", author: { name: "mrekk" } }],
+                          components: [],
+                      },
+                      embedOptions: {
+                          type: EmbedBuilderType.PLAYS,
+                          initiatorId: "123",
+                          plays: [],
+                          user: { id: 1, username: user.identity.externalId },
+                          mode: Mode.OSU,
+                          authorDb: null,
+                          page: 0,
+                          isPage: true,
+                          titleFilter,
+                      },
                   },
-              }
-            : {
-                  reply: {
-                      embeds: [{ title: "top play", author: { name: "mrekk" } }],
-                      components: [],
-                  },
-                  embedOptions: {
-                      type: EmbedBuilderType.PLAYS,
-                      initiatorId: "123",
-                      plays: [],
-                      user: { id: 1, username: user.banchoId },
-                      mode: Mode.OSU,
-                      authorDb: null,
-                      page: 0,
-                      isPage: true,
-                      titleFilter,
-                  },
-              },
-    ),
+        ),
 );
 
 mock.module("@services/play-service", () => ({

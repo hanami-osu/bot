@@ -22,9 +22,9 @@ export async function run(ctx: CommandContext) {
 }
 
 async function getEmbeds(user: SuccessUser, authorId: string) {
-    const osuUser = await userService.getUser(user.banchoId, user.mode);
+    const osuUser = await userService.getUser(user.identity, user.mode);
     if (!osuUser) {
-        return [userNotFoundEmbed(user.banchoId)];
+        return [userNotFoundEmbed(user.identity.externalId)];
     }
     const embeds = bannerBuilder({
         type: EmbedBuilderType.BANNER,

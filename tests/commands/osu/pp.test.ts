@@ -101,7 +101,7 @@ describe("pp command", () => {
         expect(replyCall.embeds[0].description).toContain("To reach **1,400.00pp**");
         expect(replyCall.embeds[0].description).toContain("**1** play");
         expect(replyCall.embeds[0].fields?.[0]?.value).toContain("1,");
-        expect(getUserScoresMock.mock.calls[0]?.[2]).toEqual({ query: { mode: "osu", limit: 200 } });
+        expect(getUserScoresMock.mock.calls[0]?.[3]).toEqual({ query: { mode: "osu", limit: 200 } });
     });
 
     test("calculates required count from a target and play pp", async () => {
@@ -165,7 +165,7 @@ describe("pp command", () => {
 
             await run(ctx);
 
-            expect(getUserScoresMock.mock.calls[callCount]?.[2]).toEqual({ query: { mode, limit: 200 } });
+            expect(getUserScoresMock.mock.calls[callCount]?.[3]).toEqual({ query: { mode, limit: 200 } });
         }
     });
 });

@@ -1,5 +1,6 @@
 import type { User } from "@type/database";
 import type { Mode, PlayType, Score, UserExtended } from "@type/osu";
+import type { ProviderId } from "./provider-id";
 
 export const USER_SCORE_FETCH_LIMIT = 200;
 
@@ -21,7 +22,7 @@ export interface BeatmapScoreQuery {
 export type ScorePreferences = User | null;
 
 export interface ScoreProvider {
-    readonly id: string;
+    readonly id: ProviderId;
     getUser(identity: string | number, mode: Mode): Promise<UserExtended | null>;
     getUserScores(userId: number, type: PlayType, options: UserScoreQuery, preferences: ScorePreferences): Promise<Array<Score>>;
     getBeatmapUserScores(

@@ -48,9 +48,15 @@ mock.module("@utils/score-api", () => ({
 }));
 
 const getFetchedPlayReplyMock = mock(
-    ({ user }: { user: { banchoId: string; mode: Mode }; includeFails?: boolean; emptyMessage?: (username: string) => string }) =>
+    ({
+        user,
+    }: {
+        user: { identity: { externalId: string }; mode: Mode };
+        includeFails?: boolean;
+        emptyMessage?: (username: string) => string;
+    }) =>
         Promise.resolve(
-            user.banchoId === "missing"
+            user.identity.externalId === "missing"
                 ? {
                       reply: {
                           embeds: [{ title: "Uh oh! :x:", description: "It seems like `missing` doesn't exist :(" }],
@@ -65,7 +71,7 @@ const getFetchedPlayReplyMock = mock(
                           type: EmbedBuilderType.PLAYS,
                           initiatorId: "123",
                           plays: [],
-                          user: { id: 1, username: user.banchoId },
+                          user: { id: 1, username: user.identity.externalId },
                           mode: Mode.OSU,
                           authorDb: null,
                           index: 0,

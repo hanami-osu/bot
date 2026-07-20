@@ -110,7 +110,7 @@ describe("whatif command", () => {
             expect(replyCall.embeds[0].description).toContain("1,408.50pp");
             expect(replyCall.embeds[0].description).toContain("#2");
             expect(replyCall.embeds[0].fields?.[0]?.value).toContain("+`408.50pp`");
-            expect(getUserScoresMock.mock.calls[0]?.[2]).toEqual({ query: { mode: "osu", limit: 200 } });
+            expect(getUserScoresMock.mock.calls[0]?.[3]).toEqual({ query: { mode: "osu", limit: 200 } });
         } finally {
             globalThis.fetch = originalFetch;
             if (typeof originalApiKey === "undefined") Reflect.deleteProperty(process.env, "OSU_DAILY_API");
@@ -142,7 +142,7 @@ describe("whatif command", () => {
 
             await run(ctx);
 
-            expect(getUserScoresMock.mock.calls[callCount]?.[2]).toEqual({ query: { mode, limit: 200 } });
+            expect(getUserScoresMock.mock.calls[callCount]?.[3]).toEqual({ query: { mode, limit: 200 } });
         }
     });
 });

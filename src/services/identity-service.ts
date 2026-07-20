@@ -4,11 +4,10 @@ import { Mode } from "@type/osu";
 import { Tables } from "@type/database";
 import { UserType, type User as CommandUser } from "@type/command-args";
 import type { User } from "@type/database";
+import { DEFAULT_PROVIDER_ID } from "../providers/provider-id";
+import type { ExternalIdentity } from "@type/external-identity";
 
-export interface ResolvedExternalIdentity {
-    provider: "bancho";
-    externalId: string;
-}
+export type ResolvedExternalIdentity = ExternalIdentity;
 
 export interface GuildIdentityResolver {
     resolve(input: { guildId: string; discordUserId: string; discordUsername: string }): Promise<ResolvedExternalIdentity | null>;
@@ -56,25 +55,37 @@ export function createIdentityService({
 
             // An explicit osu! username is intentional and must not be overridden by a mention or guild policy.
             if (input.explicitIdentity) {
-                return { ...base, type: UserType.SUCCESS, banchoId: input.explicitIdentity, mode };
+                return { ...base, type: UserType.SUCCESS, identity: { externalId: input.explicitIdentity }, mode };
             }
             if (input.mentionedDiscordUserId) {
                 const mentioned = await getUser(input.mentionedDiscordUserId);
-                if (mentioned?.banchoId) return { ...base, type: UserType.SUCCESS, banchoId: mentioned.banchoId, mode };
+                if (mentioned?.banchoId)
+                    return {
+                        ...base,
+                        type: UserType.SUCCESS,
+                        identity: { provider: DEFAULT_PROVIDER_ID, externalId: mentioned.banchoId },
+                        mode,
+                    };
                 return {
                     ...base,
                     type: UserType.FAIL,
                     failMessage: `The user <@${input.mentionedDiscordUserId}> hasn't linked their account to the bot yet!`,
                 };
             }
-            if (authorDb?.banchoId) return { ...base, type: UserType.SUCCESS, banchoId: authorDb.banchoId, mode };
+            if (authorDb?.banchoId)
+                return {
+                    ...base,
+                    type: UserType.SUCCESS,
+                    identity: { provider: DEFAULT_PROVIDER_ID, externalId: authorDb.banchoId },
+                    mode,
+                };
             if (input.guildId && input.authorDiscordUsername) {
                 const resolved = await guildResolver.resolve({
                     guildId: input.guildId,
                     discordUserId: input.authorDiscordUserId,
                     discordUsername: input.authorDiscordUsername,
                 });
-                if (resolved?.provider === "bancho") return { ...base, type: UserType.SUCCESS, banchoId: resolved.externalId, mode };
+                if (resolved) return { ...base, type: UserType.SUCCESS, identity: resolved, mode };
             }
             return {
                 ...base,

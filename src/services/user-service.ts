@@ -1,11 +1,11 @@
-import { banchoProvider } from "../providers/bancho-provider";
-import type { ScoreProvider } from "../providers/score-provider";
 import type { Mode, UserExtended } from "@type/osu";
+import { providerRegistry, type ProviderRegistry } from "../providers/provider-registry";
+import type { ExternalIdentity } from "@type/external-identity";
 
-export function createUserService(provider: ScoreProvider = banchoProvider) {
+export function createUserService(registry: ProviderRegistry = providerRegistry) {
     return {
-        getUser(identity: string | number, mode: Mode): Promise<UserExtended | null> {
-            return provider.getUser(identity, mode);
+        getUser(identity: ExternalIdentity, mode: Mode, provider = registry.get(identity.provider)): Promise<UserExtended | null> {
+            return provider.getUser(identity.externalId, mode);
         },
     };
 }
