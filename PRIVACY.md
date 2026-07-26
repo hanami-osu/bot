@@ -43,6 +43,15 @@ You have the right to:
 - Request correction of your personal information
 - Request deletion of your data from our systems
 
+### Deleting Bot data yourself
+
+Sign in at [hanami.yorunoken.com](https://hanami.yorunoken.com) with the same Discord account and open account privacy. You can delete either or both of the following immediately, without deleting your Hanami website account:
+
+- **Score history** — cached osu! scores stored against your linked osu! ID, together with the pp values calculated from them. This includes plays cached because someone else ran a command on your osu! profile.
+- **Bot account** — the user row keyed to your Discord ID, including your linked osu! ID and saved preferences. The bot stops recognising you until you link again.
+
+Deletion requires a recent Discord sign-in and a typed confirmation. Scores may be cached again if someone later runs a command against the same osu! profile. Server records (server IDs, names, owner IDs, prefixes) belong to the server rather than to you and are removed when the bot leaves the server.
+
 ## 7. Changes to This Policy
 
 We may update this privacy policy from time to time. We will notify users of any significant changes through our support server.
