@@ -57,3 +57,9 @@ docker run --rm yorunoken/hanami-bot:<commit-sha>
 ## Contact me
 
 If you have any questions or just want to have someone to talk to, add me on discord (@yorunoken), or message me on twitter (@\_yorunoken)
+
+## License
+
+Copyright © 2026 Muhammed Fatih and hanami-osu contributors.
+
+This project is licensed under the GNU Affero General Public License version 3 only (`AGPL-3.0-only`). See [LICENSE](./LICENSE) and [LICENSING.md](./LICENSING.md) for the full terms, earlier-release notices, third-party material, and branding policy.
