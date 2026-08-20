@@ -48,7 +48,31 @@ function getPrismaId(table: string, id: string | number): string | bigint {
     return id.toString();
 }
 
-const bigIntFields = new Set(["joined_at", "user_id", "map_id", "score"]);
+const bigIntFields = new Set(["user_id", "map_id", "score"]);
+
+function parseDateTimeValue(value: string | number | bigint | Date, fieldName: string): Date {
+    if (value instanceof Date) {
+        if (Number.isNaN(value.getTime())) throw new Error(`${fieldName} must be a valid date`);
+        return value;
+    }
+
+    if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (!/^-?\d+$/.test(trimmed)) {
+            const date = new Date(trimmed);
+            if (!Number.isNaN(date.getTime())) return date;
+            throw new Error(`${fieldName} must be a valid date or millisecond timestamp`);
+        }
+        value = Number(trimmed);
+    } else if (typeof value === "bigint") {
+        value = Number(value);
+    }
+
+    if (!Number.isSafeInteger(value)) throw new Error(`${fieldName} must be a safe millisecond timestamp`);
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) throw new Error(`${fieldName} must be a valid date or millisecond timestamp`);
+    return date;
+}
 
 export function parseBigIntValue(value: string | number | bigint, fieldName: string): bigint {
     if (typeof value === "bigint") return value;
@@ -70,13 +94,13 @@ function parsePrefixes(value: string): Array<string> {
     return parsed;
 }
 
-export function mapToPrismaValue(key: string, value: string | number | boolean | bigint | null | undefined): unknown {
+export function mapToPrismaValue(key: string, value: string | number | boolean | bigint | Date | null | undefined): unknown {
     if (value === null || value === undefined) return null;
+    if (key === "joined_at") {
+        if (typeof value === "boolean") throw new Error(`${key} must be a valid date or millisecond timestamp`);
+        return parseDateTimeValue(value, key);
+    }
     if (bigIntFields.has(key)) {
-        if (key === "joined_at" && typeof value === "string" && !/^-?\d+$/.test(value.trim())) {
-            const date = new Date(value);
-            if (!Number.isNaN(date.getTime())) return BigInt(date.getTime());
-        }
         if (typeof value !== "string" && typeof value !== "number" && typeof value !== "bigint") {
             throw new Error(`${key} must be an integer-compatible value`);
         }
@@ -96,6 +120,8 @@ export function mapFromPrismaValue(data: unknown): unknown {
     for (const key of Object.keys(res)) {
         if (typeof res[key] === "bigint") {
             res[key] = res[key].toString();
+        } else if (res[key] instanceof Date) {
+            res[key] = res[key].getTime().toString();
         }
     }
     if ("prefixes" in res && typeof res.prefixes === "string") {
