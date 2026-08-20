@@ -226,7 +226,7 @@ export async function getFormattedScore({
         coverLink: `https://assets.ppy.sh/beatmaps/${beatmapset.id}/covers/cover.jpg`,
         listLink: `https://assets.ppy.sh/beatmaps/${beatmapset.id}/covers/list.jpg`,
         thumbLink: `https://b.ppy.sh/thumb/${beatmapset.id}l.jpg`,
-        grade: grades[play.rank],
+        grade: grades[play.rank] ?? grades["F"],
         hitValues, // Returns the value in this format: { 433/12/2/4 }
         fcHitValues,
         fcAccuracy: fcAccuracy?.toFixed(2),
