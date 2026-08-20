@@ -74,6 +74,57 @@ mock.module("@utils/score-api", () => ({
 const { run, data } = await import("../../../src/commands/osu/pp");
 
 describe("pp command", () => {
+    mock.module("@utils/database", () => ({
+        prisma: {},
+        getEntry: mock((table: Tables, id: string) =>
+            Promise.resolve(table === Tables.USER && id === "123" ? { id, banchoId: null } : null),
+        ),
+        insertData: mock(() => Promise.resolve()),
+        bulkInsertData: mock(() => Promise.resolve()),
+        removeEntry: mock(() => Promise.resolve(true)),
+        getRowCount: mock(() => Promise.resolve(0)),
+        getRowSum: mock(() => Promise.resolve(0)),
+        parseBigIntValue: parseMockBigInt,
+        mapToPrismaValue: (key: string, value: unknown) =>
+            ["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value,
+        mapFromPrismaValue: (value: unknown) => value,
+        incrementCommandCount: mock(() => Promise.resolve()),
+    }));
+
+    mock.module("osu-api-extended", () => ({
+        enums: {
+            ModsEnum: { HD: 8, HR: 16, DT: 64, NC: 512 },
+        },
+        v2: {
+            users: {
+                details: mock(({ user }: { user: string }) =>
+                    Promise.resolve({
+                        id: 1,
+                        username: user,
+                        avatar_url: "https://a.ppy.sh/1",
+                        country_code: "US",
+                        statistics: {
+                            pp: 1000,
+                            global_rank: 10,
+                        },
+                    }),
+                ),
+            },
+        },
+    }));
+
+    const getUserScoresMock = mock((_userId: number, _type: unknown, _options: unknown, _authorDb: unknown) =>
+        Promise.resolve([
+            { id: 1, pp: 500 },
+            { id: 2, pp: 400 },
+        ]),
+    );
+
+    mock.module("@utils/score-api", () => ({
+        USER_SCORE_FETCH_LIMIT: 200,
+        getUserScores: getUserScoresMock,
+    }));
+
     test("includes short prefix aliases for non-osu modes", () => {
         expect(data.message.aliases).toContain("ppt");
         expect(data.message.aliases).toContain("ppm");

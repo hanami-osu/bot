@@ -2,18 +2,16 @@ import { expect, test, describe, mock, beforeEach, afterEach } from "bun:test";
 import { handleCommandError } from "../../src/utils/error";
 import { logger } from "../../src/utils/logger";
 
-// Mock logger
-mock.module("../../src/utils/logger", () => {
-    return {
-        logger: {
-            error: mock(() => Promise.resolve()),
-            info: mock(() => Promise.resolve()),
-            warn: mock(() => Promise.resolve()),
-        },
-    };
-});
-
 describe("handleCommandError", () => {
+    mock.module("../../src/utils/logger", () => {
+        return {
+            logger: {
+                error: mock(() => Promise.resolve()),
+                info: mock(() => Promise.resolve()),
+                warn: mock(() => Promise.resolve()),
+            },
+        };
+    });
     let mockClient: any;
     let mockInteraction: any;
     let mockMessage: any;

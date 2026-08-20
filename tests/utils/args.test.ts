@@ -31,23 +31,6 @@ function mapMockFromPrisma(value: unknown): unknown {
     return mapped;
 }
 
-mock.module("@utils/database", () => ({
-    getEntry: mock((table: Tables, id: string) => {
-        if (table !== Tables.USER) return Promise.resolve(null);
-        return Promise.resolve(linkedUsers.get(id) ?? null);
-    }),
-    insertData: mock(() => Promise.resolve()),
-    bulkInsertData: mock(() => Promise.resolve()),
-    removeEntry: mock(() => Promise.resolve(true)),
-    getRowCount: mock(() => Promise.resolve(0)),
-    getRowSum: mock(() => Promise.resolve(0)),
-    parseBigIntValue: parseMockBigInt,
-    mapToPrismaValue: (key: string, value: unknown) =>
-        ["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value,
-    mapFromPrismaValue: mapMockFromPrisma,
-    incrementCommandCount: mock(() => Promise.resolve()),
-}));
-
 const { CommandValidationError, parseBeatmapUrl, parseCommandArgs, parsePrefixPageFlag } = await import("../../src/utils/args");
 
 const mockClient = {} as unknown as Client;
@@ -92,6 +75,22 @@ function createInteractionContext(
 }
 
 describe("args parser", () => {
+    mock.module("@utils/database", () => ({
+        getEntry: mock((table: Tables, id: string) => {
+            if (table !== Tables.USER) return Promise.resolve(null);
+            return Promise.resolve(linkedUsers.get(id) ?? null);
+        }),
+        insertData: mock(() => Promise.resolve()),
+        bulkInsertData: mock(() => Promise.resolve()),
+        removeEntry: mock(() => Promise.resolve(true)),
+        getRowCount: mock(() => Promise.resolve(0)),
+        getRowSum: mock(() => Promise.resolve(0)),
+        parseBigIntValue: parseMockBigInt,
+        mapToPrismaValue: (key: string, value: unknown) =>
+            ["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value,
+        mapFromPrismaValue: mapMockFromPrisma,
+        incrementCommandCount: mock(() => Promise.resolve()),
+    }));
     describe("parseBeatmapUrl", () => {
         test.each([
             ["https://osu.ppy.sh/b/72727", "72727"],

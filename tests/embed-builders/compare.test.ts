@@ -4,43 +4,6 @@ import { Mode } from "../../src/types/osu";
 import type { CompareBuilderOptions } from "../../src/types/builders";
 import type { Score } from "../../src/types/osu";
 
-mock.module("@utils/database", () => ({
-    getEntry: mock(() => Promise.resolve({ data: "osu file format v14\n[Metadata]\nTitle:Test\n[HitObjects]\n" })),
-}));
-
-mock.module("@utils/osu", () => ({
-    downloadBeatmap: mock(() => Promise.resolve({ contents: "osu file format v14\n[Metadata]\nTitle:Test\n[HitObjects]\n" })),
-    saveScoreDatas: mock(() => Promise.resolve()),
-}));
-
-mock.module("@utils/formatter", () => ({
-    getFormattedProfile: mock(() => ({
-        username: "peppy",
-        pp: "10,000",
-        globalRank: "1",
-        countryCode: "JP",
-        countryRank: "1",
-        userUrl: "https://osu.ppy.sh/users/2",
-        flagUrl: "https://osu.ppy.sh/images/flags/JP.png",
-    })),
-    getFormattedScore: mock(({ scores, index }: { scores: Array<Score>; index: number }) => {
-        const score = scores[index];
-        const pp = score.id === 1 ? 100 : 900;
-        return Promise.resolve({
-            grade: "A",
-            stars: "5.00★",
-            pp,
-            ppFormatted: `${pp}.00pp`,
-            accuracy: "99.00",
-            mods: ["NM"],
-            score: score.score?.toLocaleString() ?? "0",
-            hitValues: "300/0/0/0",
-            comboValues: "100x",
-            playSubmitted: "today",
-        });
-    }),
-}));
-
 const { compareBuilder } = await import("../../src/embed-builders/compare");
 
 function score(id: number, rawPp: number): Score {
@@ -79,6 +42,42 @@ function options(plays: Array<Score>): CompareBuilderOptions {
 }
 
 describe("compare embed builder", () => {
+    mock.module("@utils/database", () => ({
+        getEntry: mock(() => Promise.resolve({ data: "osu file format v14\n[Metadata]\nTitle:Test\n[HitObjects]\n" })),
+    }));
+
+    mock.module("@utils/osu", () => ({
+        downloadBeatmap: mock(() => Promise.resolve({ contents: "osu file format v14\n[Metadata]\nTitle:Test\n[HitObjects]\n" })),
+        saveScoreDatas: mock(() => Promise.resolve()),
+    }));
+
+    mock.module("@utils/formatter", () => ({
+        getFormattedProfile: mock(() => ({
+            username: "peppy",
+            pp: "10,000",
+            globalRank: "1",
+            countryCode: "JP",
+            countryRank: "1",
+            userUrl: "https://osu.ppy.sh/users/2",
+            flagUrl: "https://osu.ppy.sh/images/flags/JP.png",
+        })),
+        getFormattedScore: mock(({ scores, index }: { scores: Array<Score>; index: number }) => {
+            const score = scores[index];
+            const pp = score.id === 1 ? 100 : 900;
+            return Promise.resolve({
+                grade: "A",
+                stars: "5.00★",
+                pp,
+                ppFormatted: `${pp}.00pp`,
+                accuracy: "99.00",
+                mods: ["NM"],
+                score: score.score?.toLocaleString() ?? "0",
+                hitValues: "300/0/0/0",
+                comboValues: "100x",
+                playSubmitted: "today",
+            });
+        }),
+    }));
     test("sorts displayed plays by formatted pp instead of raw API pp", async () => {
         const embeds = await compareBuilder(options([score(1, 1000), score(2, 1)]));
         const description = embeds[0]?.description ?? "";

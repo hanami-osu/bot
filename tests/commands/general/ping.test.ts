@@ -1,17 +1,16 @@
 import { expect, test, describe, mock } from "bun:test";
 import { CommandContext } from "../../../src/utils/command-context";
 
-mock.module("osu-api-extended", () => ({
-    v2: {
-        users: {
-            details: mock(() => Promise.resolve({ id: 17279598 })),
-        },
-    },
-}));
-
 const { run } = await import("../../../src/commands/general/ping");
 
 describe("ping command", () => {
+    mock.module("osu-api-extended", () => ({
+        v2: {
+            users: {
+                details: mock(() => Promise.resolve({ id: 17279598 })),
+            },
+        },
+    }));
     test("runs and returns correct latency information for message", async () => {
         const mockClient = {
             ping: mock(() => Promise.resolve({ ws: 42, rest: 50 })),

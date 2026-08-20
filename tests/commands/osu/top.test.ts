@@ -22,32 +22,6 @@ function parseMockBigInt(value: string | number | bigint, fieldName = "value"): 
     return BigInt(value);
 }
 
-mock.module("@utils/database", () => ({
-    getEntry: mock((table: Tables, id: string) =>
-        Promise.resolve(table === Tables.USER && id === "123" ? { id, banchoId: null, mode: authorMode } : null),
-    ),
-    insertData: mock(() => Promise.resolve()),
-    bulkInsertData: mock(() => Promise.resolve()),
-    removeEntry: mock(() => Promise.resolve(true)),
-    getRowCount: mock(() => Promise.resolve(0)),
-    getRowSum: mock(() => Promise.resolve(0)),
-    parseBigIntValue: parseMockBigInt,
-    mapToPrismaValue: (key: string, value: unknown) =>
-        ["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value,
-    mapFromPrismaValue: (value: unknown) => value,
-    incrementCommandCount: mock(() => Promise.resolve()),
-}));
-
-mock.module("osu-api-extended", () => ({
-    enums: {
-        ModsEnum: { HD: 8, HR: 16, DT: 64, NC: 512 },
-    },
-}));
-
-mock.module("@utils/score-api", () => ({
-    USER_SCORE_FETCH_LIMIT: 200,
-}));
-
 const getFetchedPlayReplyMock = mock(({ user, titleFilter }: { user: { banchoId: string; mode: Mode }; titleFilter?: string }) =>
     Promise.resolve(
         user.banchoId === "missing"
@@ -75,10 +49,6 @@ const getFetchedPlayReplyMock = mock(({ user, titleFilter }: { user: { banchoId:
               },
     ),
 );
-
-mock.module("@services/play-service", () => ({
-    getFetchedPlayReply: getFetchedPlayReplyMock,
-}));
 
 const { run, data: topData } = await import("../../../src/commands/osu/top");
 const { data: recentData } = await import("../../../src/commands/osu/recent");
@@ -130,6 +100,35 @@ function createSlashContext(options: Record<string, string | number | boolean | 
 }
 
 describe("top command", () => {
+    mock.module("@utils/database", () => ({
+        getEntry: mock((table: Tables, id: string) =>
+            Promise.resolve(table === Tables.USER && id === "123" ? { id, banchoId: null, mode: authorMode } : null),
+        ),
+        insertData: mock(() => Promise.resolve()),
+        bulkInsertData: mock(() => Promise.resolve()),
+        removeEntry: mock(() => Promise.resolve(true)),
+        getRowCount: mock(() => Promise.resolve(0)),
+        getRowSum: mock(() => Promise.resolve(0)),
+        parseBigIntValue: parseMockBigInt,
+        mapToPrismaValue: (key: string, value: unknown) =>
+            ["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value,
+        mapFromPrismaValue: (value: unknown) => value,
+        incrementCommandCount: mock(() => Promise.resolve()),
+    }));
+
+    mock.module("osu-api-extended", () => ({
+        enums: {
+            ModsEnum: { HD: 8, HR: 16, DT: 64, NC: 512 },
+        },
+    }));
+
+    mock.module("@utils/score-api", () => ({
+        USER_SCORE_FETCH_LIMIT: 200,
+    }));
+
+    mock.module("@services/play-service", () => ({
+        getFetchedPlayReply: getFetchedPlayReplyMock,
+    }));
     beforeEach(() => {
         authorMode = null;
         getFetchedPlayReplyMock.mockClear();

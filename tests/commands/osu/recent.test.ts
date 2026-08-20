@@ -82,6 +82,64 @@ mock.module("@services/play-service", () => ({
 const { run } = await import("../../../src/commands/osu/recent");
 
 describe("recent command", () => {
+    mock.module("@utils/database", () => ({
+        getEntry: mock((table: Tables, id: string) =>
+            Promise.resolve(table === Tables.USER && id === "123" ? { id, banchoId: null, mode: authorMode } : null),
+        ),
+        insertData: mock(() => Promise.resolve()),
+        bulkInsertData: mock(() => Promise.resolve()),
+        removeEntry: mock(() => Promise.resolve(true)),
+        getRowCount: mock(() => Promise.resolve(0)),
+        getRowSum: mock(() => Promise.resolve(0)),
+        parseBigIntValue: parseMockBigInt,
+        mapToPrismaValue: (key: string, value: unknown) =>
+            ["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value,
+        mapFromPrismaValue: (value: unknown) => value,
+        incrementCommandCount: mock(() => Promise.resolve()),
+    }));
+
+    mock.module("osu-api-extended", () => ({
+        enums: {
+            ModsEnum: { HD: 8, HR: 16, DT: 64, NC: 512 },
+        },
+    }));
+
+    mock.module("@utils/score-api", () => ({
+        USER_SCORE_FETCH_LIMIT: 200,
+    }));
+
+    const getFetchedPlayReplyMock = mock(
+        ({ user }: { user: { banchoId: string; mode: Mode }; includeFails?: boolean; emptyMessage?: (username: string) => string }) =>
+            Promise.resolve(
+                user.banchoId === "missing"
+                    ? {
+                            reply: {
+                                embeds: [{ title: "Uh oh! :x:", description: "It seems like `missing` doesn't exist :(" }],
+                            },
+                        }
+                    : {
+                            reply: {
+                                embeds: [{ title: "recent play", author: { name: "mrekk" } }],
+                                components: [],
+                            },
+                            embedOptions: {
+                                type: EmbedBuilderType.PLAYS,
+                                initiatorId: "123",
+                                plays: [],
+                                user: { id: 1, username: user.banchoId },
+                                mode: Mode.OSU,
+                                authorDb: null,
+                                index: 0,
+                                isPage: false,
+                            },
+                        },
+            ),
+    );
+
+    mock.module("@services/play-service", () => ({
+        getFetchedPlayReply: getFetchedPlayReplyMock,
+    }));
+
     beforeEach(() => {
         authorMode = null;
         getFetchedPlayReplyMock.mockClear();

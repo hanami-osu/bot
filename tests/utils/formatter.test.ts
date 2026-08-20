@@ -34,21 +34,20 @@ function mapMockFromPrisma(value: unknown): unknown {
     return mapped;
 }
 
-mock.module("@utils/database", () => ({
-    getEntry: mock(() => Promise.resolve(null)),
-    insertData: mock(() => Promise.resolve()),
-    bulkInsertData: mock(() => Promise.resolve()),
-    removeEntry: mock(() => Promise.resolve(true)),
-    getRowCount: mock(() => Promise.resolve(0)),
-    getRowSum: mock(() => Promise.resolve(0)),
-    parseBigIntValue: parseMockBigInt,
-    mapToPrismaValue: (key: string, value: unknown) =>
-        ["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value,
-    mapFromPrismaValue: mapMockFromPrisma,
-    incrementCommandCount: mock(() => Promise.resolve()),
-}));
-
 describe("formatter", () => {
+    mock.module("@utils/database", () => ({
+        getEntry: mock(() => Promise.resolve(null)),
+        insertData: mock(() => Promise.resolve()),
+        bulkInsertData: mock(() => Promise.resolve()),
+        removeEntry: mock(() => Promise.resolve(true)),
+        getRowCount: mock(() => Promise.resolve(0)),
+        getRowSum: mock(() => Promise.resolve(0)),
+        parseBigIntValue: parseMockBigInt,
+        mapToPrismaValue: (key: string, value: unknown) =>
+            ["joined_at", "user_id", "map_id", "score"].includes(key) ? parseMockBigInt(value as string | number | bigint, key) : value,
+        mapFromPrismaValue: mapMockFromPrisma,
+        incrementCommandCount: mock(() => Promise.resolve()),
+    }));
     describe("getFormattedProfile", () => {
         const mockUser: any = {
             avatar_url: "https://a.ppy.sh/12345",

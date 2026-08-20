@@ -7,17 +7,6 @@ const listScoresMock = mock(({ offset }: { offset?: number }, _addons?: { legacy
     return Promise.resolve(Array.from({ length: 100 }, (_value, index) => ({ id: start + index + 1 })));
 });
 
-mock.module("osu-api-extended", () => ({
-    enums: {
-        ModsEnum: { HD: 8, HR: 16, DT: 64, NC: 512 },
-    },
-    v2: {
-        scores: {
-            list: listScoresMock,
-        },
-    },
-}));
-
 const { getBeatmapUserScores, getUserScores } = await import("../../src/utils/score-api");
 
 function createUser(scoreData: ScoreData | null): User {
@@ -32,6 +21,16 @@ function createUser(scoreData: ScoreData | null): User {
 }
 
 describe("score API utilities", () => {
+    mock.module("osu-api-extended", () => ({
+        enums: {
+            ModsEnum: { HD: 8, HR: 16, DT: 64, NC: 512 },
+        },
+        v2: {
+            scores: {
+                list: listScoresMock,
+            },
+        },
+    }));
     beforeEach(() => {
         listScoresMock.mockClear();
     });

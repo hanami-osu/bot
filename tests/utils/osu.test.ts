@@ -4,12 +4,6 @@ import { shouldUseLazerPerformance } from "../../src/utils/score-preference";
 
 const insertDataMock = mock(() => Promise.resolve());
 
-mock.module("@utils/database", () => ({
-    bulkInsertData: mock(() => Promise.resolve()),
-    getEntry: mock(() => Promise.resolve(null)),
-    insertData: insertDataMock,
-}));
-
 const { downloadBeatmap } = await import("../../src/utils/osu");
 const validBeatmap = "osu file format v14\n[Metadata]\nTitle:Test\n[HitObjects]\n";
 
@@ -18,6 +12,11 @@ function createPlay(legacyScoreId: number | null): Parameters<typeof shouldUseLa
 }
 
 describe("osu utilities", () => {
+    mock.module("@utils/database", () => ({
+        bulkInsertData: mock(() => Promise.resolve()),
+        getEntry: mock(() => Promise.resolve(null)),
+        insertData: insertDataMock,
+    }));
     describe("shouldUseLazerPerformance", () => {
         test("stable config forces classic performance rules", () => {
             expect(shouldUseLazerPerformance(createPlay(null), ScoreData.Stable)).toBe(false);

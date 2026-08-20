@@ -65,31 +65,6 @@ const getFormattedScoreMock = mock(({ scores, index }: { scores: Array<any>; ind
     }),
 );
 
-mock.module("osu-api-extended", () => ({
-    enums: {
-        ModsEnum: { HD: 8, HR: 16, DT: 64, NC: 512 },
-    },
-    v2: {
-        users: {
-            details: userDetailsMock,
-        },
-    },
-}));
-
-mock.module("@utils/score-api", () => ({
-    USER_SCORE_FETCH_LIMIT: 200,
-    getUserScores: getUserScoresMock,
-}));
-
-mock.module("@utils/osu", () => ({
-    saveScoreDatas: saveScoreDatasMock,
-}));
-
-mock.module("@utils/formatter", () => ({
-    getFormattedProfile: getFormattedProfileMock,
-    getFormattedScore: getFormattedScoreMock,
-}));
-
 const { buildPlayPaginationMessageOptions, getFetchedPlayReply } = await import("../../src/services/play-service");
 
 function commandUser(banchoId: string) {
@@ -121,6 +96,30 @@ function play(id: number, title: string, mods: Array<string>, createdAt: string)
 }
 
 describe("play service", () => {
+    mock.module("osu-api-extended", () => ({
+        enums: {
+            ModsEnum: { HD: 8, HR: 16, DT: 64, NC: 512 },
+        },
+        v2: {
+            users: {
+                details: userDetailsMock,
+            },
+        },
+    }));
+
+    mock.module("@utils/score-api", () => ({
+        USER_SCORE_FETCH_LIMIT: 200,
+        getUserScores: getUserScoresMock,
+    }));
+
+    mock.module("@utils/osu", () => ({
+        saveScoreDatas: saveScoreDatasMock,
+    }));
+
+    mock.module("@utils/formatter", () => ({
+        getFormattedProfile: getFormattedProfileMock,
+        getFormattedScore: getFormattedScoreMock,
+    }));
     beforeEach(() => {
         userDetailsMock.mockClear();
         getUserScoresMock.mockClear();
