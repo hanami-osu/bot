@@ -17,6 +17,20 @@ describe("database conversion helpers", () => {
         expect(() => mapToPrismaValue("score", 9007199254740992)).toThrow("safe integer");
     });
 
+    test("maps guild join timestamps to Prisma dates and back to millisecond strings", () => {
+        const timestamp = 1754494897113;
+        const prismaValue = mapToPrismaValue("joined_at", timestamp);
+
+        expect(prismaValue).toEqual(new Date(timestamp));
+        expect(mapFromPrismaValue({ joined_at: prismaValue })).toEqual({ joined_at: String(timestamp) });
+    });
+
+    test("accepts ISO guild join timestamps", () => {
+        const date = new Date("2025-08-06T12:00:00.000Z");
+
+        expect(mapToPrismaValue("joined_at", date.toISOString())).toEqual(date);
+    });
+
     test("parses deterministic prefix arrays and rejects malformed prefix JSON", () => {
         expect(mapFromPrismaValue({ id: "guild", prefixes: '["!","?"]' })).toEqual({ id: "guild", prefixes: ["!", "?"] });
         expect(() => mapFromPrismaValue({ id: "guild", prefixes: '{"bad":true}' })).toThrow("JSON array of strings");

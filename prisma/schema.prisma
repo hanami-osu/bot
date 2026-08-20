@@ -22,7 +22,7 @@ model Guild {
     id        String  @id @db.VarChar(255)
     name      String? @db.Text
     owner_id  String? @db.VarChar(255)
-    joined_at BigInt?
+    joined_at DateTime? @db.DateTime(3)
     prefixes  String? @db.Text
 
     @@map("guilds")
