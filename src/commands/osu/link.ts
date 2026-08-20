@@ -1,10 +1,48 @@
 import { CommandData } from "@type/commands";
 import { DiscordLinkRequest, DiscordLinkResponse } from "@type/hanami";
 import { CommandContext } from "@utils/command-context";
+import { getEntry } from "@utils/database";
+import { Tables } from "@type/database";
+import { v2 } from "osu-api-extended";
+import { safeParse } from "@utils/safe-parse";
 
 export async function run(ctx: CommandContext) {
     if (!ctx.isInteraction) return;
     await ctx.defer(true);
+
+    const userId = ctx.user.id;
+    const user = await getEntry(Tables.USER, userId);
+
+    if (user?.banchoId) {
+        const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: "osu" }));
+        if (!osuUserRequest.success) {
+            await ctx.editReply("Something went wrong. Maybe try again?");
+            return;
+        }
+
+        const osuUser = osuUserRequest.data;
+        const userData: DiscordLinkRequest = {
+            discordUserId: ctx.user.id,
+            username: ctx.user.username,
+            displayName: ctx.user.globalName ?? ctx.user.username,
+            avatarUrl: ctx.user.avatarURL(),
+        };
+
+        const ticketInfo = await fetchTempTicketLink(userData);
+
+        if (ticketInfo === null) {
+            await ctx.editReply("Something went wrong. Maybe try again?");
+            return;
+        }
+
+        const expiryTimestamp = Math.floor(new Date(ticketInfo.expiresAt).getTime() / 1000);
+
+        await ctx.editReply(
+            `You are already linked to **${osuUser.username}**.\n\n` +
+            `Want to re-link? You can [click here](<${ticketInfo.url}>) to sign into Hanami Web and re-link your account. (expires <t:${expiryTimestamp}:R>)`,
+        );
+        return;
+    }
 
     const userData: DiscordLinkRequest = {
         discordUserId: ctx.user.id,
