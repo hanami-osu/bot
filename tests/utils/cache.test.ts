@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { decodeButtonState, encodeButtonState } from "../../src/utils/cache";
+import { decodeButtonState, encodeButtonState } from "../../src/state/button-state-cache";
 import { EmbedBuilderType, type EmbedBuilderOptions } from "../../src/types/builders";
 
 describe("cache serialization", () => {
