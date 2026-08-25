@@ -181,14 +181,8 @@ async function getFormattedPlaysForView({
 
     if (typeof page !== "undefined") {
         const pageStart = page * ITEMS_PER_PAGE;
-        const pageEnd = pageStart + ITEMS_PER_PAGE;
-        const formattedPlays: Array<Promise<ScoresInfo>> = [];
-
-        for (let i = pageStart; pageEnd > i && i < plays.length; i++) {
-            formattedPlays.push(getFormattedScore({ scores: plays, index: i, mode, authorDb }));
-        }
-
-        return Promise.all(formattedPlays);
+        const pageIndexes = plays.slice(pageStart, pageStart + ITEMS_PER_PAGE).map((_, offset) => pageStart + offset);
+        return Promise.all(pageIndexes.map((playIndex) => getFormattedScore({ scores: plays, index: playIndex, mode, authorDb })));
     }
 
     if (typeof index !== "undefined") {
