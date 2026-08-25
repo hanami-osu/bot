@@ -48,17 +48,12 @@ export async function run(ctx: CommandContext) {
     await commands[subcommand]({ prefix, interaction, guildId: interaction.guildId });
 }
 
-async function checkForPermissions(interaction: GuildInteraction<ApplicationCommandData>): Promise<false | undefined> {
-    const { member } = interaction;
-    if (!member.permissions) {
-        await interaction.editReply(PERMISSION_NEEDED_STRING);
-        return false;
-    }
+async function hasRequiredPermissions(interaction: GuildInteraction<ApplicationCommandData>): Promise<boolean> {
+    const permissions = interaction.member.permissions;
+    if (permissions && (BigInt(permissions) & BigInt(PERMISSIONS_NEEDED_INT)) !== BigInt(0)) return true;
 
-    if ((BigInt(member.permissions) & BigInt(PERMISSIONS_NEEDED_INT)) === BigInt(0)) {
-        await interaction.editReply(PERMISSION_NEEDED_STRING);
-        return false;
-    }
+    await interaction.editReply(PERMISSION_NEEDED_STRING);
+    return false;
 }
 
 async function add({
@@ -70,14 +65,11 @@ async function add({
     interaction: GuildInteraction<ApplicationCommandData>;
     guildId: string;
 }): Promise<void> {
-    const checkPerms = await checkForPermissions(interaction);
-    if (checkPerms === false) return;
+    if (!(await hasRequiredPermissions(interaction))) return;
 
     const guild = await getEntry(Tables.GUILD, guildId);
     if (typeof prefix === "undefined" || guild === null) return;
-    let { prefixes } = guild;
-
-    if (prefixes !== null && !Array.isArray(prefixes)) prefixes = JSON.parse(prefixes) as Array<string>;
+    const { prefixes } = guild;
 
     if (prefixes && prefixes.length >= MAX_AMOUNT_OF_PREFIXES) {
         await interaction.editReply(
@@ -111,8 +103,7 @@ async function remove({
     interaction: GuildInteraction<ApplicationCommandData>;
     guildId: string;
 }): Promise<void> {
-    const checkPerms = await checkForPermissions(interaction);
-    if (checkPerms === false) return;
+    if (!(await hasRequiredPermissions(interaction))) return;
 
     const guild = await getEntry(Tables.GUILD, guildId);
     if (typeof prefix === "undefined" || guild === null) return;

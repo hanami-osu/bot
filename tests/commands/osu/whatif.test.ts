@@ -120,6 +120,9 @@ describe("whatif command", () => {
     });
 
     test("routes short mode aliases to the matching osu mode", async () => {
+        const originalApiKey = process.env.OSU_DAILY_API;
+        Reflect.deleteProperty(process.env, "OSU_DAILY_API");
+
         const mockClient = { rest: {} } as unknown as Client;
         const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
         const mockMessage = {
@@ -136,14 +139,18 @@ describe("whatif command", () => {
             ["wic", "fruits"],
         ] as const;
 
-        for (const [commandName, mode] of modeCases) {
-            const callCount = getUserScoresMock.mock.calls.length;
-            const ctx = new CommandContext(mockClient, undefined, mockMessage, ["450pp", "mrekk"], "!", commandName);
-            ctx.defer = mock(() => Promise.resolve());
+        try {
+            for (const [commandName, mode] of modeCases) {
+                const callCount = getUserScoresMock.mock.calls.length;
+                const ctx = new CommandContext(mockClient, undefined, mockMessage, ["450pp", "mrekk"], "!", commandName);
+                ctx.defer = mock(() => Promise.resolve());
 
-            await run(ctx);
+                await run(ctx);
 
-            expect(getUserScoresMock.mock.calls[callCount]?.[2]).toEqual({ query: { mode, limit: 200 } });
+                expect(getUserScoresMock.mock.calls[callCount]?.[2]).toEqual({ query: { mode, limit: 200 } });
+            }
+        } finally {
+            if (typeof originalApiKey !== "undefined") process.env.OSU_DAILY_API = originalApiKey;
         }
     });
 });

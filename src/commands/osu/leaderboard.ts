@@ -10,6 +10,7 @@ import type { LeaderboardBuilderOptions } from "@type/builders";
 import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
 import type { GameMode, Beatmap } from "@type/osu";
+import { modsOption } from "./options";
 
 const modeAliases: Record<string, { isGlobal: boolean }> = {
     leaderboard: { isGlobal: true },
@@ -158,7 +159,7 @@ async function getEmbeds(
     };
 }
 
-export const data = {
+export const data: CommandData = {
     name: "leaderboard",
     description: "Display the leaderboard of a beatmap",
     hasPrefixVariant: true,
@@ -178,12 +179,7 @@ export const data = {
                 name: "map",
                 description: "Specify a beatmap link (eg: https://osu.ppy.sh/b/72727)",
             },
-            {
-                type: ApplicationCommandOptionType.STRING,
-                name: "mods",
-                description: "Specify a mods combination.",
-                min_length: 2,
-            },
+            modsOption(),
             {
                 type: ApplicationCommandOptionType.INTEGER,
                 name: "page",
@@ -195,4 +191,4 @@ export const data = {
     message: {
         aliases: Object.keys(modeAliases),
     },
-} satisfies CommandData;
+};

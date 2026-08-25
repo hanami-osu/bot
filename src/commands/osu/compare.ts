@@ -1,6 +1,6 @@
 import { compareBuilder, simpleErrorEmbed, userNotFoundEmbed } from "@builders";
 import { MessageReplyOptions } from "@lilybird/transformers";
-import { EmbedBuilderType, type CompareBuilderOptions } from "@type/builders";
+import { EmbedBuilderType, type CompareBuilderOptions, type ModStructure } from "@type/builders";
 import { SuccessUser, UserType } from "@type/command-args";
 import { CommandData } from "@type/commands";
 import { Mode, type Beatmap } from "@type/osu";
@@ -11,6 +11,7 @@ import { createPaginationActionRow } from "@utils/pagination";
 import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
 import { ApplicationCommandOptionType } from "lilybird";
+import { discordOption, gradeOption, modeOption, modsActionOption, modsOption, usernameOption } from "./options";
 
 const modeAliases: Record<string, { mode?: Mode }> = {
     შედარება: {},
@@ -47,7 +48,7 @@ export async function run(ctx: CommandContext) {
 async function getEmbeds(
     user: SuccessUser,
     authorId: string,
-    mods: any,
+    mods: ModStructure,
     context: CommandContext,
 ): Promise<{ reply: MessageReplyOptions; embedOptions?: CompareBuilderOptions }> {
     const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
@@ -119,72 +120,26 @@ async function getEmbeds(
     };
 }
 
-export const data = {
+export const data: CommandData = {
     name: "compare",
     description: "Display play(s) of a user on a beatmap.",
     hasPrefixVariant: true,
     application: {
         options: [
-            {
-                type: ApplicationCommandOptionType.STRING,
-                name: "username",
-                description: "Specify an osu! username",
-            },
+            usernameOption(),
             {
                 type: ApplicationCommandOptionType.STRING,
                 name: "map",
                 description: "Specify a beatmap link (eg: https://osu.ppy.sh/b/72727)",
             },
-            {
-                type: ApplicationCommandOptionType.STRING,
-                name: "mode",
-                description: "Specify an osu! mode",
-                choices: [
-                    { name: "osu", value: "osu" },
-                    { name: "mania", value: "mania" },
-                    { name: "taiko", value: "taiko" },
-                    { name: "ctb", value: "fruits" },
-                ],
-            },
-            {
-                type: ApplicationCommandOptionType.STRING,
-                name: "mods",
-                description: "Specify a mods combination.",
-                min_length: 2,
-            },
-            {
-                type: ApplicationCommandOptionType.STRING,
-                name: "mods_action",
-                description: "Specify the action to perform on the mods combination.",
-                choices: [
-                    {
-                        name: "Include",
-                        value: "include",
-                    },
-                    {
-                        name: "Force Include",
-                        value: "force_include",
-                    },
-                    {
-                        name: "Exclude",
-                        value: "exclude",
-                    },
-                ],
-            },
-            {
-                type: ApplicationCommandOptionType.STRING,
-                name: "grade",
-                description: "Consider scores only with this grade.",
-                choices: ["SS", "S", "A", "B", "C", "D"].map((grade) => ({ name: grade, value: grade })),
-            },
-            {
-                type: ApplicationCommandOptionType.USER,
-                name: "discord",
-                description: "Specify a linked Discord user",
-            },
+            modeOption(),
+            modsOption(),
+            modsActionOption(),
+            gradeOption(),
+            discordOption(),
         ],
     },
     message: {
         aliases: Object.keys(modeAliases),
     },
-} satisfies CommandData;
+};
