@@ -31,58 +31,29 @@ export async function run(ctx: CommandContext): Promise<void> {
     }
 
     const changes: Array<ConfigChange> = [];
+    const updates: Array<{ key: "mode" | "score_embeds" | "embed_type" | "score_data"; value: string | number }> = [];
 
     if (typeof modeData !== "undefined") {
-        await insertData({
-            table: Tables.USER,
-            id: userId,
-            data: [{ key: "mode", value: modeData }],
-        });
-
-        changes.push({
-            type: "mode",
-            data: modeData,
-        });
+        updates.push({ key: "mode", value: modeData });
+        changes.push({ type: "mode", data: modeData });
     }
 
     if (typeof scoreEmbedData !== "undefined") {
-        await insertData({
-            table: Tables.USER,
-            id: userId,
-            data: [{ key: "score_embeds", value: scoreEmbedData }],
-        });
-
-        changes.push({
-            type: "score_embeds",
-            data: ScoreEmbed[scoreEmbedData],
-        });
+        updates.push({ key: "score_embeds", value: scoreEmbedData });
+        changes.push({ type: "score_embeds", data: ScoreEmbed[scoreEmbedData] });
     }
 
     if (typeof embedTypeData !== "undefined") {
-        await insertData({
-            table: Tables.USER,
-            id: userId,
-            data: [{ key: "embed_type", value: embedTypeData }],
-        });
-
-        changes.push({
-            type: "embed_type",
-            data: embedTypeData,
-        });
+        updates.push({ key: "embed_type", value: embedTypeData });
+        changes.push({ type: "embed_type", data: embedTypeData });
     }
 
     if (typeof scoreDataValue !== "undefined") {
-        await insertData({
-            table: Tables.USER,
-            id: userId,
-            data: [{ key: "score_data", value: scoreDataValue }],
-        });
-
-        changes.push({
-            type: "score_data",
-            data: scoreDataValue === 0 ? "Stable" : "Lazer",
-        });
+        updates.push({ key: "score_data", value: scoreDataValue });
+        changes.push({ type: "score_data", data: scoreDataValue === 0 ? "Stable" : "Lazer" });
     }
+
+    await insertData({ table: Tables.USER, id: userId, data: updates });
 
     await interaction.editReply({
         content: getWebConfigNotice(),
