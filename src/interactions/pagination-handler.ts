@@ -19,7 +19,7 @@ import {
     updateBuilderOptions,
     updateBuilderOptionsValue,
 } from "@utils/pagination";
-import { ButtonStateCache } from "../state/button-state-cache";
+import { ButtonStateCache } from "@state/button-state-cache";
 
 type PaginationMessageOptions = Pick<InteractionReplyOptions, "embeds" | "components">;
 

@@ -1,7 +1,7 @@
 import { Tables } from "@type/database";
 import { getRowCount, getRowSum } from "@utils/database";
 import { BOT_INVITE_URL, BOT_VOTE_URL, HANAMI_WEBSITE_URL } from "@utils/constants";
-import { commandsCache, commandAliasesCache } from "../state/command-registry";
+import { commandsCache, commandAliasesCache } from "@state/command-registry";
 import type { Embed } from "lilybird";
 
 const OSU_COMMANDS = new Set([

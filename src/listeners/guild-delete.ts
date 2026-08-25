@@ -1,6 +1,6 @@
 import { removeEntry } from "@utils/database";
 import { Tables } from "@type/database";
-import { guildPrefixesCache } from "../state/guild-prefixes";
+import { guildPrefixesCache } from "@state/guild-prefixes";
 import { $listener } from "@utils/lilybird-handler";
 
 $listener({

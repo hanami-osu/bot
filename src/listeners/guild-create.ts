@@ -1,7 +1,7 @@
 import { getEntry, insertData } from "@utils/database";
 import { Tables } from "@type/database";
 import type { Guild } from "@type/database";
-import { guildPrefixesCache } from "../state/guild-prefixes";
+import { guildPrefixesCache } from "@state/guild-prefixes";
 import { $listener } from "@utils/lilybird-handler";
 import type { ClientListeners } from "lilybird";
 import type { DefaultTransformers } from "@lilybird/transformers";
