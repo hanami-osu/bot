@@ -5,9 +5,8 @@ import { CommandData } from "@type/commands";
 import { parseCommandArgs } from "@utils/args";
 import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
-import { ApplicationCommandOptionType } from "lilybird";
-
 import { CommandContext } from "@utils/command-context";
+import { discordOption, usernameOption } from "./options";
 
 export async function run(ctx: CommandContext) {
     await ctx.defer();
@@ -38,22 +37,11 @@ async function getEmbeds(user: SuccessUser, authorId: string) {
     return embeds;
 }
 
-export const data = {
+export const data: CommandData = {
     name: "avatar",
     description: "Display the profile of a user.",
     hasPrefixVariant: true,
     application: {
-        options: [
-            {
-                type: ApplicationCommandOptionType.STRING,
-                name: "username",
-                description: "Specify an osu! username",
-            },
-            {
-                type: ApplicationCommandOptionType.USER,
-                name: "discord",
-                description: "Specify a linked Discord user",
-            },
-        ],
+        options: [usernameOption(), discordOption()],
     },
-} satisfies CommandData;
+};
