@@ -294,6 +294,53 @@ SliderTickRate:1
             expect(result.drainLength).toBe("2:00");
         });
 
+        test("prefers the API-provided pp when formatting scores", async () => {
+            const { getFormattedScore } = await import("../../src/utils/formatter");
+
+            const result = await getFormattedScore({
+                scores: [{ ...createAccuracyScore(), pp: 321.45 }],
+                index: 0,
+                mode: Mode.OSU,
+                mapData: mockMapData,
+            });
+
+            expect(result.performance).not.toBeNull();
+            if (!result.performance) throw new Error("Expected performance calculation");
+            expect(result.pp).toBe(321.45);
+            expect(result.ppFormatted).toBe(`**321.45**/${result.performance.perfect.pp.toFixed(2).toLocaleString()}pp`);
+        });
+
+        test("shows the API-provided pp when performance calculation is unavailable", async () => {
+            const { getFormattedScore } = await import("../../src/utils/formatter");
+
+            const result = await getFormattedScore({
+                scores: [{ ...createAccuracyScore(), pp: 321.45 }],
+                index: 0,
+                mode: Mode.OSU,
+                mapData: mockManiaMapData,
+            });
+
+            expect(result.performance).toBeNull();
+            expect(result.pp).toBe(321.45);
+            expect(result.ppFormatted).toBe("**321.45pp**");
+        });
+
+        test("falls back to calculated pp when the API does not provide one", async () => {
+            const { getFormattedScore } = await import("../../src/utils/formatter");
+
+            const result = await getFormattedScore({
+                scores: [{ ...createAccuracyScore(), pp: null }],
+                index: 0,
+                mode: Mode.OSU,
+                mapData: mockMapData,
+            });
+
+            expect(result.performance).not.toBeNull();
+            if (!result.performance) throw new Error("Expected performance calculation");
+            expect(result.pp).toBe(result.performance.current.pp);
+            expect(result.ppFormatted).toContain(`**${result.performance.current.pp.toFixed(2)}`);
+        });
+
         test("uses stable classic accuracy when stable score data is selected", async () => {
             const { getFormattedScore } = await import("../../src/utils/formatter");
 
