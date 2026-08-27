@@ -12,8 +12,8 @@
         "check": "tsc --noEmit && eslint",
         "format": "prettier --write .",
         "test": "bun test --isolate",
-        "test:unit": "bun test tests/utils tests/commands tests/embed-builders --timeout 5000 --isolate",
-        "test:integration": "bun test tests/integration --timeout 30000 --isolate",
+        "test:unit": "bun test tests/utils tests/commands tests/embed-builders tests/interactions tests/listeners tests/services tests/state --timeout 5000 --isolate",
+        "test:integration": "sh -c 'if find tests/integration -name \"*.test.ts\" -print -quit | grep -q .; then bun test tests/integration --timeout 30000 --isolate; fi'",
         "test:all": "bun run test:unit && bun run test:integration"
     },
     "dependencies": {
