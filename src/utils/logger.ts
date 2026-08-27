@@ -82,19 +82,21 @@ export class Logger {
     }
 
     private formatMessage(entry: LogEntry): string {
+        const message = redactString(entry.message);
         const contextStr = entry.context ? ` | Context: ${safeSerialize(entry.context)}` : "";
         const errorStr = entry.error ? ` | Error: ${redactString(entry.error.stack || entry.error.message)}` : "";
-        return `[${entry.timestamp}] [${this.getLevelName(entry.level)}] ${entry.message}${contextStr}${errorStr}`;
+        return `[${entry.timestamp}] [${this.getLevelName(entry.level)}] ${message}${contextStr}${errorStr}`;
     }
 
     private formatConsoleMessage(entry: LogEntry): string {
         const colorCode = this.getColorCode(entry.level);
         const resetCode = "\x1b[0m";
         const levelName = this.getLevelName(entry.level).padEnd(5);
+        const message = redactString(entry.message);
         const contextStr = entry.context ? ` | ${safeSerialize(entry.context)}` : "";
         const errorStr = entry.error ? ` | ${redactString(entry.error.message)}` : "";
 
-        return `${colorCode}[${entry.timestamp}] [${levelName}]${resetCode} ${entry.message}${contextStr}${errorStr}`;
+        return `${colorCode}[${entry.timestamp}] [${levelName}]${resetCode} ${message}${contextStr}${errorStr}`;
     }
 
     private async getCurrentLogFile(): Promise<string> {

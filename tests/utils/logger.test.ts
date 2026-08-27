@@ -1,4 +1,4 @@
-import { describe, expect, test } from "bun:test";
+import { describe, expect, mock, test } from "bun:test";
 import { mkdtemp, readFile, readdir, rm } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
@@ -41,6 +41,33 @@ describe("logger serialization", () => {
             expect(contents).not.toContain(redisUrl);
             expect(contents).toContain("[REDACTED]");
         } finally {
+            await rm(logDir, { recursive: true, force: true });
+        }
+    });
+
+    test("redacts sensitive values from primary log messages", async () => {
+        const logDir = await mkdtemp(join(tmpdir(), "hanami-logger-"));
+        const originalConsoleError = console.error;
+        const consoleError = mock((..._args: Array<unknown>) => undefined);
+        console.error = consoleError;
+
+        try {
+            const logger = new Logger({ logDir, enableConsole: true, enableFile: true });
+            const bearerToken = "Bearer fake.primary-message-token_123";
+
+            await logger.error(`Request failed with ${bearerToken}`);
+            await logger.flush();
+
+            const [logFile] = await readdir(logDir);
+            const contents = await readFile(join(logDir, logFile), "utf8");
+            const consoleOutput = String(consoleError.mock.calls[0]?.[0] ?? "");
+
+            expect(contents).not.toContain(bearerToken);
+            expect(consoleOutput).not.toContain(bearerToken);
+            expect(contents).toContain("[REDACTED]");
+            expect(consoleOutput).toContain("[REDACTED]");
+        } finally {
+            console.error = originalConsoleError;
             await rm(logDir, { recursive: true, force: true });
         }
     });
