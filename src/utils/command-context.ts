@@ -183,29 +183,37 @@ export class CommandContext {
         const sentMessage = await this.editReply(options);
 
         if (
-            this.isMessage &&
             typeof sentMessage === "object" &&
             sentMessage !== null &&
             "id" in sentMessage &&
             typeof sentMessage.id === "string"
         ) {
-            await ButtonStateCache.set(sentMessage.id, embedOptions);
-        } else if (this.interaction) {
-            setTimeout(async () => {
+            if (this.interaction) {
                 try {
-                    if (!this.interaction) return;
-                    const message = await this.client.rest.getOriginalInteractionResponse(
-                        this.interaction.applicationId,
-                        this.interaction.token,
-                    );
-                    if (message && message.id) {
-                        await ButtonStateCache.set(message.id, embedOptions);
-                    }
+                    await ButtonStateCache.set(sentMessage.id, embedOptions);
                 } catch (error) {
                     const { logger } = await import("./logger");
                     await logger.warn("Could not cache interaction pagination state", { error });
                 }
-            }, 100);
+            } else {
+                await ButtonStateCache.set(sentMessage.id, embedOptions);
+            }
+            return;
+        }
+
+        if (this.interaction) {
+            try {
+                const message = await this.client.rest.getOriginalInteractionResponse(
+                    this.interaction.applicationId,
+                    this.interaction.token,
+                );
+                if (message && message.id) {
+                    await ButtonStateCache.set(message.id, embedOptions);
+                }
+            } catch (error) {
+                const { logger } = await import("./logger");
+                await logger.warn("Could not cache interaction pagination state", { error });
+            }
         }
     }
 }

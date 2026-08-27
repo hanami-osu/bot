@@ -25,6 +25,7 @@ export async function loadGuildPrefixes(): Promise<void> {
 
         logger.info(`Loaded ${loadedCount}/${guilds.length} guild prefixes into cache`);
     } catch (error) {
-        logger.error("Failed to load guild prefixes", error as Error);
+        await logger.error("Failed to load guild prefixes", error as Error);
+        throw error;
     }
 }
