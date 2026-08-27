@@ -83,7 +83,7 @@ export class Logger {
 
     private formatMessage(entry: LogEntry): string {
         const contextStr = entry.context ? ` | Context: ${safeSerialize(entry.context)}` : "";
-        const errorStr = entry.error ? ` | Error: ${entry.error.stack || entry.error.message}` : "";
+        const errorStr = entry.error ? ` | Error: ${redactString(entry.error.stack || entry.error.message)}` : "";
         return `[${entry.timestamp}] [${this.getLevelName(entry.level)}] ${entry.message}${contextStr}${errorStr}`;
     }
 
@@ -92,7 +92,7 @@ export class Logger {
         const resetCode = "\x1b[0m";
         const levelName = this.getLevelName(entry.level).padEnd(5);
         const contextStr = entry.context ? ` | ${safeSerialize(entry.context)}` : "";
-        const errorStr = entry.error ? ` | ${entry.error.message}` : "";
+        const errorStr = entry.error ? ` | ${redactString(entry.error.message)}` : "";
 
         return `${colorCode}[${entry.timestamp}] [${levelName}]${resetCode} ${entry.message}${contextStr}${errorStr}`;
     }
