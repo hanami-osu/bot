@@ -304,8 +304,10 @@ SliderTickRate:1
                 mapData: mockMapData,
             });
 
+            expect(result.performance).not.toBeNull();
+            if (!result.performance) throw new Error("Expected performance calculation");
             expect(result.pp).toBe(321.45);
-            expect(result.ppFormatted).toContain("**321.45**");
+            expect(result.ppFormatted).toBe(`**321.45**/${result.performance.perfect.pp.toFixed(2).toLocaleString()}pp`);
         });
 
         test("shows the API-provided pp when performance calculation is unavailable", async () => {
@@ -327,7 +329,7 @@ SliderTickRate:1
             const { getFormattedScore } = await import("../../src/utils/formatter");
 
             const result = await getFormattedScore({
-                scores: [createAccuracyScore()],
+                scores: [{ ...createAccuracyScore(), pp: null }],
                 index: 0,
                 mode: Mode.OSU,
                 mapData: mockMapData,
