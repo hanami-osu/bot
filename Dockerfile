@@ -12,7 +12,8 @@ FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production \
     DEV=false \
-    LOG_DIR=/tmp/hanami-logs
+    LOG_DIR=/tmp/hanami-logs \
+    OSU_TOKEN_PATH=/tmp/hanami-osu-token.json
 COPY --from=deps /app/node_modules ./node_modules
 COPY package.json bun.lock tsconfig.json ./
 COPY prisma ./prisma
