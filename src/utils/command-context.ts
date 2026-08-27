@@ -196,7 +196,12 @@ export class CommandContext {
                     await logger.warn("Could not cache interaction pagination state", { error });
                 }
             } else {
-                await ButtonStateCache.set(sentMessage.id, embedOptions);
+                try {
+                    await ButtonStateCache.set(sentMessage.id, embedOptions);
+                } catch (error) {
+                    const { logger } = await import("./logger");
+                    await logger.warn("Could not cache message pagination state", { error });
+                }
             }
             return;
         }

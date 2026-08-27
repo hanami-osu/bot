@@ -37,4 +37,25 @@ describe("command registration readiness", () => {
             process.env.DEV = previousDev;
         }
     });
+
+    test("propagates development guild registration failures", async () => {
+        const previousDev = process.env.DEV;
+        const previousDevGuildId = process.env.DEV_GUILD_ID;
+        process.env.DEV = "true";
+        process.env.DEV_GUILD_ID = "guild-1";
+        const registrationError = new Error("dev registration failed");
+        const client = {
+            user: { id: "app-1" },
+            rest: {
+                makeAPIRequest: mock(() => Promise.reject(registrationError)),
+            },
+        } as any;
+
+        try {
+            expect(loadCommands(client)).rejects.toBe(registrationError);
+        } finally {
+            process.env.DEV = previousDev;
+            process.env.DEV_GUILD_ID = previousDevGuildId;
+        }
+    });
 });
