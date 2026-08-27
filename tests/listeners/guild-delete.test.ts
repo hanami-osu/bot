@@ -16,7 +16,7 @@ const { handler } = await import("../../src/utils/lilybird-handler");
 await import("../../src/listeners/guild-delete");
 
 const listeners = handler.getListenersObject(false) as {
-    guildDelete: (client: unknown, guild: { id: string; unavailable?: true }) => Promise<void>;
+    guildDelete: (client: unknown, guild: { id: string; unavailable?: boolean }) => Promise<void>;
 };
 
 describe("guildDelete listener", () => {
@@ -38,6 +38,15 @@ describe("guildDelete listener", () => {
         guildPrefixesCache.set("guild123", [";"]);
 
         await listeners.guildDelete({}, { id: "guild123" });
+
+        expect(removeEntry).toHaveBeenCalledTimes(1);
+        expect(guildPrefixesCache.has("guild123")).toBe(false);
+    });
+
+    test("removes guild data when Discord explicitly marks the guild available", async () => {
+        guildPrefixesCache.set("guild123", [";"]);
+
+        await listeners.guildDelete({}, { id: "guild123", unavailable: false });
 
         expect(removeEntry).toHaveBeenCalledTimes(1);
         expect(guildPrefixesCache.has("guild123")).toBe(false);
