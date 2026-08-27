@@ -5,8 +5,21 @@ import type { Message } from "lilybird";
 import type { Interaction, InteractionReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
 import type { CompareBuilderOptions, EmbedBuilderOptions, LeaderboardBuilderOptions, PlayPaginationOptions } from "@type/builders";
-import { createPaginationActionRow, PAGINATION_JUMP_INPUT_ID, PaginationManager, PaginationType } from "@utils/pagination";
-import { ButtonStateCache } from "../state/button-state-cache";
+import {
+    createJumpModalId,
+    createPaginationActionRow,
+    getCurrentValue,
+    getTotalItems,
+    getTotalValues,
+    PAGINATION_JUMP_INPUT_ID,
+    parseButtonAction,
+    parseJumpButtonType,
+    parseJumpModalId,
+    PaginationType,
+    updateBuilderOptions,
+    updateBuilderOptionsValue,
+} from "@utils/pagination";
+import { ButtonStateCache } from "@state/button-state-cache";
 
 type PaginationMessageOptions = Pick<InteractionReplyOptions, "embeds" | "components">;
 
@@ -42,35 +55,31 @@ async function handleButton(interaction: Interaction): Promise<void> {
         return;
     }
 
-    const jumpType = PaginationManager.parseJumpButtonType(interaction.data.id);
+    const jumpType = parseJumpButtonType(interaction.data.id);
     if (jumpType) {
-        const totalValues = PaginationManager.getTotalValues(PaginationManager.getTotalItems(builderOptions), jumpType);
+        const totalValues = getTotalValues(getTotalItems(builderOptions), jumpType);
         if (totalValues <= 1) {
             await interaction.reply({ ephemeral: true, content: "There is only one page available." });
             return;
         }
 
         await interaction.showModal({
-            id: PaginationManager.createJumpModalId(jumpType, interaction.message.channelId, interaction.message.id),
+            id: createJumpModalId(jumpType, interaction.message.channelId, interaction.message.id),
             title: jumpType === "page" ? "Jump to page" : "Jump to entry",
-            components: createPaginationJumpModalComponents(
-                jumpType,
-                totalValues,
-                PaginationManager.getCurrentValue(builderOptions, jumpType),
-            ),
+            components: createPaginationJumpModalComponents(jumpType, totalValues, getCurrentValue(builderOptions, jumpType)),
         });
         return;
     }
 
     await interaction.updateComponents({ components: disablePaginationComponents(createPaginationActionRow(builderOptions)) });
 
-    const buttonAction = PaginationManager.parseButtonAction(interaction.data.id);
+    const buttonAction = parseButtonAction(interaction.data.id);
     if (!buttonAction) {
         await interaction.editReply({ content: "Unknown button action." });
         return;
     }
 
-    const updatedOptions = PaginationManager.updateBuilderOptions(builderOptions, buttonAction.action, buttonAction.type);
+    const updatedOptions = updateBuilderOptions(builderOptions, buttonAction.action, buttonAction.type);
 
     await ButtonStateCache.set(interaction.message.id, updatedOptions);
 
@@ -87,7 +96,7 @@ async function handleButton(interaction: Interaction): Promise<void> {
 async function handlePaginationModal(interaction: Interaction): Promise<boolean> {
     if (!interaction.isModalSubmitInteraction()) return false;
 
-    const modalData = PaginationManager.parseJumpModalId(interaction.data.id);
+    const modalData = parseJumpModalId(interaction.data.id);
     if (!modalData) return false;
 
     const rawValue = getModalInputValue(interaction.data.components, PAGINATION_JUMP_INPUT_ID);
@@ -113,14 +122,14 @@ async function handlePaginationModal(interaction: Interaction): Promise<boolean>
         return true;
     }
 
-    const totalValues = PaginationManager.getTotalValues(PaginationManager.getTotalItems(builderOptions), modalData.type);
+    const totalValues = getTotalValues(getTotalItems(builderOptions), modalData.type);
 
     if (!Number.isInteger(requestedValue) || requestedValue < 1 || requestedValue > totalValues) {
         await interaction.reply({ ephemeral: true, content: `Please enter a whole number between 1 and ${totalValues}.` });
         return true;
     }
 
-    const updatedOptions = PaginationManager.updateBuilderOptionsValue(builderOptions, requestedValue - 1, modalData.type);
+    const updatedOptions = updateBuilderOptionsValue(builderOptions, requestedValue - 1, modalData.type);
     await ButtonStateCache.set(modalData.messageId, updatedOptions);
 
     const options = await buildPaginationMessageOptions(updatedOptions);

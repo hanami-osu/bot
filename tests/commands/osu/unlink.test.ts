@@ -14,16 +14,11 @@ const linkedUser: User = {
 const getEntryMock = mock((_table: Tables, _id: string) => Promise.resolve<User | null>(linkedUser));
 const insertDataMock = mock(() => Promise.resolve());
 const removeEntryMock = mock(() => Promise.resolve(true));
-const slashCommandIdsCache = new Map<string, string>();
 
 mock.module("@utils/database", () => ({
     getEntry: getEntryMock,
     insertData: insertDataMock,
     removeEntry: removeEntryMock,
-}));
-
-mock.module("@utils/cache", () => ({
-    slashCommandIdsCache,
 }));
 
 const { run } = await import("../../../src/commands/osu/unlink");
@@ -33,7 +28,6 @@ describe("unlink command", () => {
         getEntryMock.mockImplementation((_table: Tables, _id: string) => Promise.resolve(linkedUser));
         insertDataMock.mockClear();
         removeEntryMock.mockClear();
-        slashCommandIdsCache.clear();
     });
 
     test("clears banchoId without deleting the user row", async () => {

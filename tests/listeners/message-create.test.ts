@@ -1,5 +1,7 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
-import { commandsCache, cooldownsCache, guildPrefixesCache, slashCommandIdsCache } from "../../src/utils/cache";
+import { commandsCache, slashCommandIdsCache } from "../../src/state/command-registry";
+import { cooldownsCache } from "../../src/state/cooldowns";
+import { guildPrefixesCache } from "../../src/state/guild-prefixes";
 import { handler } from "../../src/utils/lilybird-handler";
 import type { CommandFileData } from "../../src/types/commands";
 

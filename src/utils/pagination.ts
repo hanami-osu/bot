@@ -1,7 +1,7 @@
-import { ComponentType, ButtonStyle } from "lilybird";
-import { filterPlays } from "@utils/play-filters";
+import { ButtonStyle, ComponentType } from "lilybird";
 import type { Message } from "lilybird";
-import type { EmbedBuilderOptions } from "@type/builders";
+import { EmbedBuilderType, type EmbedBuilderOptions } from "@type/builders";
+import { filterPlays } from "@utils/play-filters";
 
 export const ITEMS_PER_PAGE = 5;
 export const PAGINATION_JUMP_INPUT_ID = "pagination-jump-value";
@@ -31,206 +31,191 @@ interface PaginationJumpModalData {
     messageId: string;
 }
 
-export class PaginationManager {
-    private static getButtonConfig(type: PaginationType) {
-        const suffix = type === PaginationType.PAGE ? "page" : "index";
-        return {
-            customIds: [`min-${suffix}`, `decrement-${suffix}`, `wildcard-${suffix}`, `increment-${suffix}`, `max-${suffix}`],
-            labels: ["<<", "<", "...", ">", ">>"],
-        };
-    }
+function getButtonConfig(type: PaginationType): { customIds: Array<string>; labels: Array<string> } {
+    const suffix = type === PaginationType.PAGE ? "page" : "index";
+    return {
+        customIds: [`min-${suffix}`, `decrement-${suffix}`, `wildcard-${suffix}`, `increment-${suffix}`, `max-${suffix}`],
+        labels: ["<<", "<", "...", ">", ">>"],
+    };
+}
 
-    static createActionRow(config: PaginationConfig): Array<Message.Component.Structure> {
-        const { type, totalItems, currentValue, itemsPerPage = ITEMS_PER_PAGE } = config;
-        const { customIds, labels } = this.getButtonConfig(type);
+export function createActionRow(config: PaginationConfig): Array<Message.Component.Structure> {
+    const { type, totalItems, currentValue, itemsPerPage = ITEMS_PER_PAGE } = config;
+    const { customIds, labels } = getButtonConfig(type);
+    const totalValues = getTotalValues(totalItems, type, itemsPerPage);
+    const disabledStates = [
+        currentValue === 0,
+        currentValue === 0,
+        totalValues <= 1,
+        currentValue >= totalValues - 1,
+        currentValue >= totalValues - 1,
+    ];
 
-        const totalPages = this.getTotalValues(totalItems, type, itemsPerPage);
-
-        const disabledStates = [
-            currentValue === 0, // First button
-            currentValue === 0, // Previous button
-            totalPages <= 1, // Jump button
-            currentValue >= totalPages - 1, // Next button
-            currentValue >= totalPages - 1, // Last button
-        ];
-
-        const components: Array<Message.Component.Structure> = [];
-
-        for (let i = 0; i < customIds.length; i++) {
-            components.push({
+    return [
+        {
+            type: ComponentType.ActionRow,
+            components: customIds.map((customId, index) => ({
                 type: ComponentType.Button,
                 style: ButtonStyle.Primary,
-                custom_id: customIds[i],
-                label: labels[i],
-                disabled: disabledStates[i],
-            });
-        }
+                custom_id: customId,
+                label: labels[index],
+                disabled: disabledStates[index],
+            })),
+        },
+    ];
+}
 
-        return [
-            {
-                type: ComponentType.ActionRow,
-                components,
-            },
-        ];
-    }
+export function parseButtonAction(buttonId: string): { type: PaginationType; action: PaginationAction } | null {
+    const match = /^(min|max|increment|decrement)-(page|index)$/.exec(buttonId);
+    if (!match) return null;
 
-    static parseButtonAction(buttonId: string): { type: PaginationType; action: PaginationAction } | null {
-        const match = buttonId.match(/^(min|max|increment|decrement)-(page|index)$/);
-        if (match) {
-            const actionMap: Record<string, PaginationAction> = {
-                min: PaginationAction.FIRST,
-                decrement: PaginationAction.PREV,
-                increment: PaginationAction.NEXT,
-                max: PaginationAction.LAST,
-            };
+    const actionMap: Record<string, PaginationAction> = {
+        min: PaginationAction.FIRST,
+        decrement: PaginationAction.PREV,
+        increment: PaginationAction.NEXT,
+        max: PaginationAction.LAST,
+    };
 
-            const type = match[2] === "page" ? PaginationType.PAGE : PaginationType.INDEX;
-            const action = actionMap[match[1]];
+    return {
+        type: match[2] === "page" ? PaginationType.PAGE : PaginationType.INDEX,
+        action: actionMap[match[1]],
+    };
+}
 
-            return { type, action };
-        }
+export function parseJumpButtonType(buttonId: string): PaginationType | null {
+    const match = /^wildcard-(page|index)$/.exec(buttonId);
+    if (!match) return null;
+    return match[1] === "page" ? PaginationType.PAGE : PaginationType.INDEX;
+}
 
-        return null;
-    }
+export function createJumpModalId(type: PaginationType, channelId: string, messageId: string): string {
+    return `pagination-jump:${type}:${channelId}:${messageId}`;
+}
 
-    static parseJumpButtonType(buttonId: string): PaginationType | null {
-        const match = buttonId.match(/^wildcard-(page|index)$/);
-        if (!match) return null;
-        return match[1] === "page" ? PaginationType.PAGE : PaginationType.INDEX;
-    }
+export function parseJumpModalId(modalId: string): PaginationJumpModalData | null {
+    const match = /^pagination-jump:(page|index):([^:]+):([^:]+)$/.exec(modalId);
+    if (!match) return null;
 
-    static createJumpModalId(type: PaginationType, channelId: string, messageId: string): string {
-        return `pagination-jump:${type}:${channelId}:${messageId}`;
-    }
+    return {
+        type: match[1] === "page" ? PaginationType.PAGE : PaginationType.INDEX,
+        channelId: match[2],
+        messageId: match[3],
+    };
+}
 
-    static parseJumpModalId(modalId: string): PaginationJumpModalData | null {
-        const match = modalId.match(/^pagination-jump:(page|index):([^:]+):([^:]+)$/);
-        if (!match) return null;
+export function getTotalValues(totalItems: number, type: PaginationType, itemsPerPage = ITEMS_PER_PAGE): number {
+    return type === PaginationType.PAGE ? Math.ceil(totalItems / itemsPerPage) : totalItems;
+}
 
-        return {
-            type: match[1] === "page" ? PaginationType.PAGE : PaginationType.INDEX,
-            channelId: match[2],
-            messageId: match[3],
-        };
-    }
+export function calculateNewValue(
+    action: PaginationAction,
+    currentValue: number,
+    totalItems: number,
+    type: PaginationType,
+    itemsPerPage = ITEMS_PER_PAGE,
+): number {
+    const maxValue = getTotalValues(totalItems, type, itemsPerPage) - 1;
 
-    static getTotalValues(totalItems: number, type: PaginationType, itemsPerPage: number = ITEMS_PER_PAGE): number {
-        return type === PaginationType.PAGE ? Math.ceil(totalItems / itemsPerPage) : totalItems;
-    }
-
-    static calculateNewValue(
-        action: PaginationAction,
-        currentValue: number,
-        totalItems: number,
-        type: PaginationType,
-        itemsPerPage: number = ITEMS_PER_PAGE,
-    ): number {
-        const maxValue = this.getTotalValues(totalItems, type, itemsPerPage) - 1;
-
-        switch (action) {
-            case PaginationAction.FIRST:
-                return 0;
-            case PaginationAction.PREV:
-                return Math.max(0, currentValue - 1);
-            case PaginationAction.NEXT:
-                return Math.min(maxValue, currentValue + 1);
-            case PaginationAction.LAST:
-                return maxValue;
-            default:
-                return currentValue;
-        }
-    }
-
-    static updateBuilderOptions(options: EmbedBuilderOptions, action: PaginationAction, type: PaginationType): EmbedBuilderOptions {
-        // Clone the options to avoid mutations
-        const updatedOptions = { ...options } as any;
-
-        let totalItems = 0;
-        if ("scores" in updatedOptions && Array.isArray(updatedOptions.scores)) {
-            totalItems = updatedOptions.scores.length;
-        } else if ("plays" in updatedOptions && Array.isArray(updatedOptions.plays)) {
-            totalItems = filterPlays(updatedOptions.plays, updatedOptions).length;
-        }
-
-        if (type === PaginationType.PAGE) {
-            const currentPage = updatedOptions.page ?? 0;
-            const newPage = this.calculateNewValue(action, currentPage, totalItems, type);
-            updatedOptions.page = newPage;
-
-            // For plays builder, also update isPage flag
-            if ("isPage" in updatedOptions) {
-                updatedOptions.isPage = true;
-            }
-        } else {
-            const currentIndex = updatedOptions.index ?? 0;
-            const newIndex = this.calculateNewValue(action, currentIndex, totalItems, type);
-            updatedOptions.index = newIndex;
-
-            // For plays builder, also update isPage flag
-            if ("isPage" in updatedOptions) {
-                updatedOptions.isPage = false;
-            }
-        }
-
-        return updatedOptions as EmbedBuilderOptions;
-    }
-
-    static updateBuilderOptionsValue(options: EmbedBuilderOptions, value: number, type: PaginationType): EmbedBuilderOptions {
-        const updatedOptions = { ...options } as any;
-
-        if (type === PaginationType.PAGE) {
-            updatedOptions.page = value;
-
-            if ("isPage" in updatedOptions) {
-                updatedOptions.isPage = true;
-            }
-        } else {
-            updatedOptions.index = value;
-
-            if ("isPage" in updatedOptions) {
-                updatedOptions.isPage = false;
-            }
-        }
-
-        return updatedOptions as EmbedBuilderOptions;
-    }
-
-    static getTotalItems(options: EmbedBuilderOptions): number {
-        if ("scores" in options && Array.isArray(options.scores)) {
-            return options.scores.length;
-        }
-        if ("plays" in options && Array.isArray(options.plays)) {
-            return filterPlays(options.plays, options).length;
-        }
-        return 0;
-    }
-
-    static getCurrentValue(options: EmbedBuilderOptions, type: PaginationType): number {
-        const optionsAny = options as any;
-        if (type === PaginationType.PAGE) {
-            return optionsAny.page ?? 0;
-        }
-        return optionsAny.index ?? 0;
-    }
-
-    static getPaginationType(options: EmbedBuilderOptions): PaginationType {
-        const optionsAny = options as any;
-        // For plays builder, check the isPage flag
-        if ("isPage" in optionsAny) {
-            return optionsAny.isPage === true ? PaginationType.PAGE : PaginationType.INDEX;
-        }
-
-        // Default to page for other builders (like leaderboard)
-        return PaginationType.PAGE;
+    switch (action) {
+        case PaginationAction.FIRST:
+            return 0;
+        case PaginationAction.PREV:
+            return Math.max(0, currentValue - 1);
+        case PaginationAction.NEXT:
+            return Math.min(maxValue, currentValue + 1);
+        case PaginationAction.LAST:
+            return maxValue;
     }
 }
 
-export function createPaginationActionRow(builderOptions: EmbedBuilderOptions): Array<Message.Component.Structure> {
-    const totalItems = PaginationManager.getTotalItems(builderOptions);
-    const paginationType = PaginationManager.getPaginationType(builderOptions);
-    const currentValue = PaginationManager.getCurrentValue(builderOptions, paginationType);
+export function getTotalItems(options: EmbedBuilderOptions): number {
+    switch (options.type) {
+        case EmbedBuilderType.LEADERBOARD:
+            return options.scores.length;
+        case EmbedBuilderType.COMPARE:
+        case EmbedBuilderType.PLAYS:
+            return filterPlays(options.plays, options).length;
+        default:
+            return 0;
+    }
+}
 
-    return PaginationManager.createActionRow({
+export function updateBuilderOptions(
+    options: EmbedBuilderOptions,
+    action: PaginationAction,
+    type: PaginationType,
+): EmbedBuilderOptions {
+    const totalItems = getTotalItems(options);
+
+    if (options.type === EmbedBuilderType.PLAYS) {
+        if (type === PaginationType.PAGE) {
+            return {
+                ...options,
+                page: calculateNewValue(action, options.page ?? 0, totalItems, type),
+                isPage: true,
+            };
+        }
+
+        return {
+            ...options,
+            index: calculateNewValue(action, options.index ?? 0, totalItems, type),
+            isPage: false,
+        };
+    }
+
+    if (type === PaginationType.PAGE && (options.type === EmbedBuilderType.LEADERBOARD || options.type === EmbedBuilderType.COMPARE)) {
+        return {
+            ...options,
+            page: calculateNewValue(action, options.page ?? 0, totalItems, type),
+        };
+    }
+
+    return options;
+}
+
+export function updateBuilderOptionsValue(
+    options: EmbedBuilderOptions,
+    value: number,
+    type: PaginationType,
+): EmbedBuilderOptions {
+    if (options.type === EmbedBuilderType.PLAYS) {
+        return type === PaginationType.PAGE
+            ? { ...options, page: value, isPage: true }
+            : { ...options, index: value, isPage: false };
+    }
+
+    if (type === PaginationType.PAGE && (options.type === EmbedBuilderType.LEADERBOARD || options.type === EmbedBuilderType.COMPARE)) {
+        return { ...options, page: value };
+    }
+
+    return options;
+}
+
+export function getCurrentValue(options: EmbedBuilderOptions, type: PaginationType): number {
+    if (type === PaginationType.INDEX) {
+        return options.type === EmbedBuilderType.PLAYS ? (options.index ?? 0) : 0;
+    }
+
+    if (options.type === EmbedBuilderType.LEADERBOARD || options.type === EmbedBuilderType.COMPARE || options.type === EmbedBuilderType.PLAYS) {
+        return options.page ?? 0;
+    }
+
+    return 0;
+}
+
+export function getPaginationType(options: EmbedBuilderOptions): PaginationType {
+    if (options.type === EmbedBuilderType.PLAYS) {
+        return options.isPage === true ? PaginationType.PAGE : PaginationType.INDEX;
+    }
+    return PaginationType.PAGE;
+}
+
+export function createPaginationActionRow(builderOptions: EmbedBuilderOptions): Array<Message.Component.Structure> {
+    const totalItems = getTotalItems(builderOptions);
+    const paginationType = getPaginationType(builderOptions);
+    const currentValue = getCurrentValue(builderOptions, paginationType);
+
+    return createActionRow({
         type: paginationType,
         totalItems,
         currentValue,

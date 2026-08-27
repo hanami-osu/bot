@@ -1,21 +1,19 @@
 export const cooldownsCache = new Map<string, number>();
 
-setInterval(
-    () => {
-        const now = Date.now();
-        for (const [key, expiresAt] of cooldownsCache.entries()) {
-            if (expiresAt <= now) {
-                cooldownsCache.delete(key);
-            }
-        }
-    },
-    5 * 60 * 1000,
-);
+function getCooldownKey(commandName: string, userId: string): string {
+    return `${commandName}:${userId}`;
+}
 
 export function getCooldownExpiry(commandName: string, userId: string): number | undefined {
-    return cooldownsCache.get(`${commandName}:${userId}`);
+    const key = getCooldownKey(commandName, userId);
+    const expiresAt = cooldownsCache.get(key);
+
+    if (typeof expiresAt === "undefined" || expiresAt > Date.now()) return expiresAt;
+
+    cooldownsCache.delete(key);
+    return undefined;
 }
 
 export function setCommandCooldown(commandName: string, userId: string, cooldownMs: number): void {
-    cooldownsCache.set(`${commandName}:${userId}`, Date.now() + cooldownMs);
+    cooldownsCache.set(getCooldownKey(commandName, userId), Date.now() + cooldownMs);
 }

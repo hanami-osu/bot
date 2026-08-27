@@ -48,69 +48,6 @@ export function stringifyForCache(value: unknown): string {
     );
 }
 
-export class RedisCache {
-    static async get<T>(key: string): Promise<T | null> {
-        if (!isRedisAvailable()) {
-            throw new Error(`Redis is not available for GET operation on key: ${key}`);
-        }
-
-        try {
-            const data = await redisClient.get(key);
-            return data ? JSON.parse(data) : null;
-        } catch (error) {
-            logger.error(`Redis GET error for key ${key}`, error as Error);
-            throw error;
-        }
-    }
-
-    static async set<T>(key: string, value: T, ttl?: number): Promise<boolean> {
-        if (!isRedisAvailable()) {
-            throw new Error(`Redis is not available for SET operation on key: ${key}`);
-        }
-
-        try {
-            const serialized = stringifyForCache(value);
-            if (ttl) {
-                await redisClient.setEx(key, ttl, serialized);
-            } else {
-                await redisClient.set(key, serialized);
-            }
-            return true;
-        } catch (error) {
-            logger.error(`Redis SET error for key ${key}`, error as Error);
-            throw error;
-        }
-    }
-
-    static async del(key: string): Promise<boolean> {
-        if (!isRedisAvailable()) {
-            throw new Error(`Redis is not available for DEL operation on key: ${key}`);
-        }
-
-        try {
-            await redisClient.del(key);
-            return true;
-        } catch (error) {
-            logger.error(`Redis DEL error for key ${key}`, error as Error);
-            throw error;
-        }
-    }
-
-    static async exists(key: string): Promise<boolean> {
-        if (!isRedisAvailable()) {
-            throw new Error(`Redis is not available for EXISTS operation on key: ${key}`);
-        }
-
-        try {
-            const result = await redisClient.exists(key);
-            return result === 1;
-        } catch (error) {
-            logger.error(`Redis EXISTS error for key ${key}`, error as Error);
-            throw error;
-        }
-    }
-}
-
 export function getRedisClient(): RedisClientType {
     return redisClient;
 }
