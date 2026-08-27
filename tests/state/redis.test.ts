@@ -56,4 +56,20 @@ describe("redis state", () => {
         expect(quit).toHaveBeenCalledTimes(1);
         expect(disconnect).not.toHaveBeenCalled();
     });
+
+    test("rethrows Redis connection failures with context", async () => {
+        connect.mockRejectedValueOnce(new Error("connection refused"));
+
+        await expect(initializeRedis()).rejects.toThrow("Redis connection failed: connection refused");
+    });
+
+    test("disconnects when graceful Redis shutdown fails", async () => {
+        await initializeRedis();
+        quit.mockRejectedValueOnce(new Error("quit failed"));
+
+        await closeRedis();
+
+        expect(quit).toHaveBeenCalledTimes(1);
+        expect(disconnect).toHaveBeenCalledTimes(1);
+    });
 });
