@@ -89,10 +89,11 @@ async function registerApplicationCommands(lilyClient: Client, applicationComman
                 registerSlashCommandId(commandId.name, commandId.id);
             }
         } catch (error) {
-            logger.error(
+            await logger.error(
                 `Failed to overwrite commands for DEV_GUILD_ID (${process.env.DEV_GUILD_ID}). Make sure it's a valid Server ID, not your User ID!`,
                 error as Error,
             );
+            throw error;
         }
         return;
     }
@@ -105,7 +106,8 @@ async function registerApplicationCommands(lilyClient: Client, applicationComman
             registerSlashCommandId(commandId.name, commandId.id);
         }
     } catch (error) {
-        logger.error("Failed to overwrite global commands.", error as Error);
+        await logger.error("Failed to overwrite global commands.", error as Error);
+        throw error;
     }
 }
 
