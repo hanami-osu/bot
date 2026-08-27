@@ -6,6 +6,8 @@ import { $listener } from "@utils/lilybird-handler";
 $listener({
     event: "guildDelete",
     handle: async (_, guild) => {
+        if (guild.unavailable) return;
+
         await removeEntry(Tables.GUILD, guild.id);
         guildPrefixesCache.delete(guild.id);
     },
