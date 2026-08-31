@@ -15,11 +15,11 @@ To start contributing, you need to install [Bun](https://bun.sh/)
 
 4. Install ESLint and Prettier as an extension in your IDE to help with types and formatting.
 
-5. Fill out `.env.local` with your API keys (see below to see how).
+5. Fill out `.env` with your API keys (see below to see how).
 
 ## Getting API keys
 
-You need to fill `.env.local` with the appropriate API keys to make the bot work. Here's how:
+You need to fill `.env` with the appropriate API keys to make the bot work. Here's how:
 
 ### DISCORD_BOT_TOKEN (your bot's token)
 
@@ -63,7 +63,7 @@ This one is a little tricky, because you will need to host the callback website 
 
 3. The platform will automatically detect the Dockerfile or Bun environment and build the website for you.
 
-4. Once deployed, copy the provided URL, add it to `Application Callback URLs` in your osu! Application, and set it as `OSU_AUTH_URL` in your `.env.local` file.
+4. Once deployed, copy the provided URL, add it to `Application Callback URLs` in your osu! Application, and set it as `OSU_AUTH_URL` in your `.env` file.
 
 ### ERROR_CHANNEL_ID (Optional - for error logging)
 
@@ -91,7 +91,7 @@ Hanami uses MariaDB (MySQL) with Prisma as the ORM. You need to set this up for 
 
 1. Install MariaDB/MySQL on your system or use Docker.
 2. Create a database for the bot (e.g., `CREATE DATABASE hanami;`).
-3. Set the `DATABASE_URL` in your `.env.local` to point to your database (e.g., `DATABASE_URL="mysql://username:password@localhost:3306/hanami"`).
+3. Set the `DATABASE_URL` in your `.env` to point to your database (e.g., `DATABASE_URL="mysql://username:password@localhost:3306/hanami"`).
 
 ### Redis Configuration
 
@@ -105,20 +105,20 @@ This project uses Redis to remember button message data even after the bot was r
     - **Linux/macOS**: `redis-server`
     - **Windows**: Run the Redis server executable
 
-3. Ensure the Redis connection string is configured in `.env.local`:
+3. Ensure the Redis connection string is configured in `.env`:
     - `REDIS_URL="redis://localhost:6379/0"` (this is the default and should work out of the box)
 
 ## Running the Bot
 
 After setting up all the environment variables:
 
-1. Copy `.env.example` to `.env.local`:
+1. Copy `.env.template` to `.env`:
 
     ```bash
-    cp .env.example .env.local
+    cp .env.template .env
     ```
 
-2. Fill in all the required values in `.env.local` according to the sections above.
+2. Fill in all the required values in `.env` according to the sections above.
 
 3. Set up the database schema and generate the Prisma client:
 
