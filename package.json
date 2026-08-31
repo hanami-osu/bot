@@ -18,22 +18,21 @@
     },
     "dependencies": {
         "@lilybird/handlers": "^0.6.0",
-        "@lilybird/transformers": "^0.4.1",
+        "@lilybird/transformers": "^0.4.3",
         "@prisma/client": "6",
         "dotenv": "^17.4.2",
         "lilybird": "^0.8.0",
-        "osu-api-extended": "^3.1.12",
-        "redis": "^5.7.0",
+        "osu-api-extended": "^3.2.1",
+        "redis": "^5.12.1",
         "rosu-pp-js": "4.0.1"
     },
     "devDependencies": {
-        "@eslint/js": "^9.32.0",
+        "@eslint/js": "^9.39.5",
+        "@stylistic/eslint-plugin": "^5.10.0",
         "@types/bun": "latest",
-        "eslint": "9.32.0",
-        "prettier": "^3.6.2",
+        "eslint": "^10.9.1",
         "prisma": "6",
-        "ts-morph": "^28.0.0",
         "typescript": "^6.0.3",
-        "typescript-eslint": "^8.38.0"
+        "typescript-eslint": "^8.69.0"
     }
 }
