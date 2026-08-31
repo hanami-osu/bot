@@ -2,8 +2,8 @@ node_modules/
 
 logs/
 package-lock.json
-.env
-!.env.example
+.env*
+!.env.template
 *.db
 *.tsbuildinfo
 bun.lockb
