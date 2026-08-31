@@ -135,7 +135,7 @@ describe("play service", () => {
             user: commandUser("missing"),
             authorId: "123",
             playType: PlayType.RECENT,
-            emptyMessage: (username) => `empty ${username}`,
+            emptyMessage: username => `empty ${username}`,
         });
 
         expect(result.embedOptions).toBeUndefined();
@@ -148,7 +148,7 @@ describe("play service", () => {
             user: commandUser("peppy"),
             authorId: "123",
             playType: PlayType.BEST,
-            emptyMessage: (username) => `It seems like \`${username}\` doesn't have any plays, maybe they should go set some :)`,
+            emptyMessage: username => `It seems like \`${username}\` doesn't have any plays, maybe they should go set some :)`,
         });
 
         expect(result.embedOptions).toBeUndefined();
@@ -167,7 +167,7 @@ describe("play service", () => {
             index: 0,
             isPage: false,
             includeFails: false,
-            emptyMessage: (username) => `empty ${username}`,
+            emptyMessage: username => `empty ${username}`,
         });
 
         expect(result.embedOptions).toBeDefined();
@@ -214,7 +214,7 @@ describe("play service", () => {
         expect(getFormattedScoreMock).toHaveBeenCalledTimes(2);
         const firstFormatCall = getFormattedScoreMock.mock.calls[0]?.[0] as { scores: Array<{ id: number }>; index: number };
         const secondFormatCall = getFormattedScoreMock.mock.calls[1]?.[0] as { scores: Array<{ id: number }>; index: number };
-        expect(firstFormatCall.scores.map((score) => score.id)).toEqual([2, 1]);
+        expect(firstFormatCall.scores.map(score => score.id)).toEqual([2, 1]);
         expect(firstFormatCall.index).toBe(0);
         expect(secondFormatCall.index).toBe(1);
     });
@@ -238,6 +238,6 @@ describe("play service", () => {
         } satisfies PlayPaginationOptions);
 
         expect(getFormattedScoreMock).toHaveBeenCalledTimes(5);
-        expect(getFormattedScoreMock.mock.calls.map((call) => (call[0] as { index: number }).index)).toEqual([0, 1, 2, 3, 4]);
+        expect(getFormattedScoreMock.mock.calls.map(call => (call[0] as { index: number }).index)).toEqual([0, 1, 2, 3, 4]);
     });
 });

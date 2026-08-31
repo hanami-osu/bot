@@ -61,7 +61,7 @@ export async function run(ctx: CommandContext) {
         sortByDate: true,
         mods,
         titleFilter,
-        emptyMessage: (username) => `It seems like \`${username}\` doesn't have any plays, maybe they should go set some :)`,
+        emptyMessage: username => `It seems like \`${username}\` doesn't have any plays, maybe they should go set some :)`,
     });
     if (embedOptions) {
         await ctx.sendWithPagination(reply, embedOptions);

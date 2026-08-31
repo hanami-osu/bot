@@ -19,11 +19,11 @@ export async function run(ctx: CommandContext): Promise<void> {
     const embedTypeData = data.getString("embed_type");
     const scoreDataValue = data.getNumber("score_data");
 
-    const hasNoChanges =
-        typeof modeData === "undefined" &&
-        typeof scoreEmbedData === "undefined" &&
-        typeof embedTypeData === "undefined" &&
-        typeof scoreDataValue === "undefined";
+    const hasNoChanges
+        = typeof modeData === "undefined"
+            && typeof scoreEmbedData === "undefined"
+            && typeof embedTypeData === "undefined"
+            && typeof scoreDataValue === "undefined";
 
     if (hasNoChanges) {
         await list(ctx, userId);

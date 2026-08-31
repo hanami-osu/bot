@@ -24,7 +24,7 @@ function mapMockFromPrisma(value: unknown): unknown {
     for (const key of Object.keys(mapped)) if (typeof mapped[key] === "bigint") mapped[key] = mapped[key].toString();
     if (typeof mapped.prefixes === "string") {
         const prefixes = JSON.parse(mapped.prefixes);
-        if (!Array.isArray(prefixes) || !prefixes.every((prefix) => typeof prefix === "string"))
+        if (!Array.isArray(prefixes) || !prefixes.every(prefix => typeof prefix === "string"))
             throw new Error("guild prefixes must be a JSON array of strings");
         mapped.prefixes = prefixes;
     }
@@ -144,7 +144,7 @@ describe("args parser", () => {
         });
 
         test("parses quoted flag values without treating them as usernames", async () => {
-            const result = await parseCommandArgs(createPrefixContext(["peppy", 'filter="Yami', "no", 'Uta"']), Mode.OSU);
+            const result = await parseCommandArgs(createPrefixContext(["peppy", "filter=\"Yami", "no", "Uta\""]), Mode.OSU);
 
             expect(result.user.type).toBe(UserType.SUCCESS);
             if (result.user.type === UserType.SUCCESS) expect(result.user.banchoId).toBe("peppy");

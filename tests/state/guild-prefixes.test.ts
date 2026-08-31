@@ -2,7 +2,7 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 
 const findMany = mock(() =>
     Promise.resolve([
-        { id: "guild-a", prefixes: '[";","!"]' },
+        { id: "guild-a", prefixes: "[\";\",\"!\"]" },
         { id: "guild-b", prefixes: "not-json" },
     ]),
 );

@@ -106,11 +106,11 @@ async function getEmbeds(user: SuccessUser, playPps: Array<number>, initiatorId:
         { query: { mode: user.mode, limit: USER_SCORE_FETCH_LIMIT } },
         user.authorDb,
     );
-    const currentPlayPps = scores.map((score) => score.pp).filter((pp): pp is number => typeof pp === "number");
+    const currentPlayPps = scores.map(score => score.pp).filter((pp): pp is number => typeof pp === "number");
     const currentTotalPp = osuUser.statistics.pp;
     const projection = calculateWhatIfProjection(currentTotalPp, currentPlayPps, playPps);
-    const projectedRank =
-        projection.ppGain < 0.005
+    const projectedRank
+        = projection.ppGain < 0.005
             ? osuUser.statistics.global_rank
             : await estimateGlobalRankFromPp(projection.projectedTotalPp, user.mode);
 
@@ -162,6 +162,6 @@ export const data = {
         ],
     },
     message: {
-        aliases: Object.keys(modeAliases).filter((alias) => alias !== "whatif"),
+        aliases: Object.keys(modeAliases).filter(alias => alias !== "whatif"),
     },
 } satisfies CommandData;

@@ -105,7 +105,7 @@ async function getEmbeds(user: SuccessUser, input: PpRequirementInput): Promise<
         { query: { mode: user.mode, limit: USER_SCORE_FETCH_LIMIT } },
         user.authorDb,
     );
-    const currentPlayPps = scores.map((score) => score.pp).filter((pp): pp is number => typeof pp === "number");
+    const currentPlayPps = scores.map(score => score.pp).filter((pp): pp is number => typeof pp === "number");
     const result = calculatePpRequirement(osuUser.statistics.pp, currentPlayPps, input);
 
     return {
@@ -165,6 +165,6 @@ export const data = {
         ],
     },
     message: {
-        aliases: Object.keys(modeAliases).filter((alias) => alias !== "pp"),
+        aliases: Object.keys(modeAliases).filter(alias => alias !== "pp"),
     },
 } satisfies CommandData;

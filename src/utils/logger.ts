@@ -36,8 +36,8 @@ const DEFAULT_CONFIG: LoggerConfig = {
 };
 
 const SENSITIVE_KEY_PATTERN = /(token|authorization|cookie|password|secret|database_url|session)/i;
-const SENSITIVE_VALUE_PATTERN =
-    /(Bearer\s+[A-Za-z0-9._-]+|mysql:\/\/\S+|postgres(?:ql)?:\/\/\S+|redis:\/\/\S+|[A-Za-z0-9_-]{24,}\.[A-Za-z0-9_-]{6,}\.[A-Za-z0-9_-]{20,})/gi;
+const SENSITIVE_VALUE_PATTERN
+    = /(Bearer\s+[A-Za-z0-9._-]+|mysql:\/\/\S+|postgres(?:ql)?:\/\/\S+|redis:\/\/\S+|[A-Za-z0-9_-]{24,}\.[A-Za-z0-9_-]{6,}\.[A-Za-z0-9_-]{20,})/gi;
 
 function redactString(value: string): string {
     return value.replace(SENSITIVE_VALUE_PATTERN, "[REDACTED]");
@@ -126,8 +126,8 @@ export class Logger {
         try {
             const files = await readdir(this.config.logDir);
             const logFiles = files
-                .filter((file) => file.endsWith(".log"))
-                .map((file) => ({
+                .filter(file => file.endsWith(".log"))
+                .map(file => ({
                     name: file,
                     path: join(this.config.logDir, file),
                 }))
@@ -222,7 +222,7 @@ export class Logger {
     // Flush any pending writes
     async flush(): Promise<void> {
         while (this.writeQueue.length > 0 || this.isWriting) {
-            await new Promise((resolve) => setTimeout(resolve, 10));
+            await new Promise(resolve => setTimeout(resolve, 10));
         }
     }
 }

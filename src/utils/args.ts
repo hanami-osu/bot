@@ -81,7 +81,7 @@ function parseModsString(modsValue: string | null | undefined): string | null {
     }
 
     const sections: Array<string> = normalized.match(/.{1,2}/g) ?? [];
-    if (!sections.every((selectedMod) => allowedModAcronyms.has(selectedMod))) {
+    if (!sections.every(selectedMod => allowedModAcronyms.has(selectedMod))) {
         throw new CommandValidationError("The mods value contains an unknown mod.");
     }
 
@@ -248,15 +248,15 @@ async function parseSlashCommandArgs(
     const mode = resolveMode(data.getString("mode"), fallbackMode, userAuthor?.mode);
 
     const modsValue = data.getString("mods");
-    const modsAction =
-        data.getString("mods_action") ??
-        (data.getBoolean("force_include")
-            ? "force_include"
-            : data.getBoolean("exclude")
-              ? "exclude"
-              : data.getBoolean("include")
-                ? "include"
-                : null);
+    const modsAction
+        = data.getString("mods_action")
+            ?? (data.getBoolean("force_include")
+                ? "force_include"
+                : data.getBoolean("exclude")
+                    ? "exclude"
+                    : data.getBoolean("include")
+                        ? "include"
+                        : null);
     const mods = buildMods(parseModsString(modsValue), modsAction);
 
     const beatmapId = getBeatmapId(parseBeatmapUrl(data.getString("map") ?? ""));
@@ -269,23 +269,23 @@ async function parseSlashCommandArgs(
         ? discordUser?.banchoId
             ? { type: UserType.SUCCESS, banchoId: discordUser.banchoId, authorDb: userAuthor, mode, beatmapId }
             : {
-                  type: UserType.FAIL,
-                  beatmapId,
-                  authorDb: userAuthor,
-                  failMessage: discordUserId
-                      ? `The user <@${discordUserId}> hasn't linked their account to the bot yet!`
-                      : `Please link your account to the bot using ${getSlashCommandMention("link")}!`,
-              }
+                    type: UserType.FAIL,
+                    beatmapId,
+                    authorDb: userAuthor,
+                    failMessage: discordUserId
+                        ? `The user <@${discordUserId}> hasn't linked their account to the bot yet!`
+                        : `Please link your account to the bot using ${getSlashCommandMention("link")}!`,
+                }
         : userArg
-          ? { type: UserType.SUCCESS, banchoId: userArg, mode, beatmapId, authorDb: userAuthor }
-          : userAuthor?.banchoId
-            ? { type: UserType.SUCCESS, banchoId: userAuthor.banchoId, mode, beatmapId, authorDb: userAuthor }
-            : {
-                  type: UserType.FAIL,
-                  beatmapId,
-                  authorDb: userAuthor,
-                  failMessage: "Please link your account to the bot using /link!",
-              };
+            ? { type: UserType.SUCCESS, banchoId: userArg, mode, beatmapId, authorDb: userAuthor }
+            : userAuthor?.banchoId
+                ? { type: UserType.SUCCESS, banchoId: userAuthor.banchoId, mode, beatmapId, authorDb: userAuthor }
+                : {
+                        type: UserType.FAIL,
+                        beatmapId,
+                        authorDb: userAuthor,
+                        failMessage: "Please link your account to the bot using /link!",
+                    };
 
     return { user, mods, difficultySettings, flags: {}, titleFilter, page, index, grade };
 }
@@ -322,7 +322,7 @@ async function parsePrefixCommandArgs(message: Message, args: Array<string>, fal
         result.user.beatmapId = getBeatmapId(firstMatch);
 
         // Remove the map link from args array
-        const indexToRemove = args.findIndex((link) => link === firstMatch.url);
+        const indexToRemove = args.findIndex(link => link === firstMatch.url);
         args.splice(indexToRemove, 1);
     }
 
@@ -335,7 +335,7 @@ async function parsePrefixCommandArgs(message: Message, args: Array<string>, fal
             continue;
         }
 
-        if (arg.includes('"')) {
+        if (arg.includes("\"")) {
             (result.tempUser ??= []).push(arg.replace(/"/g, ""));
             continue;
         }

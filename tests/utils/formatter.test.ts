@@ -27,7 +27,7 @@ function mapMockFromPrisma(value: unknown): unknown {
     for (const key of Object.keys(mapped)) if (typeof mapped[key] === "bigint") mapped[key] = mapped[key].toString();
     if (typeof mapped.prefixes === "string") {
         const prefixes = JSON.parse(mapped.prefixes);
-        if (!Array.isArray(prefixes) || !prefixes.every((prefix) => typeof prefix === "string"))
+        if (!Array.isArray(prefixes) || !prefixes.every(prefix => typeof prefix === "string"))
             throw new Error("guild prefixes must be a JSON array of strings");
         mapped.prefixes = prefixes;
     }

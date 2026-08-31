@@ -55,7 +55,7 @@ export async function getBeatmapTopScores({
     const req = await fetch(url, {
         headers: {
             "Content-Type": "application/json",
-            Cookie: `osu_session=${process.env.OSU_ACCESS_TOKEN}`,
+            "Cookie": `osu_session=${process.env.OSU_ACCESS_TOKEN}`,
         },
     });
 
@@ -76,7 +76,7 @@ export async function getBeatmapTopScores({
 }
 
 function isNewMods(mods: Array<Mod> | Array<string>): mods is Array<Mod> {
-    return Array.isArray(mods) && mods.every((mod) => typeof mod === "object" && "acronym" in mod);
+    return Array.isArray(mods) && mods.every(mod => typeof mod === "object" && "acronym" in mod);
 }
 
 function getRulesetId(mode: GameMode | Mode | undefined): number | undefined {
@@ -186,7 +186,7 @@ export async function getPerformanceResults({
             modsStringArray.push(mod.acronym);
         }
     } else {
-        rosuMods = (mods as Array<string>).map((acronym) => ({ acronym }));
+        rosuMods = (mods as Array<string>).map(acronym => ({ acronym }));
         modsStringArray = mods as Array<string>;
     }
 
@@ -238,8 +238,8 @@ export async function getPerformanceResults({
     // For completed plays, rosu-pp determines object count from the beatmap.
     let passedObjects: number | undefined;
     if (passed === false && hitValues) {
-        passedObjects =
-            (hitValues.count_300 ?? 0) + (hitValues.count_100 ?? 0) + (hitValues.count_50 ?? 0) + (hitValues.count_miss ?? 0);
+        passedObjects
+            = (hitValues.count_300 ?? 0) + (hitValues.count_100 ?? 0) + (hitValues.count_50 ?? 0) + (hitValues.count_miss ?? 0);
     }
 
     let current: PerformanceAttributes;
@@ -248,57 +248,57 @@ export async function getPerformanceResults({
         current = new Performance(
             typeof accuracy === "undefined"
                 ? {
-                      lazer: isLazer,
-                      mods: rosuMods,
-                      n100,
-                      n300,
-                      n50,
-                      nGeki: nGeki ?? undefined,
-                      nKatu: nKatu ?? undefined,
-                      misses,
-                      largeTickHits,
-                      smallTickHits,
-                      sliderEndHits,
-                      combo: maxCombo ?? perfect.difficulty.maxCombo,
-                      passedObjects,
-                      clockRate,
-                  }
+                        lazer: isLazer,
+                        mods: rosuMods,
+                        n100,
+                        n300,
+                        n50,
+                        nGeki: nGeki ?? undefined,
+                        nKatu: nKatu ?? undefined,
+                        misses,
+                        largeTickHits,
+                        smallTickHits,
+                        sliderEndHits,
+                        combo: maxCombo ?? perfect.difficulty.maxCombo,
+                        passedObjects,
+                        clockRate,
+                    }
                 : {
-                      lazer: isLazer,
-                      mods: rosuMods,
-                      accuracy,
-                      misses,
-                      largeTickHits,
-                      smallTickHits,
-                      sliderEndHits,
-                      combo: maxCombo ?? perfect.difficulty.maxCombo,
-                      passedObjects,
-                      clockRate,
-                  },
+                        lazer: isLazer,
+                        mods: rosuMods,
+                        accuracy,
+                        misses,
+                        largeTickHits,
+                        smallTickHits,
+                        sliderEndHits,
+                        combo: maxCombo ?? perfect.difficulty.maxCombo,
+                        passedObjects,
+                        clockRate,
+                    },
         ).calculate(perfect);
 
         fc = new Performance(
             typeof accuracy === "undefined"
                 ? {
-                      lazer: isLazer,
-                      mods: rosuMods,
-                      n100,
-                      n50,
-                      nGeki: nGeki ?? undefined,
-                      nKatu: nKatu ?? undefined,
-                      misses: 0,
-                      accuracy,
-                      combo: perfect.difficulty.maxCombo,
-                      clockRate,
-                  }
+                        lazer: isLazer,
+                        mods: rosuMods,
+                        n100,
+                        n50,
+                        nGeki: nGeki ?? undefined,
+                        nKatu: nKatu ?? undefined,
+                        misses: 0,
+                        accuracy,
+                        combo: perfect.difficulty.maxCombo,
+                        clockRate,
+                    }
                 : {
-                      lazer: isLazer,
-                      mods: rosuMods,
-                      misses: 0,
-                      accuracy,
-                      combo: perfect.difficulty.maxCombo,
-                      clockRate,
-                  },
+                        lazer: isLazer,
+                        mods: rosuMods,
+                        misses: 0,
+                        accuracy,
+                        combo: perfect.difficulty.maxCombo,
+                        clockRate,
+                    },
         ).calculate(perfect);
     } catch {
         return null;
@@ -351,11 +351,11 @@ export async function downloadBeatmap(
 export function isPlausibleBeatmap(contents: string): boolean {
     const trimmed = contents.trim();
     return (
-        trimmed.startsWith("osu file format v") &&
-        trimmed.includes("[HitObjects]") &&
-        trimmed.includes("[Metadata]") &&
-        !/^<!doctype html/i.test(trimmed) &&
-        !/^<html/i.test(trimmed)
+        trimmed.startsWith("osu file format v")
+        && trimmed.includes("[HitObjects]")
+        && trimmed.includes("[Metadata]")
+        && !/^<!doctype html/i.test(trimmed)
+        && !/^<html/i.test(trimmed)
     );
 }
 
@@ -474,9 +474,9 @@ export function hitValueCalculator(
         const value = statistics[order as keyof typeof statistics];
 
         if (
-            order === "count_geki" ||
-            (order === "count_katu" && mode !== Mode.FRUITS && mode !== Mode.MANIA) ||
-            (order === "count_100" && mode === Mode.TAIKO)
+            order === "count_geki"
+            || (order === "count_katu" && mode !== Mode.FRUITS && mode !== Mode.MANIA)
+            || (order === "count_100" && mode === Mode.TAIKO)
         )
             continue;
 
@@ -551,7 +551,7 @@ function saveScore(
             },
             {
                 key: "mods",
-                value: play.mods.map((m) => (typeof m === "object" && m !== null && "acronym" in m ? m.acronym : m)).join(""),
+                value: play.mods.map(m => (typeof m === "object" && m !== null && "acronym" in m ? m.acronym : m)).join(""),
             },
             {
                 key: "score",
@@ -667,5 +667,5 @@ export async function getBeatmapIdFromContext({
 }
 
 export function getRetryCount(beatmapIds: Array<number>, mapId: number): number {
-    return beatmapIds.filter((id) => id === mapId).length;
+    return beatmapIds.filter(id => id === mapId).length;
 }

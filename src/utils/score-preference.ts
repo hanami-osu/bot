@@ -34,10 +34,10 @@ export function getLegacyOnlyQueryValue(authorDb: User | null): "0" | "1" | unde
 }
 
 export function getScoreValue(play: ScoreLike, authorDb: User | null): number {
-    const legacyTotalScore =
-        typeof play.legacy_total_score === "number" && play.legacy_total_score > 0 ? play.legacy_total_score : undefined;
-    const classicTotalScore =
-        typeof play.classic_total_score === "number" && play.classic_total_score > 0 ? play.classic_total_score : undefined;
+    const legacyTotalScore
+        = typeof play.legacy_total_score === "number" && play.legacy_total_score > 0 ? play.legacy_total_score : undefined;
+    const classicTotalScore
+        = typeof play.classic_total_score === "number" && play.classic_total_score > 0 ? play.classic_total_score : undefined;
     const totalScore = typeof play.total_score === "number" ? play.total_score : undefined;
     const score = typeof play.score === "number" ? play.score : undefined;
 
@@ -77,9 +77,9 @@ export function calculateClassicAccuracy(mode: Mode, hits: AccuracyHits): number
             acc = (count300 + count100 + count50) / (count300 + count100 + count50 + countKatu + countMiss);
             break;
         case Mode.MANIA:
-            acc =
-                (6 * countGeki + 6 * count300 + 4 * countKatu + 2 * count100 + count50) /
-                (6 * (count50 + count100 + count300 + countMiss + countGeki + countKatu));
+            acc
+                = (6 * countGeki + 6 * count300 + 4 * countKatu + 2 * count100 + count50)
+                    / (6 * (count50 + count100 + count300 + countMiss + countGeki + countKatu));
             break;
     }
 

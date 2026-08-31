@@ -52,26 +52,26 @@ const getFetchedPlayReplyMock = mock(
         Promise.resolve(
             user.banchoId === "missing"
                 ? {
-                      reply: {
-                          embeds: [{ title: "Uh oh! :x:", description: "It seems like `missing` doesn't exist :(" }],
-                      },
-                  }
+                        reply: {
+                            embeds: [{ title: "Uh oh! :x:", description: "It seems like `missing` doesn't exist :(" }],
+                        },
+                    }
                 : {
-                      reply: {
-                          embeds: [{ title: "recent play", author: { name: "mrekk" } }],
-                          components: [],
-                      },
-                      embedOptions: {
-                          type: EmbedBuilderType.PLAYS,
-                          initiatorId: "123",
-                          plays: [],
-                          user: { id: 1, username: user.banchoId },
-                          mode: Mode.OSU,
-                          authorDb: null,
-                          index: 0,
-                          isPage: false,
-                      },
-                  },
+                        reply: {
+                            embeds: [{ title: "recent play", author: { name: "mrekk" } }],
+                            components: [],
+                        },
+                        embedOptions: {
+                            type: EmbedBuilderType.PLAYS,
+                            initiatorId: "123",
+                            plays: [],
+                            user: { id: 1, username: user.banchoId },
+                            mode: Mode.OSU,
+                            authorDb: null,
+                            index: 0,
+                            isPage: false,
+                        },
+                    },
         ),
 );
 

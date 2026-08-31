@@ -39,7 +39,7 @@ async function fetchTempTicketLink(userData: DiscordLinkRequest): Promise<Discor
         const res = await fetch(new URL("/api/internal/discord-link-ticket", webUrl), {
             method: "POST",
             headers: {
-                Authorization: `Bearer ${botLinkSecret}`,
+                "Authorization": `Bearer ${botLinkSecret}`,
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(userData),

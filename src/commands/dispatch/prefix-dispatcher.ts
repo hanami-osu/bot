@@ -40,7 +40,7 @@ async function handleNonCommandMessage(message: Message, content: string): Promi
     }
 
     const wysiArr = ["727", "7,27", "72,7", "72.7", "7.27", "wysi"];
-    if (wysiArr.some((wysi) => content.toLowerCase() === wysi)) {
+    if (wysiArr.some(wysi => content.toLowerCase() === wysi)) {
         await message.react(wysiEmoji, true);
     }
 }

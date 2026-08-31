@@ -58,7 +58,7 @@ function displayCommandInfo(name: string, preferSlash?: boolean): Array<Embed.St
                         name: "Options",
                         value:
                             data.application?.options
-                                ?.map((opt) => `\`${opt.name}\` - ${opt.description} ${opt.required ? "(required)" : ""}`)
+                                ?.map(opt => `\`${opt.name}\` - ${opt.description} ${opt.required ? "(required)" : ""}`)
                                 .join("\n") ?? "No options",
                         inline: false,
                     },
@@ -152,7 +152,7 @@ async function displayAllCommands(): Promise<Array<Embed.Structure>> {
     for (const [category, commands] of Object.entries(slashCategories)) {
         fields.push({
             name: `/${category}`,
-            value: commands.map((command) => `\`/${command}\``).join(", "),
+            value: commands.map(command => `\`/${command}\``).join(", "),
             inline: true,
         });
     }
@@ -166,7 +166,7 @@ async function displayAllCommands(): Promise<Array<Embed.Structure>> {
     for (const [category, commands] of Object.entries(prefixCategories)) {
         fields.push({
             name: category,
-            value: commands.map((command) => `\`${command}\``).join(", "),
+            value: commands.map(command => `\`${command}\``).join(", "),
             inline: true,
         });
     }

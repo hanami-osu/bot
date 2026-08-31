@@ -24,7 +24,7 @@ export function whatIfBuilder({ user, mode, projection, projectedRank }: WhatIfB
     const rankGain = rankDifference && rankDifference > 0 ? ` (+${rankDifference.toLocaleString()})` : "";
     const userUrl = `https://osu.ppy.sh/users/${user.id}/${mode}`;
     const flagUrl = `https://osu.ppy.sh/images/flags/${user.country_code}.png`;
-    const playPpText = projection.playPps.map((pp) => `**${formatPp(pp)}pp**`).join(", ");
+    const playPpText = projection.playPps.map(pp => `**${formatPp(pp)}pp**`).join(", ");
 
     if (doesNotAffectTotal) {
         return [

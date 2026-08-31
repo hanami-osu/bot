@@ -148,18 +148,12 @@ function disablePaginationComponents(components: Array<Message.Component.Structu
 
         return {
             ...row,
-            components: row.components.map((component) =>
-                component.type === ComponentType.Button ? { ...component, disabled: true } : component,
-            ),
+            components: row.components.map(component => (component.type === ComponentType.Button ? { ...component, disabled: true } : component)),
         };
     });
 }
 
-export function createPaginationJumpModalComponents(
-    type: PaginationType,
-    totalValues: number,
-    currentValue: number,
-): Array<Message.Component.ActionRowStructure> {
+export function createPaginationJumpModalComponents(type: PaginationType, totalValues: number, currentValue: number): Array<Message.Component.ActionRowStructure> {
     const label = type === "page" ? `Page (1-${totalValues})` : `Entry (1-${totalValues})`;
 
     return [

@@ -52,27 +52,27 @@ const getFetchedPlayReplyMock = mock(({ user, titleFilter }: { user: { banchoId:
     Promise.resolve(
         user.banchoId === "missing"
             ? {
-                  reply: {
-                      embeds: [{ title: "Uh oh! :x:", description: "It seems like `missing` doesn't exist :(" }],
-                  },
-              }
+                    reply: {
+                        embeds: [{ title: "Uh oh! :x:", description: "It seems like `missing` doesn't exist :(" }],
+                    },
+                }
             : {
-                  reply: {
-                      embeds: [{ title: "top play", author: { name: "mrekk" } }],
-                      components: [],
-                  },
-                  embedOptions: {
-                      type: EmbedBuilderType.PLAYS,
-                      initiatorId: "123",
-                      plays: [],
-                      user: { id: 1, username: user.banchoId },
-                      mode: Mode.OSU,
-                      authorDb: null,
-                      page: 0,
-                      isPage: true,
-                      titleFilter,
-                  },
-              },
+                    reply: {
+                        embeds: [{ title: "top play", author: { name: "mrekk" } }],
+                        components: [],
+                    },
+                    embedOptions: {
+                        type: EmbedBuilderType.PLAYS,
+                        initiatorId: "123",
+                        plays: [],
+                        user: { id: 1, username: user.banchoId },
+                        mode: Mode.OSU,
+                        authorDb: null,
+                        page: 0,
+                        isPage: true,
+                        titleFilter,
+                    },
+                },
     ),
 );
 
@@ -91,11 +91,11 @@ function getApplicationOptions(commandData: CommandData): Array<{ name: string; 
 }
 
 function getPageMaxValue(commandData: CommandData): number | undefined {
-    return getApplicationOptions(commandData).find((option) => option.name === "page")?.max_value;
+    return getApplicationOptions(commandData).find(option => option.name === "page")?.max_value;
 }
 
 function hasFilterOption(commandData: CommandData): boolean {
-    return getApplicationOptions(commandData).some((option) => option.name === "filter");
+    return getApplicationOptions(commandData).some(option => option.name === "filter");
 }
 
 function createSlashContext(options: Record<string, string | number | boolean | null>): CommandContext {
@@ -225,7 +225,7 @@ describe("top command", () => {
 
         getFetchedPlayReplyMock.mockClear();
 
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk", 'filter="Yami', "no", 'Uta"'], "!", "top");
+        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk", "filter=\"Yami", "no", "Uta\""], "!", "top");
         ctx.defer = mock(() => Promise.resolve());
 
         await run(ctx);

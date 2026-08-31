@@ -47,7 +47,7 @@ function parsePpToken(token: string): number | null {
 export function parseWhatIfPlayPps(input: string): Array<number> {
     const tokens = input
         .split(/[,\s]+/)
-        .map((token) => token.trim())
+        .map(token => token.trim())
         .filter(Boolean);
 
     if (tokens.length === 0) {
@@ -58,8 +58,8 @@ export function parseWhatIfPlayPps(input: string): Array<number> {
         throw new WhatIfValidationError(`Please provide ${MAX_WHATIF_PLAYS} or fewer pp values.`);
     }
 
-    const playPps = tokens.map((token) => parsePpToken(token));
-    if (playPps.some((pp) => pp === null)) {
+    const playPps = tokens.map(token => parsePpToken(token));
+    if (playPps.some(pp => pp === null)) {
         throw new WhatIfValidationError(`PP values must be positive numbers up to ${MAX_WHATIF_PP.toLocaleString()}pp.`);
     }
 
@@ -73,12 +73,12 @@ export function extractWhatIfPlayPps(args: Array<string>): { playPps: Array<numb
     for (const arg of args) {
         const tokens = arg
             .split(",")
-            .map((token) => token.trim())
+            .map(token => token.trim())
             .filter(Boolean);
 
         if (tokens.length > 0) {
-            const parsedTokens = tokens.map((token) => parsePpToken(token));
-            if (parsedTokens.every((pp) => pp !== null)) {
+            const parsedTokens = tokens.map(token => parsePpToken(token));
+            if (parsedTokens.every(pp => pp !== null)) {
                 playPps.push(...(parsedTokens as Array<number>));
                 continue;
             }

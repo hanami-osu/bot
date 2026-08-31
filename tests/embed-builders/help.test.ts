@@ -40,9 +40,9 @@ describe("help builder", () => {
         registerCommand("whatif");
 
         const [embed] = await helpBuilder();
-        const slashOsu = embed.fields?.find((field) => field.name === "/osu!");
-        const prefixOsu = embed.fields?.find((field) => field.name === "osu!");
-        const slashGeneral = embed.fields?.find((field) => field.name === "/General");
+        const slashOsu = embed.fields?.find(field => field.name === "/osu!");
+        const prefixOsu = embed.fields?.find(field => field.name === "osu!");
+        const slashGeneral = embed.fields?.find(field => field.name === "/General");
 
         expect(slashOsu?.value).toContain("`/pp`");
         expect(slashOsu?.value).toContain("`/whatif`");

@@ -80,7 +80,7 @@ export async function run(ctx: CommandContext) {
         isMultiple: true,
         mods,
         titleFilter,
-        emptyMessage: (username) =>
+        emptyMessage: username =>
             `It seems like \`${username}\` hasn't had any recent plays in \`${user.mode}\` in the last 24 hours!`,
     });
     if (embedOptions) {

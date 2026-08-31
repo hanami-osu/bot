@@ -182,7 +182,7 @@ async function getFormattedPlaysForView({
     if (typeof page !== "undefined") {
         const pageStart = page * ITEMS_PER_PAGE;
         const pageIndexes = plays.slice(pageStart, pageStart + ITEMS_PER_PAGE).map((_, offset) => pageStart + offset);
-        return Promise.all(pageIndexes.map((playIndex) => getFormattedScore({ scores: plays, index: playIndex, mode, authorDb })));
+        return Promise.all(pageIndexes.map(playIndex => getFormattedScore({ scores: plays, index: playIndex, mode, authorDb })));
     }
 
     if (typeof index !== "undefined") {

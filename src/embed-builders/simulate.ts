@@ -66,8 +66,8 @@ export async function simulateBuilder({ beatmapId, mods, options }: SimulateBuil
         count_geki: current.state?.nGeki,
         count_katu: current.state?.nKatu,
     };
-    const grade =
-        grades[gradeCalculator(map.mode as Mode, hitValues, mods?.map((m) => (typeof m === "string" ? m : m.acronym)) ?? [""])];
+    const grade
+        = grades[gradeCalculator(map.mode as Mode, hitValues, mods?.map(m => (typeof m === "string" ? m : m.acronym)) ?? [""])];
 
     const hitValuesString = hitValueCalculator(map.mode as Mode, hitValues);
 

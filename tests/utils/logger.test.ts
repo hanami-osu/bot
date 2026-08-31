@@ -14,8 +14,8 @@ describe("logger serialization", () => {
         context.self = context;
 
         const serialized = safeSerialize(context);
-        expect(serialized).toContain('"token":"[REDACTED]"');
-        expect(serialized).toContain('"count":"90071992547409931234"');
+        expect(serialized).toContain("\"token\":\"[REDACTED]\"");
+        expect(serialized).toContain("\"count\":\"90071992547409931234\"");
         expect(serialized).toContain("[REDACTED]");
         expect(serialized).toContain("[Circular]");
     });

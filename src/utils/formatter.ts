@@ -38,7 +38,7 @@ function getScoreMode(
 
 function getScoreMods(mods: UserBestScore["mods"]): Array<string> {
     if (!Array.isArray(mods) || mods.length === 0) return ["NM"];
-    return mods.map((mod) => (typeof mod === "string" ? mod : mod.acronym));
+    return mods.map(mod => (typeof mod === "string" ? mod : mod.acronym));
 }
 
 function getBeatmapObjectCount(
@@ -117,13 +117,13 @@ export async function getFormattedScore({
         userId = play.user_id;
     }
 
-    const objectsHit =
-        (scoreStatistics.count_300 ?? 0) +
-        (scoreStatistics.count_100 ?? 0) +
-        (scoreStatistics.count_50 ?? 0) +
-        (scoreStatistics.count_miss ?? 0) +
-        (scoreStatistics.count_geki ?? 0) +
-        (scoreStatistics.count_katu ?? 0);
+    const objectsHit
+        = (scoreStatistics.count_300 ?? 0)
+            + (scoreStatistics.count_100 ?? 0)
+            + (scoreStatistics.count_50 ?? 0)
+            + (scoreStatistics.count_miss ?? 0)
+            + (scoreStatistics.count_geki ?? 0)
+            + (scoreStatistics.count_katu ?? 0);
 
     const performance = await getPerformanceResults({
         hitValues: scoreStatistics,
@@ -245,8 +245,8 @@ export async function getFormattedScore({
                     ? `**${onlinePp.toFixed(2).toLocaleString()}**/${performance.perfect.pp.toFixed(2).toLocaleString()}pp`
                     : `**${onlinePp.toFixed(2).toLocaleString()}pp**`
                 : performance
-                  ? `**${performance.current.pp.toFixed(2).toLocaleString()}**/${performance.perfect.pp.toFixed(2).toLocaleString()}pp`
-                  : "PP unavailable",
+                    ? `**${performance.current.pp.toFixed(2).toLocaleString()}**/${performance.perfect.pp.toFixed(2).toLocaleString()}pp`
+                    : "PP unavailable",
         playSubmitted: `<t:${new Date(createdAt).getTime() / 1000}:R>`,
         ifFcHanami,
         ifFcBathbot,

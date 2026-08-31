@@ -26,7 +26,7 @@ export async function compareBuilder({
         const { exclude, forceInclude, include, name } = mods;
         const filteredPlays = [];
         for (const play of plays) {
-            const modsStr = play.mods.map((mod) => (typeof mod === "string" ? mod : mod.acronym)).join("");
+            const modsStr = play.mods.map(mod => (typeof mod === "string" ? mod : mod.acronym)).join("");
             const modName = typeof name === "string" ? name : name?.acronym;
 
             if (modName) {

@@ -143,8 +143,8 @@ export class CommandContext {
 
     async editReply(options: ReplyOptions): Promise<unknown> {
         if (this.interaction) {
-            const message =
-                typeof options === "string"
+            const message
+                = typeof options === "string"
                     ? await this.interaction.editReply(options)
                     : await this.interaction.editReply(options as InteractionReplyOptions);
             this.hasInteractionResponse = true;
@@ -183,10 +183,10 @@ export class CommandContext {
         const sentMessage = await this.editReply(options);
 
         if (
-            typeof sentMessage === "object" &&
-            sentMessage !== null &&
-            "id" in sentMessage &&
-            typeof sentMessage.id === "string"
+            typeof sentMessage === "object"
+            && sentMessage !== null
+            && "id" in sentMessage
+            && typeof sentMessage.id === "string"
         ) {
             if (this.interaction) {
                 try {

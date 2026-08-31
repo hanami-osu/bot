@@ -14,33 +14,33 @@ export interface PpRequirementInput {
     playCount?: number;
 }
 
-export type PpRequirementResult =
+export type PpRequirementResult
+    = | {
+        kind: "already_reached";
+        targetTotalPp: number;
+        currentTotalPp: number;
+    }
     | {
-          kind: "already_reached";
-          targetTotalPp: number;
-          currentTotalPp: number;
-      }
+        kind: "required_play_pp";
+        targetTotalPp: number;
+        playCount: number;
+        requiredPlayPp: number;
+        projection: WhatIfProjection;
+    }
     | {
-          kind: "required_play_pp";
-          targetTotalPp: number;
-          playCount: number;
-          requiredPlayPp: number;
-          projection: WhatIfProjection;
-      }
+        kind: "required_play_count";
+        targetTotalPp: number;
+        playPp: number;
+        playCount: number;
+        projection: WhatIfProjection;
+    }
     | {
-          kind: "required_play_count";
-          targetTotalPp: number;
-          playPp: number;
-          playCount: number;
-          projection: WhatIfProjection;
-      }
-    | {
-          kind: "unreachable";
-          targetTotalPp: number;
-          playPp?: number;
-          playCount?: number;
-          maxProjection: WhatIfProjection;
-      };
+        kind: "unreachable";
+        targetTotalPp: number;
+        playPp?: number;
+        playCount?: number;
+        maxProjection: WhatIfProjection;
+    };
 
 export class PpRequirementValidationError extends Error {
     constructor(message: string) {

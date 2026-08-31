@@ -72,7 +72,7 @@ export async function run(ctx: CommandContext) {
         includeFails,
         mods,
         titleFilter,
-        emptyMessage: (username) => `It seems like \`${username}\` hasn't set any recent plays in \`${user.mode}\`! :(`,
+        emptyMessage: username => `It seems like \`${username}\` hasn't set any recent plays in \`${user.mode}\`! :(`,
     });
     if (embedOptions) {
         await ctx.sendWithPagination(reply, embedOptions);

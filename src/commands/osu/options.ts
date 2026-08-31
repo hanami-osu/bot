@@ -65,7 +65,7 @@ export function gradeOption(): ApplicationCommandOption {
         type: ApplicationCommandOptionType.STRING,
         name: "grade",
         description: "Consider scores only with this grade.",
-        choices: ["SS", "S", "A", "B", "C", "D"].map((grade) => ({ name: grade, value: grade })),
+        choices: ["SS", "S", "A", "B", "C", "D"].map(grade => ({ name: grade, value: grade })),
     };
 }
 

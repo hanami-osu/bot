@@ -23,8 +23,8 @@ export function ppRequirementEmbed(user: UserExtended, mode: Mode, result: PpReq
     }
 
     if (result.kind === "unreachable") {
-        const limitText =
-            typeof result.playPp === "number"
+        const limitText
+            = typeof result.playPp === "number"
                 ? `with up to 100 **${formatPp(result.playPp)}pp** plays`
                 : `with ${result.playCount} ${pluralizePlay(result.playCount ?? 0)} up to 100,000.00pp`;
 
@@ -48,8 +48,8 @@ export function ppRequirementEmbed(user: UserExtended, mode: Mode, result: PpReq
         };
     }
 
-    const resultText =
-        result.kind === "required_play_count"
+    const resultText
+        = result.kind === "required_play_count"
             ? `**${result.playCount}** ${pluralizePlay(result.playCount)} worth **${formatPp(result.playPp)}pp** each`
             : `**${result.playCount}** ${pluralizePlay(result.playCount)} worth **${formatPp(result.requiredPlayPp)}pp** each`;
 

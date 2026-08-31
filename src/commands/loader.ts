@@ -16,12 +16,12 @@ type ApplicationCommandPayload = ApplicationCommand.Create.ApplicationCommandJSO
 
 function isCommandFileData(value: unknown): value is CommandFileData {
     return (
-        typeof value === "object" &&
-        value !== null &&
-        "data" in value &&
-        typeof value.data === "object" &&
-        value.data !== null &&
-        "name" in value.data
+        typeof value === "object"
+        && value !== null
+        && "data" in value
+        && typeof value.data === "object"
+        && value.data !== null
+        && "name" in value.data
     );
 }
 

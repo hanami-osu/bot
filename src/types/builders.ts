@@ -130,14 +130,14 @@ export interface WhatIfBuilderOptions extends BuilderOptions {
     projectedRank: number | null;
 }
 
-export type EmbedBuilderOptions =
-    | CompareBuilderOptions
-    | LeaderboardBuilderOptions
-    | BeatmapBuilderOptions
-    | PlayPaginationOptions
-    | ProfileBuilderOptions
-    | AvatarBuilderOptions
-    | BackgroundBuilderOptions
-    | BannerBuilderOptions
-    | SimulateBuilderOptions
-    | WhatIfBuilderOptions;
+export type EmbedBuilderOptions
+    = | CompareBuilderOptions
+        | LeaderboardBuilderOptions
+        | BeatmapBuilderOptions
+        | PlayPaginationOptions
+        | ProfileBuilderOptions
+        | AvatarBuilderOptions
+        | BackgroundBuilderOptions
+        | BannerBuilderOptions
+        | SimulateBuilderOptions
+        | WhatIfBuilderOptions;

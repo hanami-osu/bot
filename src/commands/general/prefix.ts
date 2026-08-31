@@ -78,7 +78,7 @@ async function add({
         return;
     }
 
-    if (prefixes?.some((pref) => pref === prefix)) {
+    if (prefixes?.some(pref => pref === prefix)) {
         await interaction.editReply(
             `**The prefix \`${prefix}\` is already in the prefixes list. You can look at current prefixes by using \`/prefix list\`**`,
         );
@@ -114,14 +114,14 @@ async function remove({
         return;
     }
 
-    if (!prefixes.some((pref) => pref === prefix)) {
+    if (!prefixes.some(pref => pref === prefix)) {
         await interaction.editReply(
             `**The prefix \`${prefix}\` is not in the prefixes list. You can look at current prefixes by using \`/prefix list\`**`,
         );
         return;
     }
 
-    const newPrefixes = prefixes.filter((item) => item !== prefix);
+    const newPrefixes = prefixes.filter(item => item !== prefix);
     await insertData({
         table: Tables.GUILD,
         id: guildId,

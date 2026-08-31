@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
 
 const { calculatePpRequirement, parsePpRequirementPrefixArgs, validatePpRequirementInput } = await import(
-    "../../src/utils/pp-requirement"
+    "../../src/utils/pp-requirement",
 );
 
 describe("pp utilities", () => {
