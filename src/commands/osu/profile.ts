@@ -4,7 +4,7 @@ import { EmbedBuilderType } from "@type/builders";
 import { SuccessUser, UserType } from "@type/command-args";
 import { CommandData } from "@type/commands";
 import { Mode } from "@type/osu";
-import { parseCommandArgs } from "@utils/args";
+import { CommandValidationError, parseCommandArgs } from "@utils/args";
 import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
 import { CommandContext } from "@utils/command-context";
@@ -14,7 +14,19 @@ export async function run(ctx: CommandContext) {
     await ctx.defer();
 
     const mode = ctx.isMessage && ctx.commandName !== "profile" ? (ctx.commandName as Mode) : undefined;
-    const { user } = await parseCommandArgs(ctx, mode);
+
+    let parsedArgs: Awaited<ReturnType<typeof parseCommandArgs>>;
+    try {
+        parsedArgs = await parseCommandArgs(ctx, mode);
+    } catch (error) {
+        if (error instanceof CommandValidationError) {
+            await ctx.editReply(error.message);
+            return;
+        }
+        throw error;
+    }
+
+    const { user } = parsedArgs;
     if (user.type === UserType.FAIL) {
         await ctx.editReply(user.failMessage);
         return;

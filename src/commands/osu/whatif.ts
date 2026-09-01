@@ -3,7 +3,7 @@ import { MessageReplyOptions } from "@lilybird/transformers";
 import { CommandData } from "@type/commands";
 import { EmbedBuilderType } from "@type/builders";
 import { Mode, PlayType } from "@type/osu";
-import { parseCommandArgs } from "@utils/args";
+import { CommandValidationError, parseCommandArgs } from "@utils/args";
 import { CommandContext } from "@utils/command-context";
 import { getUserScores, USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
 import { safeParse } from "@utils/safe-parse";
@@ -80,7 +80,19 @@ export async function run(ctx: CommandContext) {
     const parseCtx = ctx.isMessage
         ? new CommandContext(ctx.client, undefined, ctx.message, remainingArgs, ctx.prefix, ctx.commandName, ctx.channel, ctx.index)
         : ctx;
-    const { user } = await parseCommandArgs(parseCtx, mode);
+
+    let parsedArgs: Awaited<ReturnType<typeof parseCommandArgs>>;
+    try {
+        parsedArgs = await parseCommandArgs(parseCtx, mode);
+    } catch (error) {
+        if (error instanceof CommandValidationError) {
+            await ctx.editReply(error.message);
+            return;
+        }
+        throw error;
+    }
+
+    const { user } = parsedArgs;
 
     if (user.type === UserType.FAIL) {
         await ctx.editReply(user.failMessage);
