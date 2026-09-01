@@ -10,9 +10,23 @@ import type { Mod } from "@type/mods";
 
 import { CommandContext } from "@utils/command-context";
 
+import { CommandValidationError } from "@utils/args";
+
 export async function run(ctx: CommandContext) {
     await ctx.defer();
-    const { user, mods } = await parseCommandArgs(ctx, Mode.OSU);
+
+    let parsedArgs: Awaited<ReturnType<typeof parseCommandArgs>>;
+    try {
+        parsedArgs = await parseCommandArgs(ctx, Mode.OSU);
+    } catch (error) {
+        if (error instanceof CommandValidationError) {
+            await ctx.editReply(error.message);
+            return;
+        }
+        throw error;
+    }
+
+    const { user, mods } = parsedArgs;
 
     const beatmapId = user.beatmapId ?? (await getBeatmapIdFromContext(ctx.beatmapLookupContext));
 
