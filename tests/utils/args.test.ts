@@ -106,8 +106,16 @@ describe("args parser", () => {
             "https://example.com/b/72727",
             "https://osu.ppy.sh/users/72727",
             "https://osu.ppy.sh/beatmapsets/123456#osu/not-a-number",
-        ])("rejects unrelated URL %s", (url) => {
-            expect(parseBeatmapUrl(url)).toBeNull();
+        ])("throws invalid URL error for %s", (url) => {
+            expect(() => parseBeatmapUrl(url)).toThrow(
+                new CommandValidationError("That doesn't look like a valid osu! beatmap URL."),
+            );
+        });
+
+        test("throws beatmapset error for set-only URL", () => {
+            expect(() => parseBeatmapUrl("https://osu.ppy.sh/beatmapsets/123456")).toThrow(
+                new CommandValidationError("Please provide a specific difficulty link instead of a beatmapset link."),
+            );
         });
     });
 

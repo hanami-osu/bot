@@ -4,7 +4,7 @@ import { EmbedBuilderType, type CompareBuilderOptions, type ModStructure } from 
 import { SuccessUser, UserType } from "@type/command-args";
 import { CommandData } from "@type/commands";
 import { Mode, type Beatmap } from "@type/osu";
-import { parseCommandArgs } from "@utils/args";
+import { CommandValidationError, parseCommandArgs } from "@utils/args";
 import { getBeatmapIdFromContext } from "@utils/osu";
 import { getBeatmapUserScores } from "@utils/score-api";
 import { createPaginationActionRow } from "@utils/pagination";
@@ -30,7 +30,19 @@ import { CommandContext } from "@utils/command-context";
 export async function run(ctx: CommandContext) {
     await ctx.defer();
     const mode = ctx.isMessage ? modeAliases[ctx.commandName ?? "compare"]?.mode : undefined;
-    const { user, mods } = await parseCommandArgs(ctx, mode);
+
+    let parsedArgs: Awaited<ReturnType<typeof parseCommandArgs>>;
+    try {
+        parsedArgs = await parseCommandArgs(ctx, mode);
+    } catch (error) {
+        if (error instanceof CommandValidationError) {
+            await ctx.editReply(error.message);
+            return;
+        }
+        throw error;
+    }
+
+    const { user, mods } = parsedArgs;
 
     if (user.type === UserType.FAIL) {
         await ctx.editReply(user.failMessage);

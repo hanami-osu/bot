@@ -2,7 +2,7 @@ import { backgroundBuilder, simpleErrorEmbed } from "@builders";
 import { EmbedBuilderType } from "@type/builders";
 import { CommandData } from "@type/commands";
 import { Mode, type Beatmap } from "@type/osu";
-import { parseCommandArgs } from "@utils/args";
+import { CommandValidationError, parseCommandArgs } from "@utils/args";
 import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
 import { getBeatmapIdFromContext } from "@utils/osu";
@@ -12,7 +12,19 @@ import { CommandContext } from "@utils/command-context";
 
 export async function run(ctx: CommandContext) {
     await ctx.defer();
-    const { user } = await parseCommandArgs(ctx, Mode.OSU);
+
+    let parsedArgs: Awaited<ReturnType<typeof parseCommandArgs>>;
+    try {
+        parsedArgs = await parseCommandArgs(ctx, Mode.OSU);
+    } catch (error) {
+        if (error instanceof CommandValidationError) {
+            await ctx.editReply(error.message);
+            return;
+        }
+        throw error;
+    }
+
+    const { user } = parsedArgs;
 
     const beatmapId = user.beatmapId ?? (await getBeatmapIdFromContext(ctx.beatmapLookupContext));
 
