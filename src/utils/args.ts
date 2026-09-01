@@ -317,12 +317,9 @@ async function parsePrefixCommandArgs(message: Message, args: Array<string>, fal
     const mapLinkMatches: Array<BeatMapSetURL | BeatMapURL> = [];
     for (const arg of args) {
         if (!/https?:\/\//.test(arg)) continue;
-        try {
-            const parsedUrl = parseBeatmapUrl(arg);
-            if (parsedUrl !== null) mapLinkMatches.push(parsedUrl);
-        } catch (error) {
-            if (error instanceof CommandValidationError) throw error;
-        }
+
+        const parsedUrl = parseBeatmapUrl(arg);
+        if (parsedUrl !== null) mapLinkMatches.push(parsedUrl);
     }
 
     if (mapLinkMatches.length > 0) {
