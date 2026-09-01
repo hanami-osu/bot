@@ -12,3 +12,4 @@ osu-token.json
 /src/generated/prisma
 *.sql
 scratch
+.zcode

@@ -41,14 +41,18 @@ function isDecimalInteger(value: string): boolean {
 }
 
 export function parseBeatmapUrl(url: string): BeatMapSetURL | BeatMapURL | null {
+    if (!url) return null;
+
     let parsed: URL;
     try {
         parsed = new URL(url);
     } catch {
-        return null;
+        throw new CommandValidationError("That doesn't look like a valid osu! beatmap URL.");
     }
 
-    if (parsed.protocol !== "https:" || parsed.hostname !== "osu.ppy.sh") return null;
+    if (parsed.protocol !== "https:" || parsed.hostname !== "osu.ppy.sh") {
+        throw new CommandValidationError("That doesn't look like a valid osu! beatmap URL.");
+    }
 
     const path = parsed.pathname.replace(/\/+$/, "");
     const legacyBeatmap = /^\/b\/(\d+)$/.exec(path);
@@ -58,15 +62,17 @@ export function parseBeatmapUrl(url: string): BeatMapSetURL | BeatMapURL | null 
     if (beatmap) return { url, id: beatmap[1] };
 
     const beatmapset = /^\/beatmapsets\/(\d+)$/.exec(path);
-    if (!beatmapset) return null;
+    if (!beatmapset) throw new CommandValidationError("That doesn't look like a valid osu! beatmap URL.");
 
     const hash = parsed.hash.startsWith("#") ? parsed.hash.slice(1) : "";
     if (!hash) {
-        return { url, setId: beatmapset[1], gameMode: null, difficultyId: null };
+        throw new CommandValidationError("Please provide a specific difficulty link instead of a beatmapset link.");
     }
 
     const [gameMode, difficultyId] = hash.split("/");
-    if (!gameMode || !difficultyId || !isDecimalInteger(difficultyId)) return null;
+    if (!gameMode || !difficultyId || !isDecimalInteger(difficultyId)) {
+        throw new CommandValidationError("That doesn't look like a valid osu! beatmap URL.");
+    }
 
     return { url, setId: beatmapset[1], gameMode, difficultyId };
 }
@@ -310,8 +316,12 @@ async function parsePrefixCommandArgs(message: Message, args: Array<string>, fal
 
     const mapLinkMatches: Array<BeatMapSetURL | BeatMapURL> = [];
     for (const arg of args) {
-        const parsedUrl = parseBeatmapUrl(arg);
-        if (parsedUrl !== null) mapLinkMatches.push(parsedUrl);
+        try {
+            const parsedUrl = parseBeatmapUrl(arg);
+            if (parsedUrl !== null) mapLinkMatches.push(parsedUrl);
+        } catch {
+            // Skip non-URL args without throwing
+        }
     }
 
     if (mapLinkMatches.length > 0) {
