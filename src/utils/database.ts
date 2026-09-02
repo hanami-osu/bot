@@ -207,23 +207,27 @@ export async function insertData<T extends Tables>(
         data: Array<{ key: TableToArgument<T>; value: string | number | boolean | bigint | null }>;
     },
     ignore?: boolean,
-): Promise<void> {
+): Promise<boolean> {
     const model = getPrismaModel(table);
     const prismaId = getPrismaId(table, id);
 
     const obj = mapToPrismaData(data);
 
     if (ignore) {
-        await model.createMany({
-            data: { id: prismaId, ...obj },
-            skipDuplicates: true,
-        });
+        const result = (await Promise.resolve(
+            model.createMany({
+                data: { id: prismaId, ...obj },
+                skipDuplicates: true,
+            }),
+        )) as { count: number };
+        return result.count > 0;
     } else {
         await model.upsert({
             where: { id: prismaId },
             create: { id: prismaId, ...obj },
             update: obj,
         });
+        return true;
     }
 }
 

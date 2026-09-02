@@ -1,27 +1,13 @@
-import { Tables } from "@type/database";
-import { getRowCount, getRowSum } from "@utils/database";
 import { BOT_INVITE_URL, BOT_VOTE_URL, HANAMI_WEBSITE_URL } from "@utils/constants";
 import { commandsCache, commandAliasesCache } from "@state/command-registry";
 import type { Embed } from "lilybird";
 
-const OSU_COMMANDS = new Set([
-    "profile",
-    "recent",
-    "top",
-    "compare",
-    "map",
-    "link",
-    "unlink",
-    "avatar",
-    "banner",
-    "background",
-    "simulate",
-    "leaderboard",
-    "recentbest",
-    "recentlist",
-    "pp",
-    "whatif",
-]);
+const COMMAND_CATEGORIES = {
+    "Players": ["link", "unlink", "profile", "avatar", "banner"],
+    "Scores & plays": ["recent", "recentbest", "recentlist", "top", "compare", "leaderboard"],
+    "Beatmaps & performance": ["beatmap", "background", "simulate", "pp", "whatif"],
+    "Hanami": ["help", "ping", "config", "prefix", "invite", "vote"],
+} as const;
 
 export async function helpBuilder(commandName?: string, preferSlash?: boolean): Promise<Array<Embed.Structure>> {
     if (commandName) return displayCommandInfo(commandName, preferSlash);
@@ -117,64 +103,50 @@ export function formatCooldown(cooldownMs?: number): string {
     return `${cooldownSeconds} second${cooldownSeconds === 1 ? "" : "s"}`;
 }
 
-function getCommandCategory(commandName: string): string {
-    if (commandName.includes("osu") || OSU_COMMANDS.has(commandName)) return "osu!";
-    if (commandName === "owner") return "Owner";
-    return "General";
+function formatCommandList(commandNames: ReadonlyArray<string>): string {
+    return commandNames
+        .filter(commandName => commandsCache.has(commandName))
+        .map(commandName => `\`/${commandName}\``)
+        .join(", ");
 }
 
 async function displayAllCommands(): Promise<Array<Embed.Structure>> {
-    const joinedServers = await getRowCount(Tables.GUILD);
-    const linkedUsers = await getRowCount(Tables.USER);
-    const downloadedMaps = await getRowCount(Tables.MAP);
-    const usedCommands = await getRowSum(Tables.COMMAND);
-
-    const slashCategories: Record<string, Array<string>> = {};
-    const prefixCategories: Record<string, Array<string>> = {};
-
-    for (const commandName of Array.from(commandsCache.keys()).sort()) {
-        const command = commandsCache.get(commandName);
-        if (!command) continue;
-
-        const category = getCommandCategory(commandName);
-        (slashCategories[category] ??= []).push(commandName);
-        if (command.data.hasPrefixVariant) (prefixCategories[category] ??= []).push(commandName);
-    }
-
     const fields: Array<{ name: string; value: string; inline?: boolean }> = [
         {
-            name: "Slash Commands",
-            value: "Use `/help <command>` to get detailed information about a specific command.",
+            name: "Start here",
+            value: "`/link` your osu! account, then try `/profile`, `/recent`, or `/top`.",
             inline: false,
         },
     ];
 
-    for (const [category, commands] of Object.entries(slashCategories)) {
+    const categorizedCommands = new Set<string>();
+    for (const [category, commandNames] of Object.entries(COMMAND_CATEGORIES)) {
+        const commands = formatCommandList(commandNames);
+        if (!commands) continue;
+
+        commandNames.forEach(commandName => categorizedCommands.add(commandName));
         fields.push({
-            name: `/${category}`,
-            value: commands.map(command => `\`/${command}\``).join(", "),
+            name: category,
+            value: commands,
             inline: true,
         });
     }
 
-    fields.push({
-        name: "Message Commands",
-        value: "Use `help <command>` to get detailed information about a specific command.",
-        inline: false,
-    });
-
-    for (const [category, commands] of Object.entries(prefixCategories)) {
+    const uncategorizedCommands = Array.from(commandsCache.keys())
+        .filter(commandName => commandName !== "owner" && !categorizedCommands.has(commandName))
+        .sort();
+    if (uncategorizedCommands.length > 0) {
         fields.push({
-            name: category,
-            value: commands.map(command => `\`${command}\``).join(", "),
+            name: "More",
+            value: formatCommandList(uncategorizedCommands),
             inline: true,
         });
     }
 
     fields.push(
         {
-            name: "Bot Statistics",
-            value: `**Servers:** \`${joinedServers}\`\n**Linked Users:** \`${linkedUsers}\`\n**Maps in Database:** \`${downloadedMaps}\`\n**Commands Used:** \`${usedCommands}\``,
+            name: "Need details?",
+            value: "Use `/help <command>` for options and usage. Prefix variants also support `help <command>`.",
             inline: false,
         },
         {
@@ -187,9 +159,27 @@ async function displayAllCommands(): Promise<Array<Embed.Structure>> {
     return [
         {
             title: "Hanami - Help",
-            description: "Hanami is a Discord bot for osu!",
+            description: "Explore osu! profiles, scores, beatmaps, and performance tools without leaving Discord.",
             fields,
             color: 0xffc0cb,
         },
     ];
+}
+
+export function welcomeBuilder(): Embed.Structure {
+    return {
+        title: "Welcome to Hanami!",
+        description: "Explore osu! profiles, recent plays, top scores, beatmaps, and performance tools from Discord.",
+        fields: [
+            {
+                name: "Start here",
+                value: "Run `/link`, then try `/profile`, `/recent`, or `/top`. Use `/help` to see everything else.",
+            },
+            {
+                name: "Optional server setup",
+                value: "Slash commands work immediately. Changing message-command prefixes with `/prefix` requires Manage Server.",
+            },
+        ],
+        color: 0xffc0cb,
+    };
 }

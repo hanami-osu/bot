@@ -1,6 +1,6 @@
 import { describe, expect, mock, test } from "bun:test";
-import { bulkInsertData, mapFromPrismaValue, mapToPrismaValue, parseBigIntValue, prisma } from "../../src/utils/database";
-import { Tables } from "../../src/types/database";
+import { bulkInsertData, insertData, mapFromPrismaValue, mapToPrismaValue, parseBigIntValue, prisma } from "../../src/utils/database";
+import { Tables, type Guild } from "../../src/types/database";
 
 describe("database conversion helpers", () => {
     test("preserves values above Number.MAX_SAFE_INTEGER exactly", () => {
@@ -34,6 +34,34 @@ describe("database conversion helpers", () => {
     test("parses deterministic prefix arrays and rejects malformed prefix JSON", () => {
         expect(mapFromPrismaValue({ id: "guild", prefixes: "[\"!\",\"?\"]" })).toEqual({ id: "guild", prefixes: ["!", "?"] });
         expect(() => mapFromPrismaValue({ id: "guild", prefixes: "{\"bad\":true}" })).toThrow("JSON array of strings");
+    });
+});
+
+describe("insertData", () => {
+    test("reports whether an ignore-on-duplicate insert created the row", async () => {
+        const guildModel = prisma.guild;
+        const originalCreateMany = guildModel.createMany;
+        const createMany = mock()
+            .mockResolvedValueOnce({ count: 1 })
+            .mockResolvedValueOnce({ count: 0 });
+        Reflect.set(guildModel, "createMany", createMany);
+
+        const entry: {
+            table: Tables.GUILD;
+            id: string;
+            data: Array<{ key: keyof Guild; value: string }>;
+        } = {
+            table: Tables.GUILD,
+            id: "guild123",
+            data: [{ key: "name", value: "Test guild" }],
+        };
+
+        try {
+            expect(await insertData(entry, true)).toBe(true);
+            expect(await insertData(entry, true)).toBe(false);
+        } finally {
+            Reflect.set(guildModel, "createMany", originalCreateMany);
+        }
     });
 });
 

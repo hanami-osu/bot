@@ -40,15 +40,31 @@ describe("help builder", () => {
         registerCommand("whatif");
 
         const [embed] = await helpBuilder();
-        const slashOsu = embed.fields?.find(field => field.name === "/osu!");
-        const prefixOsu = embed.fields?.find(field => field.name === "osu!");
-        const slashGeneral = embed.fields?.find(field => field.name === "/General");
+        const performanceTools = embed.fields?.find(field => field.name === "Beatmaps & performance");
+        const botCommands = embed.fields?.find(field => field.name === "Hanami");
 
-        expect(slashOsu?.value).toContain("`/pp`");
-        expect(slashOsu?.value).toContain("`/whatif`");
-        expect(prefixOsu?.value).toContain("`pp`");
-        expect(prefixOsu?.value).toContain("`whatif`");
-        expect(slashGeneral?.value).not.toContain("`/pp`");
-        expect(slashGeneral?.value).not.toContain("`/whatif`");
+        expect(performanceTools?.value).toContain("`/pp`");
+        expect(performanceTools?.value).toContain("`/whatif`");
+        expect(botCommands?.value).toContain("`/ping`");
+        expect(botCommands?.value).not.toContain("`/pp`");
+        expect(botCommands?.value).not.toContain("`/whatif`");
+    });
+
+    test("gives new users a short starting path without duplicating prefix command lists", async () => {
+        registerCommand("link", false);
+        registerCommand("profile");
+        registerCommand("recent");
+        registerCommand("top");
+
+        const [embed] = await helpBuilder();
+        const gettingStarted = embed.fields?.find(field => field.name === "Start here");
+
+        expect(embed.description).toContain("profiles, scores, beatmaps, and performance tools");
+        expect(gettingStarted?.value).toContain("`/link`");
+        expect(gettingStarted?.value).toContain("`/profile`");
+        expect(gettingStarted?.value).toContain("`/recent`");
+        expect(gettingStarted?.value).toContain("`/top`");
+        expect(embed.fields?.some(field => field.name === "Message Commands")).toBe(false);
+        expect(embed.fields?.length).toBeLessThanOrEqual(7);
     });
 });
