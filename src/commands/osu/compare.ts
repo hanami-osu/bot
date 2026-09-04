@@ -13,7 +13,7 @@ import { Mode, type Beatmap } from "@type/osu";
 import { CommandValidationError, parseCommandArgs } from "@utils/args";
 import { getBeatmapIdFromContext } from "@utils/osu";
 import { getBeatmapUserScores } from "@utils/score-api";
-import { createPaginationActionRow, getTotalItems } from "@utils/pagination";
+import { createPaginationActionRow } from "@utils/pagination";
 import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
 import { ApplicationCommandOptionType } from "lilybird";
@@ -132,7 +132,7 @@ async function getEmbeds(
     return {
         reply: {
             embeds,
-            components: getTotalItems(embedOptions) > 0 ? createPaginationActionRow(embedOptions) : [],
+            components: createPaginationActionRow(embedOptions),
         },
         embedOptions,
     };

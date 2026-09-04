@@ -57,9 +57,9 @@ mock.module("@utils/formatter", () => ({
 }));
 
 mock.module("@utils/osu", () => ({
+    downloadBeatmap: mock(() => Promise.resolve({ contents: "" })),
     getBeatmapIdFromContext: mock(() => Promise.resolve(null)),
     saveScoreDatas: mock(() => Promise.resolve()),
-    downloadBeatmap: mock(() => Promise.resolve({ contents: "" })),
 }));
 
 const { run } = await import("../../../src/commands/osu/compare");

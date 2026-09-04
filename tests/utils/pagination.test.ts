@@ -3,6 +3,7 @@ import { ButtonStyle } from "lilybird";
 import {
     calculateNewValue,
     createActionRow,
+    createPaginationActionRow,
     createJumpModalId,
     getTotalItems,
     parseButtonAction,
@@ -140,6 +141,7 @@ describe("pagination", () => {
         test("returns 0 for builders without pagination data", () => {
             const options: any = { type: "profileBuilder" };
             expect(getTotalItems(options)).toBe(0);
+            expect(createPaginationActionRow(options)).toEqual([]);
         });
     });
 

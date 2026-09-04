@@ -1,28 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { EMBED_COLORS } from "../../src/embed-builders/common";
 
-const beatmap = {
-    id: 72727,
-    beatmapset_id: 1234,
-    beatmapset: {
-        id: 1234,
-        artist: "Artist",
-        title: "Song",
-        creator: "Mapper",
-        status: "ranked",
-        user_id: 2,
-    },
-    mode: "osu",
-    mode_int: 0,
-    version: "Expert",
-    checksum: "checksum",
-    bpm: 180,
-    total_length: 120,
-    max_combo: 500,
-    count_circles: 100,
-    count_sliders: 100,
-    count_spinners: 1,
-};
+const beatmap = { beatmapset: {}, mode_int: 0, checksum: "" };
 
 mock.module("osu-api-extended", () => ({
     v2: { beatmaps: { details: mock(() => Promise.resolve(beatmap)) } },
@@ -33,16 +12,16 @@ const safeParse = mock(() => Promise.resolve<any>({ success: true, data: beatmap
 mock.module("@utils/safe-parse", () => ({ safeParse }));
 
 mock.module("@utils/database", () => ({
-    getEntry: mock(() => Promise.resolve({ data: "osu file format v14" })),
+    getEntry: mock(() => Promise.resolve({ data: "" })),
 }));
 
 mock.module("@utils/osu", () => ({
-    accuracyCalculator: mock(() => 100),
-    downloadBeatmap: mock(() => Promise.resolve({ contents: "osu file format v14" })),
-    formatDuration: mock(() => "2:00"),
+    accuracyCalculator: mock(() => 0),
+    downloadBeatmap: mock(() => Promise.resolve({ contents: "" })),
+    formatDuration: mock(() => ""),
     getPerformanceResults: mock(() => Promise.resolve(null)),
-    gradeCalculator: mock(() => "SS"),
-    hitValueCalculator: mock(() => "500/0/0/0"),
+    gradeCalculator: mock(() => ""),
+    hitValueCalculator: mock(() => ""),
 }));
 
 const { beatmapBuilder } = await import("../../src/embed-builders/beatmap");

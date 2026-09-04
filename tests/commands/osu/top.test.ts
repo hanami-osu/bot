@@ -130,6 +130,20 @@ function createSlashContext(options: Record<string, string | number | boolean | 
     return new CommandContext(mockClient, interaction);
 }
 
+function createMessageContext(args: Array<string>, commandName = "top") {
+    const mockClient = { rest: {} } as unknown as Client;
+    const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
+    const mockMessage = {
+        author: { id: "123", username: "test_user" },
+        guildId: "guild",
+        channelId: "channel123",
+        reply,
+    } as unknown as Message;
+    const ctx = new CommandContext(mockClient, undefined, mockMessage, args, "!", commandName);
+    ctx.defer = mock(() => Promise.resolve());
+    return { ctx, reply };
+}
+
 describe("top command", () => {
     beforeEach(() => {
         authorMode = null;
@@ -150,17 +164,7 @@ describe("top command", () => {
     });
 
     test("runs with mocked osu data and returns paginated embeds", async () => {
-        const mockClient = { rest: {} } as unknown as Client;
-        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
-        const mockMessage = {
-            author: { id: "123", username: "test_user" },
-            guildId: "guild",
-            channelId: "channel123",
-            reply,
-        } as unknown as Message;
-
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk"], "!", "top");
-        ctx.defer = mock(() => Promise.resolve());
+        const { ctx, reply } = createMessageContext(["mrekk"]);
         getFetchedPlayReplyMock.mockClear();
 
         await run(ctx);
@@ -176,17 +180,7 @@ describe("top command", () => {
 
     test("uses saved mode for neutral prefix aliases", async () => {
         authorMode = Mode.MANIA;
-        const mockClient = { rest: {} } as unknown as Client;
-        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
-        const mockMessage = {
-            author: { id: "123", username: "test_user" },
-            guildId: "guild",
-            channelId: "channel123",
-            reply,
-        } as unknown as Message;
-
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk"], "!", "top");
-        ctx.defer = mock(() => Promise.resolve());
+        const { ctx } = createMessageContext(["mrekk"]);
 
         await run(ctx);
 
@@ -196,17 +190,7 @@ describe("top command", () => {
 
     test("mode-specific prefix aliases override saved mode", async () => {
         authorMode = Mode.MANIA;
-        const mockClient = { rest: {} } as unknown as Client;
-        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
-        const mockMessage = {
-            author: { id: "123", username: "test_user" },
-            guildId: "guild",
-            channelId: "channel123",
-            reply,
-        } as unknown as Message;
-
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk"], "!", "topt");
-        ctx.defer = mock(() => Promise.resolve());
+        const { ctx } = createMessageContext(["mrekk"], "topt");
 
         await run(ctx);
 
@@ -215,19 +199,9 @@ describe("top command", () => {
     });
 
     test("passes prefix title filters to the plays builder", async () => {
-        const mockClient = { rest: {} } as unknown as Client;
-        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
-        const mockMessage = {
-            author: { id: "123", username: "test_user" },
-            guildId: "guild",
-            channelId: "channel123",
-            reply,
-        } as unknown as Message;
-
         getFetchedPlayReplyMock.mockClear();
 
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk", "filter=\"Yami", "no", "Uta\""], "!", "top");
-        ctx.defer = mock(() => Promise.resolve());
+        const { ctx } = createMessageContext(["mrekk", "filter=\"Yami", "no", "Uta\""]);
 
         await run(ctx);
 
@@ -247,19 +221,9 @@ describe("top command", () => {
     });
 
     test("rejects invalid prefix page flags before calling the builder", async () => {
-        const mockClient = { rest: {} } as unknown as Client;
-        const reply = mock((_options: string | ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
-        const mockMessage = {
-            author: { id: "123", username: "test_user" },
-            guildId: "guild",
-            channelId: "channel123",
-            reply,
-        } as unknown as Message;
-
         getFetchedPlayReplyMock.mockClear();
 
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk", "p=abc"], "!", "top");
-        ctx.defer = mock(() => Promise.resolve());
+        const { ctx, reply } = createMessageContext(["mrekk", "p=abc"]);
 
         await run(ctx);
 
@@ -276,17 +240,7 @@ describe("top command", () => {
     });
 
     test("returns a generic not found embed for a missing user", async () => {
-        const mockClient = { rest: {} } as unknown as Client;
-        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
-        const mockMessage = {
-            author: { id: "123", username: "test_user" },
-            guildId: "guild",
-            channelId: "channel123",
-            reply,
-        } as unknown as Message;
-
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["missing"], "!", "top");
-        ctx.defer = mock(() => Promise.resolve());
+        const { ctx, reply } = createMessageContext(["missing"]);
 
         await run(ctx);
 
@@ -297,16 +251,7 @@ describe("top command", () => {
     });
 
     test("keeps the empty top-play message direct and playful", async () => {
-        const mockClient = { rest: {} } as unknown as Client;
-        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
-        const mockMessage = {
-            author: { id: "123", username: "test_user" },
-            guildId: "guild",
-            channelId: "channel123",
-            reply,
-        } as unknown as Message;
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk"], "!", "top");
-        ctx.defer = mock(() => Promise.resolve());
+        const { ctx } = createMessageContext(["mrekk"]);
 
         await run(ctx);
 

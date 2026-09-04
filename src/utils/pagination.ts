@@ -35,19 +35,18 @@ function getButtonConfig(
     type: PaginationType,
     currentValue: number,
     totalValues: number,
-): { customIds: Array<string>; labels: Array<string>; styles: Array<ButtonStyle> } {
+): { customIds: Array<string>; labels: Array<string> } {
     const suffix = type === PaginationType.PAGE ? "page" : "index";
     return {
         customIds: [`min-${suffix}`, `decrement-${suffix}`, `wildcard-${suffix}`, `increment-${suffix}`, `max-${suffix}`],
         labels: ["First", "Previous", `${currentValue + 1} / ${totalValues}`, "Next", "Last"],
-        styles: [ButtonStyle.Secondary, ButtonStyle.Secondary, ButtonStyle.Primary, ButtonStyle.Secondary, ButtonStyle.Secondary],
     };
 }
 
 export function createActionRow(config: PaginationConfig): Array<Message.Component.Structure> {
     const { type, totalItems, currentValue, itemsPerPage = ITEMS_PER_PAGE } = config;
     const totalValues = getTotalValues(totalItems, type, itemsPerPage);
-    const { customIds, labels, styles } = getButtonConfig(type, currentValue, totalValues);
+    const { customIds, labels } = getButtonConfig(type, currentValue, totalValues);
     const disabledStates = [
         currentValue === 0,
         currentValue === 0,
@@ -61,7 +60,7 @@ export function createActionRow(config: PaginationConfig): Array<Message.Compone
             type: ComponentType.ActionRow,
             components: customIds.map((customId, index) => ({
                 type: ComponentType.Button,
-                style: styles[index],
+                style: customId.startsWith("wildcard-") ? ButtonStyle.Primary : ButtonStyle.Secondary,
                 custom_id: customId,
                 label: labels[index],
                 disabled: disabledStates[index],
@@ -217,6 +216,8 @@ export function getPaginationType(options: EmbedBuilderOptions): PaginationType 
 
 export function createPaginationActionRow(builderOptions: EmbedBuilderOptions): Array<Message.Component.Structure> {
     const totalItems = getTotalItems(builderOptions);
+    if (totalItems === 0) return [];
+
     const paginationType = getPaginationType(builderOptions);
     const currentValue = getCurrentValue(builderOptions, paginationType);
 

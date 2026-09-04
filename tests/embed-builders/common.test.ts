@@ -37,31 +37,25 @@ describe("common embed builders", () => {
         });
     });
 
-    test("styles error responses consistently", () => {
+    test("styles status embeds consistently", () => {
         expect(simpleErrorEmbed("Nope")).toMatchObject({
             title: "Something went wrong",
             description: "Nope",
             color: EMBED_COLORS.error,
         });
-    });
 
-    test("styles informational responses consistently", () => {
         expect(simpleInfoEmbed("Look here", "Info")).toMatchObject({
             title: "Info",
             description: "Look here",
             color: EMBED_COLORS.brand,
         });
-    });
 
-    test("styles successful responses consistently", () => {
         expect(simpleSuccessEmbed("Done")).toMatchObject({
             title: "All set!",
             description: "Done",
             color: EMBED_COLORS.success,
         });
-    });
 
-    test("styles warning responses consistently", () => {
         expect(simpleWarningEmbed("Careful")).toMatchObject({
             title: "Heads up!",
             description: "Careful",

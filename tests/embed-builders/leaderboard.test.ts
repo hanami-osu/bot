@@ -6,7 +6,7 @@ mock.module("@utils/database", () => ({
 }));
 
 mock.module("@utils/osu", () => ({
-    downloadBeatmap: mock(() => Promise.resolve({ contents: "osu file format v14\n[HitObjects]\n" })),
+    downloadBeatmap: mock(() => Promise.resolve({ contents: "" })),
 }));
 
 mock.module("@utils/formatter", () => ({

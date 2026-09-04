@@ -5,12 +5,8 @@ import { run as runVote } from "../../../src/commands/general/vote";
 import { CommandContext } from "../../../src/utils/command-context";
 
 function createMessageContext(): { ctx: CommandContext; reply: ReturnType<typeof mock> } {
-    const reply = mock(() => Promise.resolve({ edit: mock(() => Promise.resolve()) }));
-    const message = {
-        author: { id: "user-1", username: "tester" },
-        channelId: "channel-1",
-        reply,
-    } as any;
+    const reply = mock(() => Promise.resolve());
+    const message = { reply } as any;
 
     return { ctx: new CommandContext({} as any, undefined, message), reply };
 }

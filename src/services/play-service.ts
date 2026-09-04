@@ -5,7 +5,7 @@ import { simpleInfoEmbed, userNotFoundEmbed } from "../embed-builders/common";
 import { playBuilder } from "../embed-builders/plays";
 import { getFormattedProfile, getFormattedScore } from "@utils/formatter";
 import { saveScoreDatas } from "@utils/osu";
-import { createPaginationActionRow, getTotalItems, ITEMS_PER_PAGE } from "@utils/pagination";
+import { createPaginationActionRow, ITEMS_PER_PAGE } from "@utils/pagination";
 import { filterPlays } from "@utils/play-filters";
 import { safeParse } from "@utils/safe-parse";
 import { getUserScores, USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
@@ -110,7 +110,7 @@ export async function buildPlayPaginationMessageOptions(options: PlayPaginationO
     const builderOptions = await getPlayBuilderOptions(options);
     return {
         embeds: await playBuilder(builderOptions),
-        components: getTotalItems(options) > 0 ? createPaginationActionRow(options) : [],
+        components: createPaginationActionRow(options),
     };
 }
 

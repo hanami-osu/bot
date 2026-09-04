@@ -81,29 +81,27 @@ mock.module("@utils/osu", () => ({
 
 const { run } = await import("../../../src/commands/osu/simulate");
 
+function createMessageContext(args: Array<string>) {
+    const mockClient = { rest: {} } as unknown as Client;
+    const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
+    const mockMessage = {
+        author: { id: "123", username: "test_user" },
+        guildId: "guild",
+        channelId: "channel123",
+        reply,
+    } as unknown as Message;
+    const ctx = new CommandContext(mockClient, undefined, mockMessage, args, "!", "simulate");
+    ctx.defer = mock(() => Promise.resolve());
+    return { ctx, reply };
+}
+
 describe("simulate command", () => {
     beforeEach(() => {
         inferredBeatmapId = 72727;
     });
 
     test("passes validated prefix inputs through the builder contract", async () => {
-        const mockClient = { rest: {} } as unknown as Client;
-        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
-        const mockMessage = {
-            author: { id: "123", username: "test_user" },
-            guildId: "guild",
-            channelId: "channel123",
-            reply,
-        } as unknown as Message;
-        const ctx = new CommandContext(
-            mockClient,
-            undefined,
-            mockMessage,
-            ["https://osu.ppy.sh/b/72727", "+HDHR", "combo=1234", "acc=98.5"],
-            "!",
-            "simulate",
-        );
-        ctx.defer = mock(() => Promise.resolve());
+        const { ctx } = createMessageContext(["https://osu.ppy.sh/b/72727", "+HDHR", "combo=1234", "acc=98.5"]);
 
         await run(ctx);
 
@@ -117,16 +115,7 @@ describe("simulate command", () => {
     });
 
     test("returns a validation error for invalid numeric input", async () => {
-        const mockClient = { rest: {} } as unknown as Client;
-        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
-        const mockMessage = {
-            author: { id: "123", username: "test_user" },
-            guildId: "guild",
-            channelId: "channel123",
-            reply,
-        } as unknown as Message;
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["combo=1.5"], "!", "simulate");
-        ctx.defer = mock(() => Promise.resolve());
+        const { ctx, reply } = createMessageContext(["combo=1.5"]);
 
         await run(ctx);
 
@@ -141,16 +130,7 @@ describe("simulate command", () => {
 
     test("explains when no beatmap can be inferred", async () => {
         inferredBeatmapId = null;
-        const mockClient = { rest: {} } as unknown as Client;
-        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
-        const mockMessage = {
-            author: { id: "123", username: "test_user" },
-            guildId: "guild",
-            channelId: "channel123",
-            reply,
-        } as unknown as Message;
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, [], "!", "simulate");
-        ctx.defer = mock(() => Promise.resolve());
+        const { ctx, reply } = createMessageContext([]);
 
         await run(ctx);
 
