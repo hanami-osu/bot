@@ -2,6 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { Mode } from "../../src/types/osu";
 import type { PlaysBuilderOptions } from "../../src/types/builders";
 import type { ProfileInfo, ScoresInfo } from "../../src/types/osu";
+import { EMBED_COLORS } from "../../src/embed-builders/common";
 
 const { playBuilder } = await import("../../src/embed-builders/plays");
 
@@ -92,7 +93,8 @@ describe("plays embed builder", () => {
             }),
         );
 
-        expect(embeds[0]?.title).toBe("Uh oh! :x:");
+        expect(embeds[0]?.title).toBe("Nothing to show");
+        expect(embeds[0]?.color).toBe(EMBED_COLORS.brand);
         expect(embeds[0]?.description).toBe("No plays matched those filters for `yorunoken` in `osu`.");
     });
 
@@ -106,8 +108,8 @@ describe("plays embed builder", () => {
         );
 
         expect(embeds[0]?.title).toBe("Artist - Yami no Uta");
-        expect(embeds[0]?.footer?.text).toContain("Play 2 of 3");
-        expect(embeds[0]?.footer?.text).toContain("Try 2");
+        expect(embeds[0]?.footer?.text).toContain("• Play 2 of 3");
+        expect(embeds[0]?.footer?.text).toContain("• Try 2");
     });
 
     test("returns an out-of-range embed without formatted play data", async () => {
@@ -119,7 +121,8 @@ describe("plays embed builder", () => {
             }),
         );
 
-        expect(embeds[0]?.title).toBe("Uh oh! :x:");
+        expect(embeds[0]?.title).toBe("Check your input");
+        expect(embeds[0]?.color).toBe(EMBED_COLORS.error);
         expect(embeds[0]?.description).toBe("That play index is out of range for `yorunoken`.");
     });
 });

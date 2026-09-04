@@ -50,7 +50,7 @@ export async function run(ctx: CommandContext) {
         validatePage(parsedArgs.page);
     } catch (error) {
         if (error instanceof CommandValidationError) {
-            await ctx.editReply(error.message);
+            await ctx.respondError(error.message, "Check your input");
             return;
         }
         throw error;
@@ -59,7 +59,7 @@ export async function run(ctx: CommandContext) {
     const { user, mods, titleFilter } = parsedArgs;
 
     if (user.type === UserType.FAIL) {
-        await ctx.editReply(user.failMessage);
+        await ctx.respondError(user.failMessage, "Account not linked");
         return;
     }
 
@@ -81,7 +81,7 @@ export async function run(ctx: CommandContext) {
         mods,
         titleFilter,
         emptyMessage: username =>
-            `It seems like \`${username}\` hasn't had any recent plays in \`${user.mode}\` in the last 24 hours!`,
+            `No \`${user.mode}\` plays found for \`${username}\` in the last 24 hours. A quiet day :3`,
     });
     if (embedOptions) {
         await ctx.sendWithPagination(reply, embedOptions);

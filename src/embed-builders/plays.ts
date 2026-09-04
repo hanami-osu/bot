@@ -6,6 +6,7 @@ import type { User } from "@type/database";
 import type { Mode, ProfileInfo, ScoresInfo } from "@type/osu";
 import type { PlaysBuilderOptions } from "@type/builders";
 import type { Embed } from "lilybird";
+import { simpleErrorEmbed, simpleInfoEmbed } from "./common";
 
 export async function playBuilder({
     plays,
@@ -23,33 +24,15 @@ export async function playBuilder({
     }
 
     if (totalPlays === 0) {
-        return [
-            {
-                type: EmbedType.Rich,
-                title: "Uh oh! :x:",
-                description: `No plays matched those filters for \`${profile.username}\` in \`${mode}\`.`,
-            },
-        ] satisfies Array<Embed.Structure>;
+        return [simpleInfoEmbed(`No plays matched those filters for \`${profile.username}\` in \`${mode}\`.`, "Nothing to show")];
     }
 
     if (typeof index !== "undefined" && (index < 0 || index >= totalPlays)) {
-        return [
-            {
-                type: EmbedType.Rich,
-                title: "Uh oh! :x:",
-                description: `That play index is out of range for \`${profile.username}\`.`,
-            },
-        ] satisfies Array<Embed.Structure>;
+        return [simpleErrorEmbed(`That play index is out of range for \`${profile.username}\`.`, "Check your input")];
     }
 
     if (typeof page !== "undefined" && (page < 0 || page * ITEMS_PER_PAGE >= totalPlays)) {
-        return [
-            {
-                type: EmbedType.Rich,
-                title: "Uh oh! :x:",
-                description: `That page is out of range for \`${profile.username}\`.`,
-            },
-        ] satisfies Array<Embed.Structure>;
+        return [simpleErrorEmbed(`That page is out of range for \`${profile.username}\`.`, "Check your input")];
     }
 
     return typeof page !== "undefined"
@@ -119,7 +102,7 @@ async function getSinglePlay({
         const title = play.songNameFormatted;
         const url = play.mapLink;
         const footer: Embed.FooterStructure = {
-            text: `${play.mapStatus} mapset by ${play.mapAuthor}${isMaximized && !isMultiple ? ` ${SPACE} - Play ${index + 1} of ${totalPlays} ${SPACE} - Try ${play.retries}` : ""}`,
+            text: `${play.mapStatus} mapset by ${play.mapAuthor}${isMaximized && !isMultiple ? ` ${SPACE} • Play ${index + 1} of ${totalPlays} ${SPACE} • Try ${play.retries}` : ""}`,
         };
 
         return [{ type: EmbedType.Rich, author, fields, image, thumbnail, footer, url, title }];
@@ -300,7 +283,7 @@ async function getMultiplePlays({
             },
             thumbnail: { url: profile.avatarUrl },
             description,
-            footer: { text: `On osu! Bancho | Page ${page + 1} of ${Math.ceil(totalPlays / ITEMS_PER_PAGE)}` },
+            footer: { text: `On osu! Bancho • Page ${page + 1} of ${Math.ceil(totalPlays / ITEMS_PER_PAGE)}` },
         },
     ];
 }

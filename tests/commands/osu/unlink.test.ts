@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { CommandContext } from "../../../src/utils/command-context";
 import { Tables, type User } from "../../../src/types/database";
+import { EMBED_COLORS } from "../../../src/embed-builders/common";
 
 const linkedUser: User = {
     id: "123",
@@ -45,7 +46,15 @@ describe("unlink command", () => {
         expect(mockInteraction.deferReply).toHaveBeenCalledWith(true);
         expect(insertDataMock).toHaveBeenCalledWith({ table: Tables.USER, id: "123", data: [{ key: "banchoId", value: null }] });
         expect(removeEntryMock).not.toHaveBeenCalled();
-        expect(mockInteraction.editReply).toHaveBeenCalledWith(expect.stringContaining("Sad to see you go"));
+        expect(mockInteraction.editReply).toHaveBeenCalledWith({
+            embeds: [
+                expect.objectContaining({
+                    title: "Account unlinked",
+                    color: EMBED_COLORS.success,
+                    description: expect.stringContaining("Sad to see you go"),
+                }),
+            ],
+        });
     });
 
     test("does not update storage when the user is not linked", async () => {
@@ -64,6 +73,14 @@ describe("unlink command", () => {
 
         expect(insertDataMock).not.toHaveBeenCalled();
         expect(removeEntryMock).not.toHaveBeenCalled();
-        expect(mockInteraction.editReply).toHaveBeenCalledWith(expect.stringContaining("You are not linked"));
+        expect(mockInteraction.editReply).toHaveBeenCalledWith({
+            embeds: [
+                expect.objectContaining({
+                    title: "Nothing to unlink",
+                    color: EMBED_COLORS.warning,
+                    description: expect.stringContaining("You aren't linked"),
+                }),
+            ],
+        });
     });
 });

@@ -6,6 +6,7 @@ import { Mode } from "../../../src/types/osu";
 import type { Client } from "lilybird";
 import type { ApplicationCommandData, Interaction, Message } from "@lilybird/transformers";
 import type { CommandData } from "../../../src/types/commands";
+import { EMBED_COLORS } from "../../../src/embed-builders/common";
 
 interface ReplyPayload {
     embeds: Array<{ title?: string; description?: string }>;
@@ -53,7 +54,7 @@ const getFetchedPlayReplyMock = mock(({ user, titleFilter }: { user: { banchoId:
         user.banchoId === "missing"
             ? {
                     reply: {
-                        embeds: [{ title: "Uh oh! :x:", description: "It seems like `missing` doesn't exist :(" }],
+                        embeds: [{ title: "Nothing found", description: "I couldn't find an osu! user matching **`missing`**." }],
                     },
                 }
             : {
@@ -263,7 +264,15 @@ describe("top command", () => {
         await run(ctx);
 
         expect(getFetchedPlayReplyMock).not.toHaveBeenCalled();
-        expect(reply).toHaveBeenCalledWith("page must be a whole number.");
+        expect(reply).toHaveBeenCalledWith({
+            embeds: [
+                expect.objectContaining({
+                    title: "Check your input",
+                    description: "page must be a whole number.",
+                    color: EMBED_COLORS.error,
+                }),
+            ],
+        });
     });
 
     test("returns a generic not found embed for a missing user", async () => {
@@ -283,7 +292,27 @@ describe("top command", () => {
 
         const replyCall = reply.mock.calls[0]?.[0];
         if (!replyCall) throw new Error("Expected reply payload");
-        expect(replyCall.embeds[0].title).toBe("Uh oh! :x:");
-        expect(replyCall.embeds[0].description).toContain("doesn't exist");
+        expect(replyCall.embeds[0].title).toBe("Nothing found");
+        expect(replyCall.embeds[0].description).toContain("couldn't find");
+    });
+
+    test("keeps the empty top-play message direct and playful", async () => {
+        const mockClient = { rest: {} } as unknown as Client;
+        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
+        const mockMessage = {
+            author: { id: "123", username: "test_user" },
+            guildId: "guild",
+            channelId: "channel123",
+            reply,
+        } as unknown as Message;
+        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk"], "!", "top");
+        ctx.defer = mock(() => Promise.resolve());
+
+        await run(ctx);
+
+        const [serviceOptions] = getFetchedPlayReplyMock.mock.calls[0] as Array<{
+            emptyMessage?: (username: string) => string;
+        }>;
+        expect(serviceOptions.emptyMessage?.("yorunoken")).toBe("No top plays found for `yorunoken`. Time to set one :3");
     });
 });

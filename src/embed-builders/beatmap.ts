@@ -5,20 +5,14 @@ import { getEntry } from "@utils/database";
 import { rulesets } from "@utils/constants";
 import { Mode } from "@type/osu";
 import { Tables } from "@type/database";
-import { EmbedType } from "lilybird";
 import type { BeatmapBuilderOptions } from "@type/builders";
 import type { Embed } from "lilybird";
+import { beatmapNotFoundEmbed, simpleErrorEmbed } from "./common";
 
 export async function beatmapBuilder({ beatmapId, mods }: BeatmapBuilderOptions): Promise<Array<Embed.Structure>> {
     const beatmapRequest = await safeParse(v2.beatmaps.details({ type: "difficulty", id: Number(beatmapId) }));
     if (!beatmapRequest.success) {
-        return [
-            {
-                type: EmbedType.Rich,
-                title: "Uh oh! :x:",
-                description: "It seems like this beatmap couldn't be found :(",
-            },
-        ];
+        return [beatmapNotFoundEmbed()];
     }
     const map = beatmapRequest.data;
 
@@ -43,12 +37,7 @@ export async function beatmapBuilder({ beatmapId, mods }: BeatmapBuilderOptions)
 
     const [a98, a97, a95] = performances;
     if (a98 === null || a97 === null || a95 === null) {
-        return [
-            {
-                title: "ERROR",
-                description: "Oops, sorry about that, it seems there was an error. Maybe try again?\n\nPERFORMANCES IS NULL",
-            },
-        ];
+        return [simpleErrorEmbed("I couldn't calculate performance for that beatmap. Please try again in a moment.")];
     }
 
     const drainLengthInSeconds = map.total_length / a98.difficultyAttrs.clockRate;

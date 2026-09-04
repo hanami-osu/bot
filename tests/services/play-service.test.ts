@@ -1,4 +1,5 @@
 import { beforeEach, describe, expect, mock, test } from "bun:test";
+import { EMBED_COLORS } from "../../src/embed-builders/common";
 import { EmbedBuilderType, type ModStructure, type PlayPaginationOptions } from "../../src/types/builders";
 import { Mode, PlayType } from "../../src/types/osu";
 import type { Score, UserExtended } from "../../src/types/osu";
@@ -139,8 +140,11 @@ describe("play service", () => {
         });
 
         expect(result.embedOptions).toBeUndefined();
-        expect(result.reply.embeds?.[0]?.title).toBe("Uh oh! :x:");
-        expect(result.reply.embeds?.[0]?.description).toContain("doesn't exist");
+        expect(result.reply.embeds?.[0]).toMatchObject({
+            title: "Nothing found",
+            description: "I couldn't find an osu! user matching **`missing`**.",
+            color: EMBED_COLORS.error,
+        });
     });
 
     test("returns the provided empty message when no scores are fetched", async () => {
@@ -152,9 +156,11 @@ describe("play service", () => {
         });
 
         expect(result.embedOptions).toBeUndefined();
-        expect(result.reply.embeds?.[0]?.description).toBe(
-            "It seems like `peppy` doesn't have any plays, maybe they should go set some :)",
-        );
+        expect(result.reply.embeds?.[0]).toMatchObject({
+            title: "Nothing to show",
+            description: "It seems like `peppy` doesn't have any plays, maybe they should go set some :)",
+            color: EMBED_COLORS.brand,
+        });
     });
 
     test("fetches recent scores with the expected mode, limit, and include-fails flag", async () => {
@@ -217,6 +223,27 @@ describe("play service", () => {
         expect(firstFormatCall.scores.map(score => score.id)).toEqual([2, 1]);
         expect(firstFormatCall.index).toBe(0);
         expect(secondFormatCall.index).toBe(1);
+    });
+
+    test("omits pagination controls when filters leave nothing to display", async () => {
+        const result = await buildPlayPaginationMessageOptions({
+            type: EmbedBuilderType.PLAYS,
+            initiatorId: "123",
+            user: { id: 1, username: "peppy", statistics: {}, country: {}, cover: {} } as never,
+            mode: Mode.OSU,
+            authorDb: null,
+            plays: [play(1, "Other Song", ["HR"], "2024-01-01T00:00:00Z")],
+            isMultiple: true,
+            page: 0,
+            isPage: true,
+            titleFilter: "missing",
+        } satisfies PlayPaginationOptions);
+
+        expect(result.embeds[0]).toMatchObject({
+            title: "Nothing to show",
+            color: EMBED_COLORS.brand,
+        });
+        expect(result.components).toEqual([]);
     });
 
     test("formats the page view when both page and index are present", async () => {

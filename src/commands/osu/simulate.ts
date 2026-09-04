@@ -1,4 +1,5 @@
-import { simpleErrorEmbed, simulateBuilder } from "@builders";
+import { missingBeatmapEmbed } from "../../embed-builders/common";
+import { simulateBuilder } from "../../embed-builders/simulate";
 import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
 import { CommandData } from "@type/commands";
@@ -23,9 +24,7 @@ export async function run(ctx: CommandContext) {
         parsedArgs = await parseCommandArgs(ctx, Mode.OSU);
     } catch (error) {
         if (error instanceof CommandValidationError) {
-            await ctx.editReply({
-                embeds: [simpleErrorEmbed(error.message, "Invalid simulation input")],
-            });
+            await ctx.respondError(error.message, "Check your input");
             return;
         }
         throw error;
@@ -36,7 +35,7 @@ export async function run(ctx: CommandContext) {
     const beatmapId = user.beatmapId ?? (await getBeatmapIdFromContext(ctx.beatmapLookupContext));
     if (!beatmapId) {
         await ctx.editReply({
-            embeds: [simpleErrorEmbed("It seems like the beatmap ID couldn't be found :(\n")],
+            embeds: [missingBeatmapEmbed()],
         });
         return;
     }
@@ -65,9 +64,7 @@ export async function run(ctx: CommandContext) {
                     };
     } catch (error) {
         if (error instanceof CommandValidationError) {
-            await ctx.editReply({
-                embeds: [simpleErrorEmbed(error.message, "Invalid simulation input")],
-            });
+            await ctx.respondError(error.message, "Check your input");
             return;
         }
         throw error;

@@ -8,6 +8,7 @@ import { EmbedType } from "lilybird";
 import type { LeaderboardBuilderOptions } from "@type/builders";
 import type { Embed } from "lilybird";
 import type { Beatmap, LeaderboardScore, Mode, ScoresInfo } from "@type/osu";
+import { simpleInfoEmbed } from "./common";
 
 export async function leaderboardBuilder({
     scores,
@@ -16,13 +17,7 @@ export async function leaderboardBuilder({
     page = 0,
 }: LeaderboardBuilderOptions): Promise<Array<Embed.Structure>> {
     if (scores.length === 0) {
-        return [
-            {
-                type: EmbedType.Rich,
-                title: "Uh oh! :x:",
-                description: "No scores yet. Maybe you should try setting some? :)",
-            },
-        ] satisfies Array<Embed.Structure>;
+        return [simpleInfoEmbed("No scores here yet. Maybe you'll be first :3", "Nothing to show")];
     }
 
     return getPlays(scores, beatmap, authorDb, page);
@@ -66,7 +61,7 @@ async function getPlays(
         thumbnail: { url: `https://assets.ppy.sh/beatmaps/${beatmapset.id}/covers/list.jpg` },
         description,
         footer: {
-            text: `${beatmap.status.charAt(0).toUpperCase()}${beatmap.status.slice(1)} beatmapset by ${beatmap.beatmapset.creator} ${SPACE} - ${SPACE} Page ${page + 1} of ${Math.ceil(plays.length / ITEMS_PER_PAGE)}`,
+            text: `${beatmap.status.charAt(0).toUpperCase()}${beatmap.status.slice(1)} beatmapset by ${beatmap.beatmapset.creator} ${SPACE} • Page ${page + 1} of ${Math.ceil(plays.length / ITEMS_PER_PAGE)}`,
         },
     };
 

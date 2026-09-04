@@ -1,11 +1,11 @@
 import { EmbedBuilderType, type ModStructure, type PlayPaginationOptions, type PlaysBuilderOptions } from "@type/builders";
 import { type SuccessUser } from "@type/command-args";
 import { type Mode, PlayType, type Score, type ScoresInfo } from "@type/osu";
-import { simpleErrorEmbed, userNotFoundEmbed } from "../embed-builders/common";
+import { simpleInfoEmbed, userNotFoundEmbed } from "../embed-builders/common";
 import { playBuilder } from "../embed-builders/plays";
 import { getFormattedProfile, getFormattedScore } from "@utils/formatter";
 import { saveScoreDatas } from "@utils/osu";
-import { createPaginationActionRow, ITEMS_PER_PAGE } from "@utils/pagination";
+import { createPaginationActionRow, getTotalItems, ITEMS_PER_PAGE } from "@utils/pagination";
 import { filterPlays } from "@utils/play-filters";
 import { safeParse } from "@utils/safe-parse";
 import { getUserScores, USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
@@ -79,7 +79,7 @@ export async function getFetchedPlayReply({
     if (plays.length === 0) {
         return {
             reply: {
-                embeds: [simpleErrorEmbed(emptyMessage(osuUser.username))],
+                embeds: [simpleInfoEmbed(emptyMessage(osuUser.username), "Nothing to show")],
             },
         };
     }
@@ -110,7 +110,7 @@ export async function buildPlayPaginationMessageOptions(options: PlayPaginationO
     const builderOptions = await getPlayBuilderOptions(options);
     return {
         embeds: await playBuilder(builderOptions),
-        components: createPaginationActionRow(options),
+        components: getTotalItems(options) > 0 ? createPaginationActionRow(options) : [],
     };
 }
 

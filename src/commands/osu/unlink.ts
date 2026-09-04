@@ -2,6 +2,7 @@ import { getEntry, insertData } from "@utils/database";
 import { Tables } from "@type/database";
 import type { CommandData } from "@type/commands";
 import { getSlashCommandMention } from "../../state/command-registry";
+import { simpleSuccessEmbed, simpleWarningEmbed } from "../../embed-builders/common";
 
 import { CommandContext } from "@utils/command-context";
 
@@ -13,12 +14,26 @@ export async function run(ctx: CommandContext): Promise<void> {
     const userId = ctx.user.id;
     const user = await getEntry(Tables.USER, userId);
     if (!user?.banchoId) {
-        await ctx.editReply(`You are not linked to the bot! You can link your account by using ${linkCommand} to visit Hanami Web.`);
+        await ctx.editReply({
+            embeds: [
+                simpleWarningEmbed(
+                    `You aren't linked to Hanami yet. Use ${linkCommand} to connect your osu! account.`,
+                    "Nothing to unlink",
+                ),
+            ],
+        });
         return;
     }
 
     await insertData({ table: Tables.USER, id: userId, data: [{ key: "banchoId", value: null }] });
-    await ctx.editReply(`Sad to see you go :(\nYou can always re-link yourself by using ${linkCommand} to visit Hanami Web!`);
+    await ctx.editReply({
+        embeds: [
+            simpleSuccessEmbed(
+                `Sad to see you go :(\nYou can reconnect anytime with ${linkCommand}.`,
+                "Account unlinked",
+            ),
+        ],
+    });
 }
 
 export const data = {
