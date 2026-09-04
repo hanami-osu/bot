@@ -61,7 +61,7 @@ async function getPlays(
         thumbnail: { url: `https://assets.ppy.sh/beatmaps/${beatmapset.id}/covers/list.jpg` },
         description,
         footer: {
-            text: `${beatmap.status.charAt(0).toUpperCase()}${beatmap.status.slice(1)} beatmapset by ${beatmap.beatmapset.creator} ${SPACE} • Page ${page + 1} of ${Math.ceil(plays.length / ITEMS_PER_PAGE)}`,
+            text: `${beatmap.status.charAt(0).toUpperCase()}${beatmap.status.slice(1)} beatmapset by ${beatmap.beatmapset.creator}`,
         },
     };
 

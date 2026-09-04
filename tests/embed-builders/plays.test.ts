@@ -3,6 +3,7 @@ import { Mode } from "../../src/types/osu";
 import type { PlaysBuilderOptions } from "../../src/types/builders";
 import type { ProfileInfo, ScoresInfo } from "../../src/types/osu";
 import { EMBED_COLORS } from "../../src/embed-builders/common";
+import { EmbedScoreType, type User } from "../../src/types/database";
 
 const { playBuilder } = await import("../../src/embed-builders/plays");
 
@@ -67,8 +68,19 @@ function builderOptions(options: Partial<PlaysBuilderOptions>): PlaysBuilderOpti
     };
 }
 
+function userPreferences(embedType: EmbedScoreType): User {
+    return {
+        id: "discord-user",
+        banchoId: "1",
+        score_embeds: 1,
+        embed_type: embedType,
+        mode: Mode.OSU,
+        score_data: 0,
+    };
+}
+
 describe("plays embed builder", () => {
-    test("uses total fetched plays when calculating page count", async () => {
+    test("omits a footer when the Hanami page counter was its only content", async () => {
         const embeds = await playBuilder(
             builderOptions({
                 isMultiple: true,
@@ -78,7 +90,7 @@ describe("plays embed builder", () => {
             }),
         );
 
-        expect(embeds[0]?.footer?.text).toBe("Page 1 of 40");
+        expect(embeds[0]?.footer).toBeUndefined();
         expect(embeds[0]?.description).toContain("#1");
         expect(embeds[0]?.description).toContain("#5");
     });
@@ -108,8 +120,49 @@ describe("plays embed builder", () => {
         );
 
         expect(embeds[0]?.title).toBe("Artist - Yami no Uta");
-        expect(embeds[0]?.footer?.text).toContain("• Play 2 of 3");
-        expect(embeds[0]?.footer?.text).toContain("• Try 2");
+        expect(embeds[0]?.footer?.text).toBe("Ranked mapset by mapper \0 • Try 2");
+    });
+
+    test("keeps the original top rank without repeating the navigable total", async () => {
+        const embeds = await playBuilder(
+            builderOptions({
+                index: 1,
+                isMultiple: true,
+                plays: [score(7, "Yami no Uta")],
+                totalPlays: 3,
+            }),
+        );
+
+        expect(embeds[0]?.fields?.[0]?.name).toContain("Top **__#7__**");
+        expect(embeds[0]?.fields?.[0]?.name).not.toContain("of 3");
+    });
+
+    test("keeps only mode metadata in Bathbot paginated footers", async () => {
+        const embeds = await playBuilder(
+            builderOptions({
+                isMultiple: true,
+                page: 0,
+                plays: [score(1)],
+                totalPlays: 1,
+                authorDb: userPreferences(EmbedScoreType.Bathbot),
+            }),
+        );
+
+        expect(embeds[0]?.footer?.text).toBe("Mode: osu");
+    });
+
+    test("keeps only Bancho attribution in owo paginated footers", async () => {
+        const embeds = await playBuilder(
+            builderOptions({
+                isMultiple: true,
+                page: 0,
+                plays: [score(1)],
+                totalPlays: 1,
+                authorDb: userPreferences(EmbedScoreType.Owo),
+            }),
+        );
+
+        expect(embeds[0]?.footer?.text).toBe("On osu! Bancho");
     });
 
     test("returns an out-of-range embed without formatted play data", async () => {

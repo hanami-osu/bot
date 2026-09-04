@@ -41,7 +41,7 @@ describe("leaderboard embed builder", () => {
         });
     });
 
-    test("separates leaderboard footer details consistently", async () => {
+    test("keeps pagination position out of the leaderboard footer", async () => {
         const embeds = await leaderboardBuilder({
             scores: [{ id: 1 }],
             beatmap: {
@@ -55,6 +55,6 @@ describe("leaderboard embed builder", () => {
             page: 0,
         } as never);
 
-        expect(embeds[0]?.footer?.text).toContain("• Page 1 of 1");
+        expect(embeds[0]?.footer?.text).toBe("Ranked beatmapset by Mapper");
     });
 });

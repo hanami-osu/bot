@@ -36,24 +36,20 @@ export async function playBuilder({
     }
 
     return typeof page !== "undefined"
-        ? getMultiplePlays({ plays, page, mode, profile, authorDb, totalPlays })
-        : getSinglePlay({ index: index ?? 0, play: plays[0], profile, authorDb, isMultiple, totalPlays });
+        ? getMultiplePlays({ plays, mode, profile, authorDb })
+        : getSinglePlay({ play: plays[0], profile, authorDb, isMultiple });
 }
 
 async function getSinglePlay({
-    index,
     play,
     profile,
     authorDb,
     isMultiple,
-    totalPlays,
 }: {
     play: ScoresInfo;
     profile: ProfileInfo;
-    index: number;
     authorDb: User | null;
     isMultiple?: boolean;
-    totalPlays: number;
 }): Promise<Array<Embed.Structure>> {
     const isMaximized = (authorDb?.score_embeds ?? 1) === 1;
     const embedType = authorDb?.embed_type ?? EmbedScoreType.Hanami;
@@ -74,7 +70,7 @@ async function getSinglePlay({
 
         const fields = [
             {
-                name: `${play.rulesetEmote} ${play.difficultyName} **+${play.mods.join("")}** [${play.stars}] ${isMultiple ? `${SPACE} Top **__#${play.position}__** of ${totalPlays}` : ""}`,
+                name: `${play.rulesetEmote} ${play.difficultyName} **+${play.mods.join("")}** [${play.stars}] ${isMultiple ? `${SPACE} Top **__#${play.position}__**` : ""}`,
                 value: line1 + line2,
                 inline: false,
             },
@@ -102,7 +98,7 @@ async function getSinglePlay({
         const title = play.songNameFormatted;
         const url = play.mapLink;
         const footer: Embed.FooterStructure = {
-            text: `${play.mapStatus} mapset by ${play.mapAuthor}${isMaximized && !isMultiple ? ` ${SPACE} • Play ${index + 1} of ${totalPlays} ${SPACE} • Try ${play.retries}` : ""}`,
+            text: `${play.mapStatus} mapset by ${play.mapAuthor}${isMaximized && !isMultiple ? ` ${SPACE} • Try ${play.retries}` : ""}`,
         };
 
         return [{ type: EmbedType.Rich, author, fields, image, thumbnail, footer, url, title }];
@@ -197,18 +193,14 @@ async function getSinglePlay({
 
 async function getMultiplePlays({
     plays,
-    page,
     mode,
     profile,
     authorDb,
-    totalPlays,
 }: {
     plays: Array<ScoresInfo>;
-    page: number;
     mode: Mode;
     profile: ProfileInfo;
     authorDb: User | null;
-    totalPlays: number;
 }): Promise<Array<Embed.Structure>> {
     const embedType = authorDb?.embed_type ?? EmbedScoreType.Hanami;
 
@@ -232,7 +224,6 @@ async function getMultiplePlays({
                 },
                 thumbnail: { url: profile.avatarUrl },
                 description,
-                footer: { text: `Page ${page + 1} of ${Math.ceil(totalPlays / ITEMS_PER_PAGE)}` },
             },
         ];
     }
@@ -257,7 +248,7 @@ async function getMultiplePlays({
                 },
                 thumbnail: { url: profile.avatarUrl },
                 description,
-                footer: { text: `Page ${page + 1} of ${Math.ceil(totalPlays / ITEMS_PER_PAGE)} • Mode: ${mode}` },
+                footer: { text: `Mode: ${mode}` },
             },
         ];
     }
@@ -283,7 +274,7 @@ async function getMultiplePlays({
             },
             thumbnail: { url: profile.avatarUrl },
             description,
-            footer: { text: `On osu! Bancho • Page ${page + 1} of ${Math.ceil(totalPlays / ITEMS_PER_PAGE)}` },
+            footer: { text: "On osu! Bancho" },
         },
     ];
 }

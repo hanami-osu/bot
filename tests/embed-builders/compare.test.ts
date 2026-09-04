@@ -85,7 +85,7 @@ describe("compare embed builder", () => {
         const description = embeds[0]?.description ?? "";
 
         expect(description.indexOf("900.00pp")).toBeLessThan(description.indexOf("100.00pp"));
-        expect(embeds[0]?.footer?.text).toContain("• Page 1 of 1");
+        expect(embeds[0]?.footer?.text).toBe("Ranked beatmapset by Mapper");
     });
 
     test("uses an informational empty state when no scores match", async () => {
