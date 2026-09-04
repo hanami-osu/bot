@@ -1,4 +1,5 @@
 import { describe, expect, test } from "bun:test";
+import { ButtonStyle } from "lilybird";
 import {
     calculateNewValue,
     createActionRow,
@@ -169,11 +170,26 @@ describe("pagination", () => {
             expect(components[2].disabled).toBe(true);
         });
 
-        test("adds a jump button between previous and next", () => {
+        test("labels controls with their actions and current page", () => {
             const row = createActionRow({ type: PaginationType.PAGE, totalItems: 20, currentValue: 1 });
             const components = (row[0] as any).components;
+
+            expect(components.map((component: any) => component.label)).toEqual(["First", "Previous", "2 / 4", "Next", "Last"]);
             expect(components[2].custom_id).toBe("wildcard-page");
-            expect(components[2].label).toBe("...");
+        });
+
+        test("uses a primary jump control and secondary navigation controls", () => {
+            const row = createActionRow({ type: PaginationType.INDEX, totalItems: 8, currentValue: 4 });
+            const components = (row[0] as any).components;
+
+            expect(components.map((component: any) => component.style)).toEqual([
+                ButtonStyle.Secondary,
+                ButtonStyle.Secondary,
+                ButtonStyle.Primary,
+                ButtonStyle.Secondary,
+                ButtonStyle.Secondary,
+            ]);
+            expect(components[2].label).toBe("5 / 8");
         });
     });
 });
