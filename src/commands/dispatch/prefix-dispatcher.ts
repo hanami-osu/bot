@@ -1,4 +1,5 @@
 import { deprecatedEmbed } from "embed-builders/deprecated-prefix";
+import { simpleInfoEmbed, simpleWarningEmbed } from "../../embed-builders/common";
 import type { Message } from "@lilybird/transformers";
 import { DEFAULT_PREFIX, wysiEmoji } from "@utils/constants";
 import { CommandContext } from "@utils/command-context";
@@ -67,7 +68,12 @@ export async function dispatchPrefixCommand(message: Message): Promise<void> {
 
     if (!data.hasPrefixVariant) {
         await message.reply({
-            content: `The \`${data.name}\` command can only be used as a slash command. Try ${getSlashCommandMention(data.name)}.`,
+            embeds: [
+                simpleInfoEmbed(
+                    `The \`${data.name}\` command can only be used as a slash command. Try ${getSlashCommandMention(data.name)}.`,
+                    "Slash command only",
+                ),
+            ],
             allowed_mentions: { replied_user: false, parse: [], roles: [], users: [] },
         });
         return;
@@ -76,9 +82,17 @@ export async function dispatchPrefixCommand(message: Message): Promise<void> {
     const cooldownExpiry = getCooldownExpiry(data.name, author.id);
     if (cooldownExpiry && cooldownExpiry > Date.now()) {
         const remainingTime = cooldownExpiry - Date.now();
+        const remainingSeconds = Math.max(1, Math.ceil(remainingTime / 1000));
+        const unit = remainingSeconds === 1 ? "second" : "seconds";
         try {
             const sentMessage = await message.reply({
-                content: `Please wait \`${remainingTime}ms\` before executing this command again`,
+                embeds: [
+                    simpleWarningEmbed(
+                        `This command is still cooling down. Try again in **${remainingSeconds} ${unit}**.`,
+                        "Easy there :3",
+                    ),
+                ],
+                allowed_mentions: { replied_user: false, parse: [], roles: [], users: [] },
             });
             setTimeout(async () => {
                 try {

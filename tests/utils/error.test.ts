@@ -1,6 +1,7 @@
 import { expect, test, describe, mock, beforeEach, afterEach } from "bun:test";
 import { handleCommandError } from "../../src/utils/error";
 import { logger } from "../../src/utils/logger";
+import { EMBED_COLORS } from "../../src/embed-builders/common";
 
 // Mock logger
 mock.module("../../src/utils/logger", () => {
@@ -68,8 +69,12 @@ describe("handleCommandError", () => {
         // Verifies interaction reply
         expect(mockInteraction.reply).toHaveBeenCalled();
         const replyCall = mockInteraction.reply.mock.calls[0][0];
-        expect(replyCall.content).toContain("Something went wrong");
-        expect(replyCall.content).not.toContain("Test interaction error");
+        expect(replyCall.ephemeral).toBe(true);
+        expect(replyCall.embeds[0]).toMatchObject({
+            title: "Something went wrong",
+            color: EMBED_COLORS.error,
+        });
+        expect(replyCall.embeds[0].description).not.toContain("Test interaction error");
 
         // Verifies discord channel logging
         expect(mockClient.rest.createMessage).toHaveBeenCalled();
@@ -96,8 +101,13 @@ describe("handleCommandError", () => {
         });
 
         expect(commandContext.reply).toHaveBeenCalledWith({
-            content: "Something went wrong while running that command. The error has been logged, so please try again later.",
             ephemeral: true,
+            embeds: [
+                expect.objectContaining({
+                    title: "Something went wrong",
+                    color: EMBED_COLORS.error,
+                }),
+            ],
         });
         expect(mockInteraction.reply).not.toHaveBeenCalled();
         expect(mockClient.rest.createMessage).toHaveBeenCalled();
@@ -118,8 +128,11 @@ describe("handleCommandError", () => {
         // Verifies message reply
         expect(mockMessage.reply).toHaveBeenCalled();
         const replyCall = mockMessage.reply.mock.calls[0][0];
-        expect(replyCall.content).toContain("Something went wrong");
-        expect(replyCall.content).not.toContain("Test message error");
+        expect(replyCall.embeds[0]).toMatchObject({
+            title: "Something went wrong",
+            color: EMBED_COLORS.error,
+        });
+        expect(replyCall.embeds[0].description).not.toContain("Test message error");
 
         // Verifies discord channel logging
         expect(mockClient.rest.createMessage).toHaveBeenCalled();

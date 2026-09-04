@@ -7,6 +7,19 @@ export const EMBED_COLORS = {
     error: 0xed4245,
 } as const;
 
+interface EmbedReply {
+    embeds?: Array<Embed.Structure>;
+}
+
+export function applyDefaultEmbedColor<T extends EmbedReply>(reply: T): T {
+    if (!reply.embeds) return reply;
+
+    return {
+        ...reply,
+        embeds: reply.embeds.map(embed => (typeof embed.color === "number" ? embed : { ...embed, color: EMBED_COLORS.brand })),
+    };
+}
+
 function statusEmbed(description: string, title: string, color: number): Embed.Structure {
     return {
         type: EmbedType.Rich,
@@ -34,4 +47,12 @@ export function simpleWarningEmbed(description: string, title = "Heads up!"): Em
 
 export function userNotFoundEmbed(userId: string | number): Embed.Structure {
     return simpleErrorEmbed(`I couldn't find an osu! user matching **\`${userId}\`**.`, "Nothing found");
+}
+
+export function missingBeatmapEmbed(): Embed.Structure {
+    return simpleErrorEmbed("I couldn't find a beatmap in your command or recent channel messages.", "Nothing found");
+}
+
+export function beatmapNotFoundEmbed(): Embed.Structure {
+    return simpleErrorEmbed("I couldn't find that beatmap.", "Nothing found");
 }

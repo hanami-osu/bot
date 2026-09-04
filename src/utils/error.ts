@@ -1,4 +1,5 @@
-import { commandErrorDisplayName, commandErrorLogEmbed } from "@builders";
+import { commandErrorDisplayName, commandErrorLogEmbed } from "../embed-builders/command-error";
+import { simpleErrorEmbed } from "../embed-builders/common";
 import { Client } from "lilybird";
 import { logger } from "@utils/logger";
 import { Interaction, Message, ApplicationCommandData, GuildInteraction, DMInteraction } from "@lilybird/transformers";
@@ -30,16 +31,16 @@ function isDMInteraction(interaction: Interaction<ApplicationCommandData>): inte
 export async function handleCommandError(error: Error, ctx: CommandErrorContext): Promise<void> {
     const { client, commandContext, interaction, message, commandName, subCommand, content, prefix } = ctx;
     const isInteraction = !!interaction;
+    const userError = { embeds: [simpleErrorEmbed(GENERIC_COMMAND_ERROR)] };
 
-    // Send reply to user
     try {
         if (commandContext) {
-            await commandContext.reply(isInteraction ? { content: GENERIC_COMMAND_ERROR, ephemeral: true } : GENERIC_COMMAND_ERROR);
+            await commandContext.reply(isInteraction ? { ...userError, ephemeral: true } : userError);
         } else if (interaction) {
-            await interaction.reply({ content: GENERIC_COMMAND_ERROR, ephemeral: true });
+            await interaction.reply({ ...userError, ephemeral: true });
         } else if (message) {
             await message.reply({
-                content: GENERIC_COMMAND_ERROR,
+                ...userError,
                 allowed_mentions: { replied_user: false, parse: [], roles: [], users: [] },
             });
         }

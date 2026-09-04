@@ -3,20 +3,26 @@ import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
 
 import { CommandContext } from "@utils/command-context";
+import { simpleInfoEmbed } from "../../embed-builders/common";
 
 export async function run(ctx: CommandContext) {
     await ctx.defer();
     const isMessage = ctx.isMessage;
 
     if (isMessage) {
-        await ctx.reply({ content: "🏓..." });
+        await ctx.reply({ content: "🏓 Checking latency..." });
     }
 
     const { ws, rest } = await ctx.client.ping();
     const osuDuration = await getOsuResponseTime();
 
     await ctx.editReply({
-        content: `🏓 WebSocket: \`${ws.toFixed()}ms\` | Rest: \`${rest.toFixed()}ms\`\nosu! API: \`${osuDuration.toFixed()}ms\``,
+        embeds: [
+            simpleInfoEmbed(
+                `**Discord WebSocket:** \`${ws.toFixed()}ms\`\n**Discord REST:** \`${rest.toFixed()}ms\`\n**osu! API:** \`${osuDuration.toFixed()}ms\``,
+                "Pong! 🏓",
+            ),
+        ],
     });
 }
 
