@@ -1,4 +1,6 @@
 import { compareBuilder, leaderboardBuilder } from "@builders";
+import { beatmapBuilder } from "../embed-builders/beatmap";
+import { beatmapsetBuilder } from "../embed-builders/beatmapset";
 import { buildPlayPaginationMessageOptions } from "@services/play-service";
 import { ComponentType, TextInputStyle } from "lilybird";
 import type { Message } from "lilybird";
@@ -25,16 +27,19 @@ import { applyDefaultEmbedColor, simpleErrorEmbed, simpleInfoEmbed, simpleWarnin
 type PaginationMessageOptions = Pick<InteractionReplyOptions, "embeds" | "components">;
 
 export async function handlePaginationInteraction(interaction: Interaction): Promise<boolean> {
-    if (interaction.isMessageComponentInteraction() && interaction.data.isButton()) {
-        await handleButton(interaction);
+    if (
+        interaction.isMessageComponentInteraction()
+        && ((interaction.data.type === ComponentType.StringSelect && interaction.data.id === "beatmapset-difficulty") || interaction.data.isButton())
+    ) {
+        await handleComponent(interaction);
         return true;
     }
 
     return handlePaginationModal(interaction);
 }
 
-async function handleButton(interaction: Interaction): Promise<void> {
-    if (!interaction.isMessageComponentInteraction() || !interaction.data.isButton()) return;
+async function handleComponent(interaction: Interaction): Promise<void> {
+    if (!interaction.isMessageComponentInteraction()) return;
 
     const builderOptions = await ButtonStateCache.get(interaction.message.id);
     if (builderOptions === null || builderOptions === undefined) {
@@ -53,6 +58,40 @@ async function handleButton(interaction: Interaction): Promise<void> {
             ephemeral: true,
             embeds: [simpleWarningEmbed("Run the command yourself to get controls you can use.", "Not your controls")],
         });
+        return;
+    }
+
+    if (interaction.data.type === ComponentType.StringSelect) {
+        const values = interaction.data.values ?? [];
+        const beatmap = builderOptions.type === EmbedBuilderType.MAPSET
+            && values.length === 1 && /^\d+$/.test(values[0])
+            && builderOptions.beatmapset.beatmaps.find(map => map.id === Number(values[0]));
+        if (!beatmap) {
+            await interaction.reply({
+                ephemeral: true,
+                embeds: [simpleErrorEmbed("Choose a difficulty from this beatmapset.", "Check your input")],
+            });
+            return;
+        }
+
+        const { components } = beatmapsetBuilder(builderOptions);
+        await interaction.updateComponents({ components: disablePaginationComponents(components) });
+        try {
+            const embeds = await beatmapBuilder({
+                type: EmbedBuilderType.MAP,
+                initiatorId: builderOptions.initiatorId,
+                beatmapId: beatmap.id,
+                mods: builderOptions.mods,
+            });
+            const selectedOptions = { ...builderOptions, selectedBeatmapId: beatmap.id };
+            await ButtonStateCache.set(interaction.message.id, selectedOptions);
+            await interaction.editReply(applyDefaultEmbedColor({ embeds, components: beatmapsetBuilder(selectedOptions).components }));
+        } catch {
+            await interaction.editReply({
+                embeds: [simpleErrorEmbed("I couldn't load that difficulty. Please try again in a moment.")],
+                components,
+            });
+        }
         return;
     }
 
@@ -162,7 +201,11 @@ function disablePaginationComponents(components: Array<Message.Component.Structu
 
         return {
             ...row,
-            components: row.components.map(component => (component.type === ComponentType.Button ? { ...component, disabled: true } : component)),
+            components: row.components.map(component => (
+                component.type === ComponentType.Button || component.type === ComponentType.StringSelect
+                    ? { ...component, disabled: true }
+                    : component
+            )),
         };
     });
 }
@@ -208,6 +251,8 @@ async function buildPaginationMessageOptions(updatedOptions: EmbedBuilderOptions
     const options: PaginationMessageOptions = {};
 
     switch (updatedOptions.type) {
+        case EmbedBuilderType.MAPSET:
+            return beatmapsetBuilder(updatedOptions);
         case EmbedBuilderType.LEADERBOARD:
             options.embeds = await leaderboardBuilder(updatedOptions as LeaderboardBuilderOptions);
             break;

@@ -45,6 +45,7 @@ export type User = SuccessUser | FailUser;
 
 interface NormalizedCommandOptions {
     flags: Record<string, string | undefined>;
+    beatmapsetId?: string;
     titleFilter?: string;
     page?: number;
     index?: number;
@@ -67,6 +68,7 @@ export interface Mods {
 export interface PrefixCommandArgs {
     tempUser: Array<string> | null;
     user: User;
+    beatmapsetId?: string;
     mods: Mods;
     flags: Record<string, string | undefined>;
     titleFilter?: string;
