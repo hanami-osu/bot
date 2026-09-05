@@ -66,7 +66,7 @@ export function parseBeatmapUrl(url: string): BeatMapSetURL | BeatMapURL | null 
 
     const hash = parsed.hash.startsWith("#") ? parsed.hash.slice(1) : "";
     if (!hash) {
-        throw new CommandValidationError("Please provide a specific difficulty link instead of a beatmapset link.");
+        return { url, setId: beatmapset[1], gameMode: null, difficultyId: null };
     }
 
     const [gameMode, difficultyId] = hash.split("/");
@@ -165,6 +165,14 @@ function getBeatmapId(urlMatch: BeatMapSetURL | BeatMapURL | null): string | nul
     return "id" in urlMatch ? urlMatch.id : urlMatch.difficultyId;
 }
 
+function getBeatmapsetId(urlMatch: BeatMapSetURL | BeatMapURL | null, allowBeatmapset: boolean): string | undefined {
+    if (!urlMatch || !("setId" in urlMatch) || urlMatch.difficultyId !== null) return undefined;
+    if (!allowBeatmapset) {
+        throw new CommandValidationError("Please provide a specific difficulty link instead of a beatmapset link.");
+    }
+    return urlMatch.setId;
+}
+
 function isGuildInteraction(
     interaction: Interaction<ApplicationCommandData>,
 ): interaction is GuildInteraction<ApplicationCommandData> {
@@ -218,6 +226,7 @@ async function parseSlashCommandArgs(
     interaction: Interaction<ApplicationCommandData>,
     fallbackMode?: Mode,
     getAttributes?: boolean,
+    allowBeatmapset = false,
 ): Promise<SlashCommandArgs> {
     const { data } = interaction;
 
@@ -265,7 +274,9 @@ async function parseSlashCommandArgs(
                         : null);
     const mods = buildMods(parseModsString(modsValue), modsAction);
 
-    const beatmapId = getBeatmapId(parseBeatmapUrl(data.getString("map") ?? ""));
+    const parsedBeatmap = parseBeatmapUrl(data.getString("map") ?? "");
+    const beatmapId = getBeatmapId(parsedBeatmap);
+    const beatmapsetId = getBeatmapsetId(parsedBeatmap, allowBeatmapset);
     const titleFilter = normalizeStringOption(data.getString("filter"));
     const page = parseSlashIntegerOption(data.getInteger("page"), "page");
     const index = parseSlashIntegerOption(data.getInteger("index"), "index");
@@ -293,10 +304,15 @@ async function parseSlashCommandArgs(
                         failMessage: "Please link your account to the bot using /link!",
                     };
 
-    return { user, mods, difficultySettings, flags: {}, titleFilter, page, index, grade };
+    return { user, mods, difficultySettings, beatmapsetId, flags: {}, titleFilter, page, index, grade };
 }
 
-async function parsePrefixCommandArgs(message: Message, args: Array<string>, fallbackMode?: Mode): Promise<PrefixCommandArgs> {
+async function parsePrefixCommandArgs(
+    message: Message,
+    args: Array<string>,
+    fallbackMode?: Mode,
+    allowBeatmapset = false,
+): Promise<PrefixCommandArgs> {
     const result: PrefixCommandArgs = {
         tempUser: null,
         user: {
@@ -319,6 +335,7 @@ async function parsePrefixCommandArgs(message: Message, args: Array<string>, fal
         if (!/https?:\/\//.test(arg)) continue;
 
         const parsedUrl = parseBeatmapUrl(arg);
+        getBeatmapsetId(parsedUrl, allowBeatmapset);
         if (parsedUrl !== null) mapLinkMatches.push(parsedUrl);
     }
 
@@ -328,6 +345,7 @@ async function parsePrefixCommandArgs(message: Message, args: Array<string>, fal
 
         // Extract beatmap ID from link
         result.user.beatmapId = getBeatmapId(firstMatch);
+        result.beatmapsetId = getBeatmapsetId(firstMatch, allowBeatmapset);
 
         // Remove the map link from args array
         const indexToRemove = args.findIndex(link => link === firstMatch.url);
@@ -416,13 +434,18 @@ async function parsePrefixCommandArgs(message: Message, args: Array<string>, fal
     return result;
 }
 
-export async function parseCommandArgs(ctx: CommandContext, mode?: Mode, getAttributes?: boolean): Promise<CommandArgs> {
+export async function parseCommandArgs(
+    ctx: CommandContext,
+    mode?: Mode,
+    getAttributes?: boolean,
+    allowBeatmapset = false,
+): Promise<CommandArgs> {
     if (ctx.isInteraction) {
         if (!ctx.interaction) throw new Error("Interaction command context is missing interaction data");
-        return await parseSlashCommandArgs(ctx.interaction, mode, getAttributes);
+        return await parseSlashCommandArgs(ctx.interaction, mode, getAttributes, allowBeatmapset);
     } else {
         if (!ctx.message) throw new Error("Message command context is missing message data");
-        const prefixArgs = await parsePrefixCommandArgs(ctx.message, ctx.args, mode);
+        const prefixArgs = await parsePrefixCommandArgs(ctx.message, ctx.args, mode, allowBeatmapset);
         return { ...prefixArgs, index: ctx.index };
     }
 }

@@ -143,6 +143,21 @@ describe("pagination", () => {
             expect(getTotalItems(options)).toBe(0);
             expect(createPaginationActionRow(options)).toEqual([]);
         });
+
+        test("gets total difficulties from a beatmapset", () => {
+            const options: any = { type: "mapsetBuilder", beatmapset: { beatmaps: [1, 2, 3, 4, 5, 6] }, page: 0 };
+            expect(getTotalItems(options)).toBe(6);
+            expect((createPaginationActionRow(options)[0] as any).components[2].label).toBe("1 / 2");
+        });
+    });
+
+    describe("beatmapset pagination", () => {
+        test("updates page controls for MAPSET", () => {
+            const options: any = { type: "mapsetBuilder", beatmapset: { beatmaps: new Array(12) }, page: 1 };
+
+            expect((updateBuilderOptions(options, PaginationAction.NEXT, PaginationType.PAGE) as any).page).toBe(2);
+            expect((updateBuilderOptionsValue(options, 0, PaginationType.PAGE) as any).page).toBe(0);
+        });
     });
 
     describe("createActionRow", () => {

@@ -112,10 +112,13 @@ describe("args parser", () => {
             );
         });
 
-        test("throws beatmapset error for set-only URL", () => {
-            expect(() => parseBeatmapUrl("https://osu.ppy.sh/beatmapsets/123456")).toThrow(
-                new CommandValidationError("Please provide a specific difficulty link instead of a beatmapset link."),
-            );
+        test("parses beatmapset-only URLs without a difficulty", () => {
+            expect(parseBeatmapUrl("https://osu.ppy.sh/beatmapsets/123456")).toEqual({
+                url: "https://osu.ppy.sh/beatmapsets/123456",
+                setId: "123456",
+                gameMode: null,
+                difficultyId: null,
+            });
         });
     });
 
@@ -158,6 +161,50 @@ describe("args parser", () => {
             if (result.user.type === UserType.SUCCESS) expect(result.user.banchoId).toBe("peppy");
             expect(result.flags.filter).toBe("Yami no Uta");
             expect(result.titleFilter).toBe("Yami no Uta");
+        });
+
+        test("rejects beatmapset-only links by default", async () => {
+            await expect(
+                parseCommandArgs(createPrefixContext(["peppy", "https://osu.ppy.sh/beatmapsets/123456"]), Mode.OSU),
+            ).rejects.toThrow(new CommandValidationError("Please provide a specific difficulty link instead of a beatmapset link."));
+        });
+
+        test("preserves beatmapset IDs and mods when beatmapsets are allowed", async () => {
+            const result = await parseCommandArgs(
+                createPrefixContext(["peppy", "https://osu.ppy.sh/beatmapsets/123456", "+HDHR"]),
+                Mode.OSU,
+                undefined,
+                true,
+            );
+
+            expect(result.beatmapsetId).toBe("123456");
+            expect(result.user.beatmapId).toBeNull();
+            expect(result.mods.name).toBe("HDHR");
+        });
+
+        test("preserves beatmapset IDs when no username is provided", async () => {
+            const result = await parseCommandArgs(
+                createPrefixContext(["https://osu.ppy.sh/beatmapsets/123456"]),
+                Mode.OSU,
+                undefined,
+                true,
+            );
+
+            expect(result.beatmapsetId).toBe("123456");
+            expect(result.user.type).toBe(UserType.FAIL);
+            expect(result.user.beatmapId).toBeNull();
+        });
+
+        test("keeps specific difficulty IDs when beatmapsets are allowed", async () => {
+            const result = await parseCommandArgs(
+                createPrefixContext(["peppy", "https://osu.ppy.sh/beatmapsets/123456#osu/72727"]),
+                Mode.OSU,
+                undefined,
+                true,
+            );
+
+            expect(result.user.beatmapId).toBe("72727");
+            expect(result.beatmapsetId).toBeUndefined();
         });
 
         test("resolves linked Discord mentions through injected database lookup", async () => {
@@ -221,6 +268,43 @@ describe("args parser", () => {
             expect(result.mods.forceInclude).toBe(true);
             expect(result.difficultySettings?.bpm).toBe(200);
             expect(result.difficultySettings?.cs).toBe(5);
+        });
+
+        test("rejects beatmapset-only links by default", async () => {
+            await expect(
+                parseCommandArgs(createInteractionContext({ username: "peppy", map: "https://osu.ppy.sh/beatmapsets/123456" }), Mode.OSU),
+            ).rejects.toThrow(new CommandValidationError("Please provide a specific difficulty link instead of a beatmapset link."));
+        });
+
+        test("preserves beatmapset IDs and mods when beatmapsets are allowed", async () => {
+            const result = await parseCommandArgs(
+                createInteractionContext({
+                    username: "peppy",
+                    map: "https://osu.ppy.sh/beatmapsets/123456",
+                    mods: "HDHR",
+                    mods_action: "exclude",
+                }),
+                Mode.OSU,
+                undefined,
+                true,
+            );
+
+            expect(result.beatmapsetId).toBe("123456");
+            expect(result.user.beatmapId).toBeNull();
+            expect(result.mods.name).toBe("HDHR");
+            expect(result.mods.exclude).toBe(true);
+        });
+
+        test("keeps specific difficulty IDs when beatmapsets are allowed", async () => {
+            const result = await parseCommandArgs(
+                createInteractionContext({ username: "peppy", map: "https://osu.ppy.sh/beatmapsets/123456#osu/72727" }),
+                Mode.OSU,
+                undefined,
+                true,
+            );
+
+            expect(result.user.beatmapId).toBe("72727");
+            expect(result.beatmapsetId).toBeUndefined();
         });
 
         test("normalizes slash filter without relying on raw data options", async () => {

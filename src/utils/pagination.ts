@@ -136,6 +136,8 @@ export function getTotalItems(options: EmbedBuilderOptions): number {
     switch (options.type) {
         case EmbedBuilderType.LEADERBOARD:
             return options.scores.length;
+        case EmbedBuilderType.MAPSET:
+            return options.beatmapset.beatmaps.length;
         case EmbedBuilderType.COMPARE:
         case EmbedBuilderType.PLAYS:
             return filterPlays(options.plays, options).length;
@@ -167,7 +169,10 @@ export function updateBuilderOptions(
         };
     }
 
-    if (type === PaginationType.PAGE && (options.type === EmbedBuilderType.LEADERBOARD || options.type === EmbedBuilderType.COMPARE)) {
+    if (
+        type === PaginationType.PAGE
+        && (options.type === EmbedBuilderType.LEADERBOARD || options.type === EmbedBuilderType.COMPARE || options.type === EmbedBuilderType.MAPSET)
+    ) {
         return {
             ...options,
             page: calculateNewValue(action, options.page ?? 0, totalItems, type),
@@ -188,7 +193,10 @@ export function updateBuilderOptionsValue(
             : { ...options, index: value, isPage: false };
     }
 
-    if (type === PaginationType.PAGE && (options.type === EmbedBuilderType.LEADERBOARD || options.type === EmbedBuilderType.COMPARE)) {
+    if (
+        type === PaginationType.PAGE
+        && (options.type === EmbedBuilderType.LEADERBOARD || options.type === EmbedBuilderType.COMPARE || options.type === EmbedBuilderType.MAPSET)
+    ) {
         return { ...options, page: value };
     }
 
@@ -200,7 +208,12 @@ export function getCurrentValue(options: EmbedBuilderOptions, type: PaginationTy
         return options.type === EmbedBuilderType.PLAYS ? (options.index ?? 0) : 0;
     }
 
-    if (options.type === EmbedBuilderType.LEADERBOARD || options.type === EmbedBuilderType.COMPARE || options.type === EmbedBuilderType.PLAYS) {
+    if (
+        options.type === EmbedBuilderType.LEADERBOARD
+        || options.type === EmbedBuilderType.COMPARE
+        || options.type === EmbedBuilderType.MAPSET
+        || options.type === EmbedBuilderType.PLAYS
+    ) {
         return options.page ?? 0;
     }
 

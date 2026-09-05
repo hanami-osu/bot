@@ -16,11 +16,13 @@ import type {
 import type { UserExtended } from "./osu";
 import type { Mod } from "./mods";
 import type { WhatIfProjection } from "@utils/whatif";
+import type { v2_beatmaps_details_set } from "osu-api-extended";
 
 export const enum EmbedBuilderType {
     COMPARE = "compareBuilder",
     LEADERBOARD = "leaderboardBuilder",
     MAP = "mapBuilder",
+    MAPSET = "mapsetBuilder",
     PLAYS = "playBuilder",
     PROFILE = "profileBuilder",
     AVATAR = "avatarBuilder",
@@ -72,6 +74,40 @@ export interface BeatmapBuilderOptions extends BuilderOptions {
     type: EmbedBuilderType.MAP;
     beatmapId: number;
     mods: Array<Mod> | null;
+}
+
+type BeatmapsetResponse = v2_beatmaps_details_set.beatmaps_details_set_response;
+type BeatmapsetDifficulty = BeatmapsetResponse["beatmaps"][number];
+
+export type BeatmapsetBuilderDifficulty = Pick<
+    BeatmapsetDifficulty,
+    | "id"
+    | "mode"
+    | "version"
+    | "difficulty_rating"
+    | "total_length"
+    | "bpm"
+    | "accuracy"
+    | "ar"
+    | "cs"
+    | "drain"
+    | "count_circles"
+    | "count_sliders"
+    | "count_spinners"
+    | "max_combo"
+>;
+
+export type BeatmapsetBuilderSet = Pick<
+    BeatmapsetResponse,
+    "id" | "artist" | "title" | "creator" | "status" | "user_id" | "favourite_count" | "play_count"
+> & { beatmaps: Array<BeatmapsetBuilderDifficulty> };
+
+export interface BeatmapsetBuilderOptions extends BuilderOptions {
+    type: EmbedBuilderType.MAPSET;
+    beatmapset: BeatmapsetBuilderSet;
+    mods: Array<Mod> | null;
+    page: number;
+    selectedBeatmapId?: number;
 }
 
 export interface PlayPaginationOptions extends BuilderOptions {
@@ -134,6 +170,7 @@ export type EmbedBuilderOptions
     = | CompareBuilderOptions
         | LeaderboardBuilderOptions
         | BeatmapBuilderOptions
+        | BeatmapsetBuilderOptions
         | PlayPaginationOptions
         | ProfileBuilderOptions
         | AvatarBuilderOptions
