@@ -26,7 +26,6 @@ function formatDifficultyField(
 ): Embed.FieldStructure {
     const details = [
         `**Stars:** \`${difficulty.difficulty_rating.toFixed(2)}\` **Max Combo:** \`${difficulty.max_combo}x\``,
-        `**Length:** \`${formatDuration(difficulty.total_length)}\` **BPM:** \`${difficulty.bpm.toFixed(0)}\``,
         `**AR:** \`${difficulty.ar.toFixed(1)}\` **OD:** \`${difficulty.accuracy.toFixed(1)}\` **CS:** \`${difficulty.cs.toFixed(1)}\` **HP:** \`${difficulty.drain.toFixed(1)}\``,
         `**Objects:** \`${(difficulty.count_circles + difficulty.count_sliders + difficulty.count_spinners).toLocaleString()}\``,
     ];

@@ -71,8 +71,8 @@ describe("beatmapset embed builder", () => {
         });
         expect(embed?.fields?.[0]?.value).toContain("**Stars:** `4.25`");
         expect(embed?.fields?.[0]?.value).toContain("**Max Combo:** `900x`");
-        expect(embed?.fields?.[0]?.value).toContain("**Length:** `2:05`");
-        expect(embed?.fields?.[0]?.value).toContain("**BPM:** `180`");
+        expect(embed?.fields?.[0]?.value).not.toContain("**Length:**");
+        expect(embed?.fields?.[0]?.value).not.toContain("**BPM:**");
         expect(embed?.fields?.[0]?.value).toContain("**AR:** `9.5`");
         expect(embed?.fields?.[0]?.value).toContain("**OD:** `8.5`");
         expect(embed?.fields?.[0]?.value).toContain("**CS:** `4.0`");
