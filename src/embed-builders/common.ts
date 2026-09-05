@@ -20,29 +20,30 @@ export function applyDefaultEmbedColor<T extends EmbedReply>(reply: T): T {
     };
 }
 
-function statusEmbed(description: string, title: string, color: number): Embed.Structure {
+function statusEmbed(description: string, title: string, color: number, thumbnailUrl?: string): Embed.Structure {
     return {
         type: EmbedType.Rich,
         title,
         description,
         color,
+        thumbnail: thumbnailUrl ? { url: thumbnailUrl } : undefined,
     };
 }
 
-export function simpleErrorEmbed(description: string, title = "Something went wrong"): Embed.Structure {
-    return statusEmbed(description, title, EMBED_COLORS.error);
+export function simpleErrorEmbed(description: string, title = "Something went wrong", thumbnailUrl?: string): Embed.Structure {
+    return statusEmbed(description, title, EMBED_COLORS.error, thumbnailUrl);
 }
 
-export function simpleInfoEmbed(description: string, title: string): Embed.Structure {
-    return statusEmbed(description, title, EMBED_COLORS.brand);
+export function simpleInfoEmbed(description: string, title: string, thumbnailUrl?: string): Embed.Structure {
+    return statusEmbed(description, title, EMBED_COLORS.brand, thumbnailUrl);
 }
 
-export function simpleSuccessEmbed(description: string, title = "All set!"): Embed.Structure {
-    return statusEmbed(description, title, EMBED_COLORS.success);
+export function simpleSuccessEmbed(description: string, title = "All set!", thumbnailUrl?: string): Embed.Structure {
+    return statusEmbed(description, title, EMBED_COLORS.success, thumbnailUrl);
 }
 
-export function simpleWarningEmbed(description: string, title = "Heads up!"): Embed.Structure {
-    return statusEmbed(description, title, EMBED_COLORS.warning);
+export function simpleWarningEmbed(description: string, title = "Heads up!", thumbnailUrl?: string): Embed.Structure {
+    return statusEmbed(description, title, EMBED_COLORS.warning, thumbnailUrl);
 }
 
 export function userNotFoundEmbed(userId: string | number): Embed.Structure {

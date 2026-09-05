@@ -2,10 +2,17 @@ import { CommandData } from "@type/commands";
 import { DiscordLinkRequest, DiscordLinkResponse } from "@type/hanami";
 import { CommandContext } from "@utils/command-context";
 import { simpleErrorEmbed, simpleInfoEmbed } from "../../embed-builders/common";
+import { getEntry } from "@utils/database";
+import { Tables } from "@type/database";
+import { safeParse } from "@utils/safe-parse";
+import { v2 } from "osu-api-extended";
+import { Mode } from "@type/osu";
 
 export async function run(ctx: CommandContext) {
     if (!ctx.isInteraction) return;
     await ctx.defer(true);
+
+    const databaseUser = await getEntry(Tables.USER, ctx.user.id);
 
     const userData: DiscordLinkRequest = {
         discordUserId: ctx.user.id,
@@ -23,11 +30,26 @@ export async function run(ctx: CommandContext) {
 
     const expiryTimestamp = Math.floor(new Date(ticketInfo.expiresAt).getTime() / 1000);
 
+    let linkText = `[Continue to Hanami Web](<${ticketInfo.url}>) to link your osu! account or manage your settings.\nThis link expires <t:${expiryTimestamp}:R>.`;
+    let avatarUrl: string | undefined = undefined;
+    if (databaseUser?.banchoId) {
+        const osuUserRequest = await safeParse(v2.users.details({ user: databaseUser.banchoId, mode: Mode.OSU }));
+        if (!osuUserRequest.success) {
+            await ctx.editReply({ embeds: [simpleErrorEmbed("Something went REALLLLLYYY wrong..\nPlease contact @yorunoken to fix this, how did you even break it this hard?", "What the hell.. how?")] });
+            return;
+        }
+
+        const osuUser = osuUserRequest.data;
+        linkText = `It looks like you're already to osu! user \`${osuUser.username}\`\n[Continue to Hanami Web](<${ticketInfo.url}>) to re-link your osu! account or manage your settings.\nThis link expires <t:${expiryTimestamp}:R>.`;
+        avatarUrl = osuUser.avatar_url;
+    }
+
     await ctx.editReply({
         embeds: [
             simpleInfoEmbed(
-                `[Continue to Hanami Web](<${ticketInfo.url}>) to link your osu! account or manage your settings.\nThis link expires <t:${expiryTimestamp}:R>.`,
+                linkText,
                 "Link your osu! account",
+                avatarUrl,
             ),
         ],
     });
