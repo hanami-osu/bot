@@ -1,7 +1,7 @@
 import { EmbedBuilderType, type ModStructure, type PlayPaginationOptions, type PlaysBuilderOptions } from "@type/builders";
 import { type SuccessUser } from "@type/command-args";
 import { type Mode, PlayType, type Score, type ScoresInfo } from "@type/osu";
-import { simpleErrorEmbed, userNotFoundEmbed } from "../embed-builders/common";
+import { simpleInfoEmbed, userNotFoundEmbed } from "../embed-builders/common";
 import { playBuilder } from "../embed-builders/plays";
 import { getFormattedProfile, getFormattedScore } from "@utils/formatter";
 import { saveScoreDatas } from "@utils/osu";
@@ -79,7 +79,7 @@ export async function getFetchedPlayReply({
     if (plays.length === 0) {
         return {
             reply: {
-                embeds: [simpleErrorEmbed(emptyMessage(osuUser.username))],
+                embeds: [simpleInfoEmbed(emptyMessage(osuUser.username), "Nothing to show")],
             },
         };
     }

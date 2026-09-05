@@ -1,12 +1,13 @@
 import { CommandData } from "@type/commands";
+import { BOT_VOTE_URL } from "@utils/constants";
+import { simpleInfoEmbed } from "../../embed-builders/common";
 
-const voteLink = "https://top.gg/bot/995999045157916763";
-const voteString = `You can vote for the bot using the following link:\n${voteLink}`;
+const voteString = `[Vote for Hanami on top.gg](${BOT_VOTE_URL})\nThanks for helping more osu! players find me :3`;
 
 import { CommandContext } from "@utils/command-context";
 
 export async function run(ctx: CommandContext) {
-    await ctx.reply(voteString);
+    await ctx.reply({ embeds: [simpleInfoEmbed(voteString, "Vote for Hanami")] });
 }
 
 export const data = {

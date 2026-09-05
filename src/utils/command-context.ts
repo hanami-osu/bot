@@ -9,6 +9,7 @@ import {
     Interaction,
 } from "@lilybird/transformers";
 import type { EmbedBuilderOptions } from "@type/builders";
+import { applyDefaultEmbedColor, simpleErrorEmbed } from "../embed-builders/common";
 
 type ReplyOptions = string | MessageReplyOptions | InteractionReplyOptions;
 
@@ -112,6 +113,11 @@ export class CommandContext {
 
     private sentMessage?: SentMessage;
 
+    private prepareReplyOptions(options: ReplyOptions): ReplyOptions {
+        if (typeof options === "string" || this.commandName === "help") return options;
+        return applyDefaultEmbedColor(options);
+    }
+
     async defer(ephemeral?: boolean): Promise<void> {
         if (this.interaction) {
             await this.interaction.deferReply(ephemeral);
@@ -122,40 +128,48 @@ export class CommandContext {
     }
 
     async reply(options: ReplyOptions): Promise<unknown> {
+        const replyOptions = this.prepareReplyOptions(options);
+
         if (this.interaction) {
             if (this.hasInteractionResponse) {
-                return await this.editReply(options);
+                return await this.editReply(replyOptions);
             }
 
-            if (typeof options === "string") await this.interaction.reply(options);
-            else await this.interaction.reply(options as InteractionReplyOptions);
+            if (typeof replyOptions === "string") await this.interaction.reply(replyOptions);
+            else await this.interaction.reply(replyOptions as InteractionReplyOptions);
             this.sentMessage = undefined;
             this.hasInteractionResponse = true;
             return this.sentMessage;
         } else if (this.message) {
-            this.sentMessage = (typeof options === "string"
-                ? await this.message.reply(options)
-                : await this.message.reply(options as MessageReplyOptions)) as unknown as SentMessage;
+            this.sentMessage = (typeof replyOptions === "string"
+                ? await this.message.reply(replyOptions)
+                : await this.message.reply(replyOptions as MessageReplyOptions)) as unknown as SentMessage;
             return this.sentMessage;
         }
         throw new Error("Command context cannot reply without interaction or message data");
     }
 
     async editReply(options: ReplyOptions): Promise<unknown> {
+        const replyOptions = this.prepareReplyOptions(options);
+
         if (this.interaction) {
             const message
-                = typeof options === "string"
-                    ? await this.interaction.editReply(options)
-                    : await this.interaction.editReply(options as InteractionReplyOptions);
+                = typeof replyOptions === "string"
+                    ? await this.interaction.editReply(replyOptions)
+                    : await this.interaction.editReply(replyOptions as InteractionReplyOptions);
             this.hasInteractionResponse = true;
             return message;
         } else {
             if (this.sentMessage) {
-                return await this.sentMessage.edit(options);
+                return await this.sentMessage.edit(replyOptions);
             } else {
-                return await this.reply(options);
+                return await this.reply(replyOptions);
             }
         }
+    }
+
+    async respondError(description: string, title = "Something went wrong"): Promise<unknown> {
+        return await this.reply({ embeds: [simpleErrorEmbed(description, title)] });
     }
 
     async ensureGuild(reason = "This command can only be used in a server."): Promise<boolean> {
@@ -165,17 +179,19 @@ export class CommandContext {
     }
 
     async respondUnavailable(content: string): Promise<void> {
+        const response = { embeds: [simpleErrorEmbed(content, "Command unavailable")] };
+
         if (this.interaction && this.hasInteractionResponse) {
-            await this.editReply(content);
+            await this.editReply(response);
             return;
         }
 
         if (this.interaction) {
-            await this.reply({ content, ephemeral: true });
+            await this.reply({ ...response, ephemeral: true });
             return;
         }
 
-        await this.reply(content);
+        await this.reply(response);
     }
 
     async sendWithPagination(options: ReplyOptions, embedOptions: EmbedBuilderOptions): Promise<void> {

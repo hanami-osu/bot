@@ -1,4 +1,10 @@
-import { leaderboardBuilder, simpleErrorEmbed } from "@builders";
+import { leaderboardBuilder } from "../../embed-builders/leaderboard";
+import {
+    beatmapNotFoundEmbed,
+    missingBeatmapEmbed,
+    simpleErrorEmbed,
+    simpleInfoEmbed,
+} from "../../embed-builders/common";
 import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
 import { CommandData } from "@type/commands";
@@ -39,7 +45,7 @@ export async function run(ctx: CommandContext) {
         parsedArgs = await parseCommandArgs(ctx);
     } catch (error) {
         if (error instanceof CommandValidationError) {
-            await ctx.editReply(error.message);
+            await ctx.respondError(error.message, "Check your input");
             return;
         }
         throw error;
@@ -75,7 +81,7 @@ async function getEmbeds(
     if (typeof resolvedBeatmapId === "undefined" || resolvedBeatmapId === null) {
         return {
             reply: {
-                embeds: [simpleErrorEmbed("It seems like the beatmap ID couldn't be found :(\n")],
+                embeds: [missingBeatmapEmbed()],
             },
         };
     }
@@ -84,7 +90,7 @@ async function getEmbeds(
     if (!beatmapRequest.success) {
         return {
             reply: {
-                embeds: [simpleErrorEmbed("It seems like this beatmap doesn't exist! :(")],
+                embeds: [beatmapNotFoundEmbed()],
             },
         };
     }
@@ -93,7 +99,7 @@ async function getEmbeds(
     if (beatmap.status === "pending" || beatmap.status === "wip" || beatmap.status === "graveyard") {
         return {
             reply: {
-                embeds: [simpleErrorEmbed("It seems like this beatmap's leaderboard doesn't exist! :(")],
+                embeds: [simpleInfoEmbed("That beatmap doesn't have a public leaderboard yet.", "Nothing to show")],
             },
         };
     }
@@ -113,11 +119,7 @@ async function getEmbeds(
     if (!scoresRequest.success) {
         return {
             reply: {
-                embeds: [
-                    simpleErrorEmbed(
-                        "Failed to fetch top scores! If you were using mods or a country leaderboard, maybe my osu! supporter ran out? Support me at https://yorunoken.com#support :3",
-                    ),
-                ],
+                embeds: [simpleErrorEmbed("I couldn't fetch that leaderboard right now. Try again in a moment.")],
             },
         };
     }
@@ -127,7 +129,7 @@ async function getEmbeds(
     if (scores.length === 0) {
         return {
             reply: {
-                embeds: [simpleErrorEmbed("It seems like this beatmap's leaderboard doesn't exist! :(")],
+                embeds: [simpleInfoEmbed("No scores are on this leaderboard yet. Maybe you'll be first :3", "Nothing to show")],
             },
         };
     }
@@ -135,7 +137,7 @@ async function getEmbeds(
     if (page < 0 || page * ITEMS_PER_PAGE >= scores.length) {
         return {
             reply: {
-                embeds: [simpleErrorEmbed("That page is out of range for this leaderboard.")],
+                embeds: [simpleErrorEmbed("That page is out of range for this leaderboard.", "Check your input")],
             },
         };
     }

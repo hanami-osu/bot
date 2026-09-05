@@ -3,6 +3,7 @@ import { CommandContext } from "../../../src/utils/command-context";
 import { Tables } from "../../../src/types/database";
 import type { Client } from "lilybird";
 import type { Message } from "@lilybird/transformers";
+import { EMBED_COLORS } from "../../../src/embed-builders/common";
 
 interface ReplyPayload {
     embeds: Array<{
@@ -127,7 +128,7 @@ describe("pp command", () => {
 
     test("returns a validation message when both play pp and play count are provided", async () => {
         const mockClient = { rest: {} } as unknown as Client;
-        const reply = mock((_content: string) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
+        const reply = mock((_content: string | ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
         const mockMessage = {
             author: { id: "123", username: "test_user" },
             guildId: "guild",
@@ -139,7 +140,15 @@ describe("pp command", () => {
 
         await run(ctx);
 
-        expect(reply).toHaveBeenCalledWith(expect.stringContaining("Provide either a play pp value or a play count, not both."));
+        expect(reply).toHaveBeenCalledWith({
+            embeds: [
+                expect.objectContaining({
+                    title: "Check your input",
+                    color: EMBED_COLORS.error,
+                    description: expect.stringContaining("Provide either a play pp value or a play count, not both."),
+                }),
+            ],
+        });
     });
 
     test("routes short mode aliases to the matching osu mode", async () => {

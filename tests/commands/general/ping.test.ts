@@ -1,5 +1,6 @@
 import { expect, test, describe, mock } from "bun:test";
 import { CommandContext } from "../../../src/utils/command-context";
+import { EMBED_COLORS } from "../../../src/embed-builders/common";
 
 mock.module("osu-api-extended", () => ({
     v2: {
@@ -34,16 +35,17 @@ describe("ping command", () => {
         expect(mockMessage.reply).toHaveBeenCalled();
 
         const replyCall = mockMessage.reply.mock.calls[0][0];
-        expect(replyCall.content).toContain("🏓...");
+        expect(replyCall.content).toBe("🏓 Checking latency...");
 
         // After osu API resolves, we expect an edit on the sent message
         const sentMessage = await mockMessage.reply.mock.results[0].value;
         expect(sentMessage.edit).toHaveBeenCalled();
 
         const editCall = sentMessage.edit.mock.calls[0][0];
-        expect(editCall.content).toContain("WebSocket: `42ms`");
-        expect(editCall.content).toContain("Rest: `50ms`");
-        expect(editCall.content).toContain("osu! API:");
+        expect(editCall.embeds[0]).toMatchObject({ title: "Pong! 🏓", color: EMBED_COLORS.brand });
+        expect(editCall.embeds[0].description).toContain("Discord WebSocket:** `42ms`");
+        expect(editCall.embeds[0].description).toContain("Discord REST:** `50ms`");
+        expect(editCall.embeds[0].description).toContain("osu! API:");
     });
 
     test("runs and returns correct latency information for interaction", async () => {
@@ -66,8 +68,9 @@ describe("ping command", () => {
         expect(mockInteraction.editReply).toHaveBeenCalled();
 
         const editCall = mockInteraction.editReply.mock.calls[0][0];
-        expect(editCall.content).toContain("WebSocket: `10ms`");
-        expect(editCall.content).toContain("Rest: `15ms`");
-        expect(editCall.content).toContain("osu! API:");
+        expect(editCall.embeds[0]).toMatchObject({ title: "Pong! 🏓", color: EMBED_COLORS.brand });
+        expect(editCall.embeds[0].description).toContain("Discord WebSocket:** `10ms`");
+        expect(editCall.embeds[0].description).toContain("Discord REST:** `15ms`");
+        expect(editCall.embeds[0].description).toContain("osu! API:");
     });
 });

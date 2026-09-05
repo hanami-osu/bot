@@ -7,6 +7,7 @@ import type { ApplicationCommandData, GuildInteraction } from "@lilybird/transfo
 import { CommandData } from "@type/commands";
 import { ApplicationCommandOptionType, PermissionFlags } from "lilybird";
 import { CommandInteractionContext, CommandIntegrationType } from "@utils/command-context";
+import { simpleErrorEmbed, simpleInfoEmbed, simpleSuccessEmbed, simpleWarningEmbed } from "../../embed-builders/common";
 
 const commands: Record<
     string,
@@ -25,14 +26,8 @@ const commands: Record<
     list,
 };
 
-const PermissionNames: Record<number, string> = {};
-Object.entries(PermissionFlags).forEach(([name, value]) => {
-    PermissionNames[Number(value)] = name;
-});
-
 const PERMISSIONS_NEEDED_INT = PermissionFlags.MANAGE_GUILD;
-const PERMISSIONS_NEEDED = PermissionNames[Number(PERMISSIONS_NEEDED_INT)];
-const PERMISSION_NEEDED_STRING = `Looks like you don't have the necessary permissions for this command. Permission(s) needed: \`${PERMISSIONS_NEEDED}\``;
+const PERMISSION_NEEDED_STRING = "You need the `Manage Server` permission to change prefixes.";
 
 import { CommandContext } from "@utils/command-context";
 
@@ -52,7 +47,7 @@ async function hasRequiredPermissions(interaction: GuildInteraction<ApplicationC
     const permissions = interaction.member.permissions;
     if (permissions && (BigInt(permissions) & BigInt(PERMISSIONS_NEEDED_INT)) !== BigInt(0)) return true;
 
-    await interaction.editReply(PERMISSION_NEEDED_STRING);
+    await interaction.editReply({ embeds: [simpleErrorEmbed(PERMISSION_NEEDED_STRING, "Missing permissions")] });
     return false;
 }
 
@@ -72,16 +67,26 @@ async function add({
     const { prefixes } = guild;
 
     if (prefixes && prefixes.length >= MAX_AMOUNT_OF_PREFIXES) {
-        await interaction.editReply(
-            `**The maximum amount of prefixes allowed is \`${MAX_AMOUNT_OF_PREFIXES}\`. You can remove a prefix using \`/prefix remove\`**`,
-        );
+        await interaction.editReply({
+            embeds: [
+                simpleWarningEmbed(
+                    `This server already has the maximum of **${MAX_AMOUNT_OF_PREFIXES}** custom prefixes. Remove one with \`/prefix remove\` first.`,
+                    "Prefix limit reached",
+                ),
+            ],
+        });
         return;
     }
 
     if (prefixes?.some(pref => pref === prefix)) {
-        await interaction.editReply(
-            `**The prefix \`${prefix}\` is already in the prefixes list. You can look at current prefixes by using \`/prefix list\`**`,
-        );
+        await interaction.editReply({
+            embeds: [
+                simpleWarningEmbed(
+                    `\`${prefix}\` is already configured. Use \`/prefix list\` to see every prefix.`,
+                    "Prefix already added",
+                ),
+            ],
+        });
         return;
     }
 
@@ -90,7 +95,7 @@ async function add({
     await insertData({ table: Tables.GUILD, id: guildId, data: [{ key: "prefixes", value: JSON.stringify(newPrefixes) }] });
     guildPrefixesCache.set(guildId, newPrefixes);
 
-    await interaction.editReply(`**The prefix \`${prefix}\` has been added to the list.**`);
+    await interaction.editReply({ embeds: [simpleSuccessEmbed(`\`${prefix}\` is ready to use :3`, "Prefix added")] });
     return;
 }
 
@@ -110,14 +115,21 @@ async function remove({
     const { prefixes } = guild;
 
     if (prefixes === null) {
-        await interaction.editReply("**There aren't any prefixes on this guild. You can add a new prefixes by using `/prefix add`**");
+        await interaction.editReply({
+            embeds: [simpleInfoEmbed("This server has no custom prefixes. Add one with `/prefix add`.", "Nothing to remove")],
+        });
         return;
     }
 
     if (!prefixes.some(pref => pref === prefix)) {
-        await interaction.editReply(
-            `**The prefix \`${prefix}\` is not in the prefixes list. You can look at current prefixes by using \`/prefix list\`**`,
-        );
+        await interaction.editReply({
+            embeds: [
+                simpleErrorEmbed(
+                    `\`${prefix}\` is not configured. Use \`/prefix list\` to see every prefix.`,
+                    "Prefix not found",
+                ),
+            ],
+        });
         return;
     }
 
@@ -129,11 +141,15 @@ async function remove({
     });
     guildPrefixesCache.set(guildId, newPrefixes.length > 0 ? newPrefixes : DEFAULT_PREFIX);
 
-    let message = `**The prefix \`${prefix}\` has been removed from the list.**`;
-    if (newPrefixes.length === 0)
-        message = `**__Warning__:\nThere are no more custom prefixes on the guild left. The default prefix is \`${DEFAULT_PREFIX.join("")}\`**`;
+    const embed
+        = newPrefixes.length === 0
+            ? simpleWarningEmbed(
+                    `No custom prefixes remain, so the default prefix is now \`${DEFAULT_PREFIX.join("")}\`.`,
+                    "Using the default prefix",
+                )
+            : simpleSuccessEmbed(`\`${prefix}\` has been removed.`, "Prefix removed");
 
-    await interaction.editReply(message);
+    await interaction.editReply({ embeds: [embed] });
     return;
 }
 
@@ -150,9 +166,14 @@ async function list({
     const { prefixes } = guild;
 
     if (prefixes === null) {
-        await interaction.editReply(
-            `**There aren't any custom prefixes on this guild. The default is \`${DEFAULT_PREFIX.join("")}\`**`,
-        );
+        await interaction.editReply({
+            embeds: [
+                simpleInfoEmbed(
+                    `This server has no custom prefixes. The default is \`${DEFAULT_PREFIX.join("")}\`.`,
+                    "Using the default prefix",
+                ),
+            ],
+        });
         return;
     }
 

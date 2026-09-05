@@ -1,9 +1,10 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 import { EmbedBuilderType, type EmbedBuilderOptions } from "../../src/types/builders";
+import { EMBED_COLORS } from "../../src/embed-builders/common";
 
 const get = mock(() => Promise.resolve<EmbedBuilderOptions | null>(null));
 const set = mock(() => Promise.resolve(true));
-const buildPlayPaginationMessageOptions = mock(() => Promise.resolve({ content: "rendered page" }));
+const buildPlayPaginationMessageOptions = mock(() => Promise.resolve({ embeds: [{ title: "rendered page" }] }));
 
 mock.module("@state/button-state-cache", () => ({
     ButtonStateCache: { get, set },
@@ -45,7 +46,13 @@ describe("pagination interaction runtime", () => {
         expect(get).toHaveBeenCalledWith("message-1");
         expect(reply).toHaveBeenCalledWith({
             ephemeral: true,
-            content: "This button will not work because the message was created before a bot restart, so its data has been lost.",
+            embeds: [
+                expect.objectContaining({
+                    title: "Controls expired",
+                    color: EMBED_COLORS.warning,
+                    description: "Run the command again to get fresh controls.",
+                }),
+            ],
         });
     });
 
@@ -73,7 +80,13 @@ describe("pagination interaction runtime", () => {
         expect(handled).toBe(true);
         expect(reply).toHaveBeenCalledWith({
             ephemeral: true,
-            content: "You need to be the person who initialized the command to be able to interact with this.",
+            embeds: [
+                expect.objectContaining({
+                    title: "Not your controls",
+                    color: EMBED_COLORS.warning,
+                    description: "Run the command yourself to get controls you can use.",
+                }),
+            ],
         });
         expect(set).not.toHaveBeenCalled();
     });
@@ -92,7 +105,9 @@ describe("pagination interaction runtime", () => {
         get.mockResolvedValueOnce(builderOptions);
 
         const reply = mock(() => Promise.resolve());
-        const updateComponents = mock(() => Promise.resolve());
+        const updateComponents = mock((_options: { components: Array<{ components: Array<{ disabled?: boolean }> }> }) =>
+            Promise.resolve(),
+        );
         const editReply = mock(() => Promise.resolve());
         const interaction = {
             ...createButtonInteraction(reply),
@@ -107,8 +122,10 @@ describe("pagination interaction runtime", () => {
 
         expect(handled).toBe(true);
         expect(updateComponents).toHaveBeenCalledTimes(1);
+        const disabledRow = updateComponents.mock.calls[0]?.[0].components[0];
+        expect(disabledRow.components.every((component: { disabled?: boolean }) => component.disabled === true)).toBe(true);
         expect(set).toHaveBeenCalledWith("message-1", expect.objectContaining({ page: 1, isPage: true }));
         expect(buildPlayPaginationMessageOptions).toHaveBeenCalledWith(expect.objectContaining({ page: 1, isPage: true }));
-        expect(editReply).toHaveBeenCalledWith({ content: "rendered page" });
+        expect(editReply).toHaveBeenCalledWith({ embeds: [{ title: "rendered page", color: EMBED_COLORS.brand }] });
     });
 });

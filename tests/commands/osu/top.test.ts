@@ -6,6 +6,7 @@ import { Mode } from "../../../src/types/osu";
 import type { Client } from "lilybird";
 import type { ApplicationCommandData, Interaction, Message } from "@lilybird/transformers";
 import type { CommandData } from "../../../src/types/commands";
+import { EMBED_COLORS } from "../../../src/embed-builders/common";
 
 interface ReplyPayload {
     embeds: Array<{ title?: string; description?: string }>;
@@ -53,7 +54,7 @@ const getFetchedPlayReplyMock = mock(({ user, titleFilter }: { user: { banchoId:
         user.banchoId === "missing"
             ? {
                     reply: {
-                        embeds: [{ title: "Uh oh! :x:", description: "It seems like `missing` doesn't exist :(" }],
+                        embeds: [{ title: "Nothing found", description: "I couldn't find an osu! user matching **`missing`**." }],
                     },
                 }
             : {
@@ -129,6 +130,20 @@ function createSlashContext(options: Record<string, string | number | boolean | 
     return new CommandContext(mockClient, interaction);
 }
 
+function createMessageContext(args: Array<string>, commandName = "top") {
+    const mockClient = { rest: {} } as unknown as Client;
+    const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
+    const mockMessage = {
+        author: { id: "123", username: "test_user" },
+        guildId: "guild",
+        channelId: "channel123",
+        reply,
+    } as unknown as Message;
+    const ctx = new CommandContext(mockClient, undefined, mockMessage, args, "!", commandName);
+    ctx.defer = mock(() => Promise.resolve());
+    return { ctx, reply };
+}
+
 describe("top command", () => {
     beforeEach(() => {
         authorMode = null;
@@ -149,17 +164,7 @@ describe("top command", () => {
     });
 
     test("runs with mocked osu data and returns paginated embeds", async () => {
-        const mockClient = { rest: {} } as unknown as Client;
-        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
-        const mockMessage = {
-            author: { id: "123", username: "test_user" },
-            guildId: "guild",
-            channelId: "channel123",
-            reply,
-        } as unknown as Message;
-
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk"], "!", "top");
-        ctx.defer = mock(() => Promise.resolve());
+        const { ctx, reply } = createMessageContext(["mrekk"]);
         getFetchedPlayReplyMock.mockClear();
 
         await run(ctx);
@@ -175,17 +180,7 @@ describe("top command", () => {
 
     test("uses saved mode for neutral prefix aliases", async () => {
         authorMode = Mode.MANIA;
-        const mockClient = { rest: {} } as unknown as Client;
-        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
-        const mockMessage = {
-            author: { id: "123", username: "test_user" },
-            guildId: "guild",
-            channelId: "channel123",
-            reply,
-        } as unknown as Message;
-
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk"], "!", "top");
-        ctx.defer = mock(() => Promise.resolve());
+        const { ctx } = createMessageContext(["mrekk"]);
 
         await run(ctx);
 
@@ -195,17 +190,7 @@ describe("top command", () => {
 
     test("mode-specific prefix aliases override saved mode", async () => {
         authorMode = Mode.MANIA;
-        const mockClient = { rest: {} } as unknown as Client;
-        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
-        const mockMessage = {
-            author: { id: "123", username: "test_user" },
-            guildId: "guild",
-            channelId: "channel123",
-            reply,
-        } as unknown as Message;
-
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk"], "!", "topt");
-        ctx.defer = mock(() => Promise.resolve());
+        const { ctx } = createMessageContext(["mrekk"], "topt");
 
         await run(ctx);
 
@@ -214,19 +199,9 @@ describe("top command", () => {
     });
 
     test("passes prefix title filters to the plays builder", async () => {
-        const mockClient = { rest: {} } as unknown as Client;
-        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
-        const mockMessage = {
-            author: { id: "123", username: "test_user" },
-            guildId: "guild",
-            channelId: "channel123",
-            reply,
-        } as unknown as Message;
-
         getFetchedPlayReplyMock.mockClear();
 
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk", "filter=\"Yami", "no", "Uta\""], "!", "top");
-        ctx.defer = mock(() => Promise.resolve());
+        const { ctx } = createMessageContext(["mrekk", "filter=\"Yami", "no", "Uta\""]);
 
         await run(ctx);
 
@@ -246,44 +221,43 @@ describe("top command", () => {
     });
 
     test("rejects invalid prefix page flags before calling the builder", async () => {
-        const mockClient = { rest: {} } as unknown as Client;
-        const reply = mock((_options: string | ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
-        const mockMessage = {
-            author: { id: "123", username: "test_user" },
-            guildId: "guild",
-            channelId: "channel123",
-            reply,
-        } as unknown as Message;
-
         getFetchedPlayReplyMock.mockClear();
 
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["mrekk", "p=abc"], "!", "top");
-        ctx.defer = mock(() => Promise.resolve());
+        const { ctx, reply } = createMessageContext(["mrekk", "p=abc"]);
 
         await run(ctx);
 
         expect(getFetchedPlayReplyMock).not.toHaveBeenCalled();
-        expect(reply).toHaveBeenCalledWith("page must be a whole number.");
+        expect(reply).toHaveBeenCalledWith({
+            embeds: [
+                expect.objectContaining({
+                    title: "Check your input",
+                    description: "page must be a whole number.",
+                    color: EMBED_COLORS.error,
+                }),
+            ],
+        });
     });
 
     test("returns a generic not found embed for a missing user", async () => {
-        const mockClient = { rest: {} } as unknown as Client;
-        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
-        const mockMessage = {
-            author: { id: "123", username: "test_user" },
-            guildId: "guild",
-            channelId: "channel123",
-            reply,
-        } as unknown as Message;
-
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["missing"], "!", "top");
-        ctx.defer = mock(() => Promise.resolve());
+        const { ctx, reply } = createMessageContext(["missing"]);
 
         await run(ctx);
 
         const replyCall = reply.mock.calls[0]?.[0];
         if (!replyCall) throw new Error("Expected reply payload");
-        expect(replyCall.embeds[0].title).toBe("Uh oh! :x:");
-        expect(replyCall.embeds[0].description).toContain("doesn't exist");
+        expect(replyCall.embeds[0].title).toBe("Nothing found");
+        expect(replyCall.embeds[0].description).toContain("couldn't find");
+    });
+
+    test("keeps the empty top-play message direct and playful", async () => {
+        const { ctx } = createMessageContext(["mrekk"]);
+
+        await run(ctx);
+
+        const [serviceOptions] = getFetchedPlayReplyMock.mock.calls[0] as Array<{
+            emptyMessage?: (username: string) => string;
+        }>;
+        expect(serviceOptions.emptyMessage?.("yorunoken")).toBe("No top plays found for `yorunoken`. Time to set one :3");
     });
 });

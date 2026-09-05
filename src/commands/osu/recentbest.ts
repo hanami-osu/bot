@@ -31,7 +31,7 @@ export async function run(ctx: CommandContext) {
         validatePage(parsedArgs.page);
     } catch (error) {
         if (error instanceof CommandValidationError) {
-            await ctx.editReply(error.message);
+            await ctx.respondError(error.message, "Check your input");
             return;
         }
         throw error;
@@ -40,7 +40,7 @@ export async function run(ctx: CommandContext) {
     const { user, mods, titleFilter } = parsedArgs;
 
     if (user.type === UserType.FAIL) {
-        await ctx.editReply(user.failMessage);
+        await ctx.respondError(user.failMessage, "Account not linked");
         return;
     }
 
@@ -61,7 +61,7 @@ export async function run(ctx: CommandContext) {
         sortByDate: true,
         mods,
         titleFilter,
-        emptyMessage: username => `It seems like \`${username}\` doesn't have any plays, maybe they should go set some :)`,
+        emptyMessage: username => `No top plays found for \`${username}\`. Time to set one :3`,
     });
     if (embedOptions) {
         await ctx.sendWithPagination(reply, embedOptions);

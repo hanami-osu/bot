@@ -1,12 +1,14 @@
 import { describe, expect, test } from "bun:test";
 import { configListEmbed, configUpdatedEmbed } from "../../src/embed-builders/config";
 import { EmbedScoreType } from "../../src/types/database";
+import { EMBED_COLORS } from "../../src/embed-builders/common";
 
 describe("config embed builder", () => {
     test("formats updated config changes", () => {
         expect(configUpdatedEmbed("tester", [{ type: "mode", data: "mania" }])).toMatchObject({
-            title: "Successfully changed config for tester",
-            description: "Updated settings:\nmode: mania\n",
+            title: "Updated settings for tester",
+            description: "Updated settings:\n**Game mode:** `mania`",
+            color: EMBED_COLORS.success,
         });
     });
 
@@ -21,8 +23,10 @@ describe("config embed builder", () => {
         });
 
         expect(embed.title).toBe("Config settings of tester");
-        expect(embed.fields).toContainEqual({ name: "score_embeds", value: "Maximized" });
-        expect(embed.fields).toContainEqual({ name: "mode", value: "osu" });
-        expect(embed.fields).toContainEqual({ name: "score_data", value: "Stable" });
+        expect(embed.color).toBe(EMBED_COLORS.brand);
+        expect(embed.fields).toContainEqual({ name: "Score layout", value: "Maximized" });
+        expect(embed.fields).toContainEqual({ name: "Game mode", value: "osu" });
+        expect(embed.fields).toContainEqual({ name: "Score data", value: "Stable" });
+        expect(embed.fields).toContainEqual({ name: "Embed style", value: "hanami" });
     });
 });

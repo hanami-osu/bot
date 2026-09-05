@@ -3,6 +3,7 @@ import { EmbedBuilderType } from "../../src/types/builders";
 import { Mode } from "../../src/types/osu";
 import type { CompareBuilderOptions } from "../../src/types/builders";
 import type { Score } from "../../src/types/osu";
+import { EMBED_COLORS } from "../../src/embed-builders/common";
 
 mock.module("@utils/database", () => ({
     getEntry: mock(() => Promise.resolve({ data: "osu file format v14\n[Metadata]\nTitle:Test\n[HitObjects]\n" })),
@@ -84,5 +85,16 @@ describe("compare embed builder", () => {
         const description = embeds[0]?.description ?? "";
 
         expect(description.indexOf("900.00pp")).toBeLessThan(description.indexOf("100.00pp"));
+        expect(embeds[0]?.footer?.text).toBe("Ranked beatmapset by Mapper");
+    });
+
+    test("uses an informational empty state when no scores match", async () => {
+        const embeds = await compareBuilder(options([]));
+
+        expect(embeds[0]).toMatchObject({
+            title: "Nothing to show",
+            color: EMBED_COLORS.brand,
+            description: "`peppy` has no matching scores on this beatmap.",
+        });
     });
 });

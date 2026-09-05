@@ -2,6 +2,7 @@ import { afterEach, describe, expect, mock, test } from "bun:test";
 import { dispatchApplicationCommand } from "../../../src/commands/dispatch/application-dispatcher";
 import { commandsCache } from "../../../src/state/command-registry";
 import type { CommandFileData } from "../../../src/types/commands";
+import { EMBED_COLORS } from "../../../src/embed-builders/common";
 
 describe("application dispatcher", () => {
     afterEach(() => {
@@ -32,7 +33,16 @@ describe("application dispatcher", () => {
             reply,
         } as any);
 
-        expect(reply).toHaveBeenCalledWith({ content: "Guild only.", ephemeral: true });
+        expect(reply).toHaveBeenCalledWith({
+            ephemeral: true,
+            embeds: [
+                expect.objectContaining({
+                    title: "Command unavailable",
+                    description: "Guild only.",
+                    color: EMBED_COLORS.error,
+                }),
+            ],
+        });
         expect(runApplication).not.toHaveBeenCalled();
     });
 

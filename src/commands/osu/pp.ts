@@ -69,8 +69,9 @@ export async function run(ctx: CommandContext): Promise<void> {
         validatePpRequirementInput(input);
     } catch (error) {
         const message = error instanceof PpRequirementValidationError ? error.message : "The pp requirement could not be parsed.";
-        await ctx.editReply(
+        await ctx.respondError(
             `${message}\nExamples: \`${ctx.prefix ?? "/"}pp 10000 mrekk\`, \`${ctx.prefix ?? "/"}pp 10000 500pp mrekk\`, \`${ctx.prefix ?? "/"}pp 10000 plays=5 mrekk\``,
+            "Check your input",
         );
         return;
     }
@@ -85,7 +86,7 @@ export async function run(ctx: CommandContext): Promise<void> {
         parsedArgs = await parseCommandArgs(parseCtx, mode);
     } catch (error) {
         if (error instanceof CommandValidationError) {
-            await ctx.editReply(error.message);
+            await ctx.respondError(error.message, "Check your input");
             return;
         }
         throw error;
@@ -94,7 +95,7 @@ export async function run(ctx: CommandContext): Promise<void> {
     const { user } = parsedArgs;
 
     if (user.type === UserType.FAIL) {
-        await ctx.editReply(user.failMessage);
+        await ctx.respondError(user.failMessage, "Account not linked");
         return;
     }
 

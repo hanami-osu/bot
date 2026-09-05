@@ -1,17 +1,76 @@
 import { describe, expect, test } from "bun:test";
-import { simpleErrorEmbed, simpleInfoEmbed, simpleSuccessEmbed, userNotFoundEmbed } from "../../src/embed-builders/common";
+import type { Embed } from "lilybird";
+import {
+    applyDefaultEmbedColor,
+    beatmapNotFoundEmbed,
+    EMBED_COLORS,
+    missingBeatmapEmbed,
+    simpleErrorEmbed,
+    simpleInfoEmbed,
+    simpleSuccessEmbed,
+    simpleWarningEmbed,
+    userNotFoundEmbed,
+} from "../../src/embed-builders/common";
 
 describe("common embed builders", () => {
     test("builds the shared user not found embed", () => {
         expect(userNotFoundEmbed("mrekk")).toMatchObject({
-            title: "Uh oh! :x:",
-            description: "It seems like the user **`mrekk`** doesn't exist! :(",
+            title: "Nothing found",
+            description: "I couldn't find an osu! user matching **`mrekk`**.",
+            color: EMBED_COLORS.error,
         });
     });
 
-    test("builds simple status embeds", () => {
-        expect(simpleErrorEmbed("Nope")).toMatchObject({ title: "Uh oh! :x:", description: "Nope" });
-        expect(simpleInfoEmbed("Look here", "Info")).toMatchObject({ title: "Info", description: "Look here" });
-        expect(simpleSuccessEmbed("Done", "Success")).toMatchObject({ title: "Success", description: "Done" });
+    test("explains when no beatmap could be inferred", () => {
+        expect(missingBeatmapEmbed()).toMatchObject({
+            title: "Nothing found",
+            description: "I couldn't find a beatmap in your command or recent channel messages.",
+            color: EMBED_COLORS.error,
+        });
+    });
+
+    test("builds the shared beatmap not found embed", () => {
+        expect(beatmapNotFoundEmbed()).toMatchObject({
+            title: "Nothing found",
+            description: "I couldn't find that beatmap.",
+            color: EMBED_COLORS.error,
+        });
+    });
+
+    test("styles status embeds consistently", () => {
+        expect(simpleErrorEmbed("Nope")).toMatchObject({
+            title: "Something went wrong",
+            description: "Nope",
+            color: EMBED_COLORS.error,
+        });
+
+        expect(simpleInfoEmbed("Look here", "Info")).toMatchObject({
+            title: "Info",
+            description: "Look here",
+            color: EMBED_COLORS.brand,
+        });
+
+        expect(simpleSuccessEmbed("Done")).toMatchObject({
+            title: "All set!",
+            description: "Done",
+            color: EMBED_COLORS.success,
+        });
+
+        expect(simpleWarningEmbed("Careful")).toMatchObject({
+            title: "Heads up!",
+            description: "Careful",
+            color: EMBED_COLORS.warning,
+        });
+    });
+
+    test("adds the brand color without replacing explicit status colors", () => {
+        const reply = applyDefaultEmbedColor({
+            embeds: [{ title: "Result" }, { title: "Failure", color: EMBED_COLORS.error }] as Array<Embed.Structure>,
+        });
+
+        expect(reply.embeds).toEqual([
+            { title: "Result", color: EMBED_COLORS.brand },
+            { title: "Failure", color: EMBED_COLORS.error },
+        ]);
     });
 });

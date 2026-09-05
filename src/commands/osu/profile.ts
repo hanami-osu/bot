@@ -20,7 +20,7 @@ export async function run(ctx: CommandContext) {
         parsedArgs = await parseCommandArgs(ctx, mode);
     } catch (error) {
         if (error instanceof CommandValidationError) {
-            await ctx.editReply(error.message);
+            await ctx.respondError(error.message, "Check your input");
             return;
         }
         throw error;
@@ -28,7 +28,7 @@ export async function run(ctx: CommandContext) {
 
     const { user } = parsedArgs;
     if (user.type === UserType.FAIL) {
-        await ctx.editReply(user.failMessage);
+        await ctx.respondError(user.failMessage, "Account not linked");
         return;
     }
 

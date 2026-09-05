@@ -1,4 +1,5 @@
-import { beatmapBuilder, simpleErrorEmbed } from "@builders";
+import { beatmapBuilder } from "../../embed-builders/beatmap";
+import { missingBeatmapEmbed } from "../../embed-builders/common";
 import { EmbedBuilderType } from "@type/builders";
 import { Mods } from "@type/command-args";
 import { CommandData } from "@type/commands";
@@ -20,7 +21,7 @@ export async function run(ctx: CommandContext) {
         parsedArgs = await parseCommandArgs(ctx, Mode.OSU);
     } catch (error) {
         if (error instanceof CommandValidationError) {
-            await ctx.editReply(error.message);
+            await ctx.respondError(error.message, "Check your input");
             return;
         }
         throw error;
@@ -36,7 +37,7 @@ export async function run(ctx: CommandContext) {
 
 async function getEmbed(beatmapId: string | number | null, authorId: string, mods: Mods) {
     if (typeof beatmapId === "undefined" || beatmapId === null) {
-        return [simpleErrorEmbed("It seems like the beatmap ID couldn't be found :(\n")];
+        return [missingBeatmapEmbed()];
     }
 
     const embeds = await beatmapBuilder({

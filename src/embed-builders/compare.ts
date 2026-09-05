@@ -8,6 +8,7 @@ import { EmbedType } from "lilybird";
 import type { CompareBuilderOptions } from "@type/builders";
 import type { Embed } from "lilybird";
 import type { Beatmap, Mode, ProfileInfo, Score, ScoreV2 } from "@type/osu";
+import { simpleInfoEmbed } from "./common";
 
 export async function compareBuilder({
     beatmap,
@@ -39,13 +40,7 @@ export async function compareBuilder({
     }
 
     if (plays.length === 0) {
-        return [
-            {
-                type: EmbedType.Rich,
-                title: "Uh oh! :x:",
-                description: `It seems like \`${profile.username}\` doesn't have any scores on this beatmap with these! :(`,
-            },
-        ] satisfies Array<Embed.Structure>;
+        return [simpleInfoEmbed(`\`${profile.username}\` has no matching scores on this beatmap.`, "Nothing to show")];
     }
 
     return getMultiplePlays({ plays, profile, beatmap, mode, authorDb, page });
@@ -102,7 +97,7 @@ async function getMultiplePlays({
         thumbnail: { url: `https://assets.ppy.sh/beatmaps/${beatmapset.id}/covers/list.jpg` },
         description,
         footer: {
-            text: `${beatmap.status.charAt(0).toUpperCase()}${beatmap.status.slice(1)} beatmapset by ${beatmap.beatmapset.creator} ${SPACE} - ${SPACE} Page ${page + 1} of ${Math.ceil(plays.length / ITEMS_PER_PAGE)}`,
+            text: `${beatmap.status.charAt(0).toUpperCase()}${beatmap.status.slice(1)} beatmapset by ${beatmap.beatmapset.creator}`,
         },
     };
 

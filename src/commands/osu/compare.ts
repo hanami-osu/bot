@@ -1,4 +1,10 @@
-import { compareBuilder, simpleErrorEmbed, userNotFoundEmbed } from "@builders";
+import { compareBuilder } from "../../embed-builders/compare";
+import {
+    beatmapNotFoundEmbed,
+    missingBeatmapEmbed,
+    simpleInfoEmbed,
+    userNotFoundEmbed,
+} from "../../embed-builders/common";
 import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType, type CompareBuilderOptions, type ModStructure } from "@type/builders";
 import { SuccessUser, UserType } from "@type/command-args";
@@ -36,7 +42,7 @@ export async function run(ctx: CommandContext) {
         parsedArgs = await parseCommandArgs(ctx, mode);
     } catch (error) {
         if (error instanceof CommandValidationError) {
-            await ctx.editReply(error.message);
+            await ctx.respondError(error.message, "Check your input");
             return;
         }
         throw error;
@@ -45,7 +51,7 @@ export async function run(ctx: CommandContext) {
     const { user, mods } = parsedArgs;
 
     if (user.type === UserType.FAIL) {
-        await ctx.editReply(user.failMessage);
+        await ctx.respondError(user.failMessage, "Account not linked");
         return;
     }
 
@@ -77,7 +83,7 @@ async function getEmbeds(
     if (typeof beatmapId === "undefined" || beatmapId === null) {
         return {
             reply: {
-                embeds: [simpleErrorEmbed("It seems like the beatmap ID couldn't be found :(\n")],
+                embeds: [missingBeatmapEmbed()],
             },
         };
     }
@@ -86,7 +92,7 @@ async function getEmbeds(
     if (!beatmapRequest.success) {
         return {
             reply: {
-                embeds: [simpleErrorEmbed("It seems like this beatmap doesn't exist! :(")],
+                embeds: [beatmapNotFoundEmbed()],
             },
         };
     }
@@ -95,7 +101,7 @@ async function getEmbeds(
     if (beatmap.status === "pending" || beatmap.status === "wip" || beatmap.status === "graveyard") {
         return {
             reply: {
-                embeds: [simpleErrorEmbed("It seems like this beatmap's leaderboard doesn't exist! :(")],
+                embeds: [simpleInfoEmbed("That beatmap doesn't have a public leaderboard yet.", "Nothing to show")],
             },
         };
     }
@@ -105,7 +111,7 @@ async function getEmbeds(
     if (plays.length === 0) {
         return {
             reply: {
-                embeds: [simpleErrorEmbed(`It seems like \`${osuUser.username}\` has no plays on that beatmap in \`${user.mode}\`!`)],
+                embeds: [simpleInfoEmbed(`\`${osuUser.username}\` has no plays on that beatmap in \`${user.mode}\` yet.`, "Nothing to show")],
             },
         };
     }

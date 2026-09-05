@@ -20,6 +20,7 @@ import {
     updateBuilderOptionsValue,
 } from "@utils/pagination";
 import { ButtonStateCache } from "@state/button-state-cache";
+import { applyDefaultEmbedColor, simpleErrorEmbed, simpleInfoEmbed, simpleWarningEmbed } from "../embed-builders/common";
 
 type PaginationMessageOptions = Pick<InteractionReplyOptions, "embeds" | "components">;
 
@@ -39,7 +40,7 @@ async function handleButton(interaction: Interaction): Promise<void> {
     if (builderOptions === null || builderOptions === undefined) {
         await interaction.reply({
             ephemeral: true,
-            content: "This button will not work because the message was created before a bot restart, so its data has been lost.",
+            embeds: [simpleWarningEmbed("Run the command again to get fresh controls.", "Controls expired")],
         });
         return;
     }
@@ -50,7 +51,7 @@ async function handleButton(interaction: Interaction): Promise<void> {
     if (builderOptions.initiatorId !== user.id) {
         await interaction.reply({
             ephemeral: true,
-            content: "You need to be the person who initialized the command to be able to interact with this.",
+            embeds: [simpleWarningEmbed("Run the command yourself to get controls you can use.", "Not your controls")],
         });
         return;
     }
@@ -59,7 +60,10 @@ async function handleButton(interaction: Interaction): Promise<void> {
     if (jumpType) {
         const totalValues = getTotalValues(getTotalItems(builderOptions), jumpType);
         if (totalValues <= 1) {
-            await interaction.reply({ ephemeral: true, content: "There is only one page available." });
+            await interaction.reply({
+                ephemeral: true,
+                embeds: [simpleInfoEmbed("There is only one page available.", "Already there")],
+            });
             return;
         }
 
@@ -75,7 +79,9 @@ async function handleButton(interaction: Interaction): Promise<void> {
 
     const buttonAction = parseButtonAction(interaction.data.id);
     if (!buttonAction) {
-        await interaction.editReply({ content: "Unknown button action." });
+        await interaction.editReply({
+            embeds: [simpleErrorEmbed("Run the command again to get fresh controls.")],
+        });
         return;
     }
 
@@ -86,11 +92,13 @@ async function handleButton(interaction: Interaction): Promise<void> {
     const options = await buildPaginationMessageOptions(updatedOptions);
 
     if (!options) {
-        await interaction.editReply({ content: "Unsupported builder type for pagination." });
+        await interaction.editReply({
+            embeds: [simpleErrorEmbed("Run the command again to get fresh controls.")],
+        });
         return;
     }
 
-    await interaction.editReply(options);
+    await interaction.editReply(applyDefaultEmbedColor(options));
 }
 
 async function handlePaginationModal(interaction: Interaction): Promise<boolean> {
@@ -106,7 +114,7 @@ async function handlePaginationModal(interaction: Interaction): Promise<boolean>
     if (builderOptions === null || builderOptions === undefined) {
         await interaction.reply({
             ephemeral: true,
-            content: "This page picker will not work because the message was created before a bot restart, so its data has been lost.",
+            embeds: [simpleWarningEmbed("Run the command again to get a fresh page picker.", "Page picker expired")],
         });
         return true;
     }
@@ -117,7 +125,7 @@ async function handlePaginationModal(interaction: Interaction): Promise<boolean>
     if (builderOptions.initiatorId !== user.id) {
         await interaction.reply({
             ephemeral: true,
-            content: "You need to be the person who initialized the command to be able to interact with this.",
+            embeds: [simpleWarningEmbed("Run the command yourself to get controls you can use.", "Not your controls")],
         });
         return true;
     }
@@ -125,7 +133,10 @@ async function handlePaginationModal(interaction: Interaction): Promise<boolean>
     const totalValues = getTotalValues(getTotalItems(builderOptions), modalData.type);
 
     if (!Number.isInteger(requestedValue) || requestedValue < 1 || requestedValue > totalValues) {
-        await interaction.reply({ ephemeral: true, content: `Please enter a whole number between 1 and ${totalValues}.` });
+        await interaction.reply({
+            ephemeral: true,
+            embeds: [simpleErrorEmbed(`Please enter a whole number between 1 and ${totalValues}.`, "Check your input")],
+        });
         return true;
     }
 
@@ -134,11 +145,14 @@ async function handlePaginationModal(interaction: Interaction): Promise<boolean>
 
     const options = await buildPaginationMessageOptions(updatedOptions);
     if (!options) {
-        await interaction.reply({ ephemeral: true, content: "Unsupported builder type for pagination." });
+        await interaction.reply({
+            ephemeral: true,
+            embeds: [simpleErrorEmbed("Run the command again to get fresh controls.")],
+        });
         return true;
     }
 
-    await interaction.updateComponents(options);
+    await interaction.updateComponents(applyDefaultEmbedColor(options));
     return true;
 }
 

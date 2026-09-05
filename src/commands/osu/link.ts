@@ -1,6 +1,7 @@
 import { CommandData } from "@type/commands";
 import { DiscordLinkRequest, DiscordLinkResponse } from "@type/hanami";
 import { CommandContext } from "@utils/command-context";
+import { simpleErrorEmbed, simpleInfoEmbed } from "../../embed-builders/common";
 
 export async function run(ctx: CommandContext) {
     if (!ctx.isInteraction) return;
@@ -16,15 +17,20 @@ export async function run(ctx: CommandContext) {
     const ticketInfo = await fetchTempTicketLink(userData);
 
     if (ticketInfo === null) {
-        await ctx.editReply("Something went wrong. Maybe try again?");
+        await ctx.editReply({ embeds: [simpleErrorEmbed("Please try again in a moment.", "Couldn't create a link")] });
         return;
     }
 
     const expiryTimestamp = Math.floor(new Date(ticketInfo.expiresAt).getTime() / 1000);
 
-    await ctx.editReply(
-        `You can [click here](<${ticketInfo.url}>) to sign into Hanami Web, and link your osu! account.. or manage your configurations! (expires <t:${expiryTimestamp}:R>)`,
-    );
+    await ctx.editReply({
+        embeds: [
+            simpleInfoEmbed(
+                `[Continue to Hanami Web](<${ticketInfo.url}>) to link your osu! account or manage your settings.\nThis link expires <t:${expiryTimestamp}:R>.`,
+                "Link your osu! account",
+            ),
+        ],
+    });
 }
 
 async function fetchTempTicketLink(userData: DiscordLinkRequest): Promise<DiscordLinkResponse | null> {

@@ -53,7 +53,7 @@ const getFetchedPlayReplyMock = mock(
             user.banchoId === "missing"
                 ? {
                         reply: {
-                            embeds: [{ title: "Uh oh! :x:", description: "It seems like `missing` doesn't exist :(" }],
+                            embeds: [{ title: "Nothing found", description: "I couldn't find an osu! user matching **`missing`**." }],
                         },
                     }
                 : {
@@ -130,8 +130,8 @@ describe("recent command", () => {
 
         const replyCall = reply.mock.calls[0]?.[0];
         if (!replyCall) throw new Error("Expected reply payload");
-        expect(replyCall.embeds[0].title).toBe("Uh oh! :x:");
-        expect(replyCall.embeds[0].description).toContain("doesn't exist");
+        expect(replyCall.embeds[0].title).toBe("Nothing found");
+        expect(replyCall.embeds[0].description).toContain("couldn't find");
     });
 
     test("neutral prefix aliases use saved mode and preserve include-fails behavior", async () => {
@@ -214,8 +214,6 @@ describe("recent command", () => {
         await run(ctx);
 
         const [serviceOptions] = getFetchedPlayReplyMock.mock.calls[0] as Array<{ emptyMessage?: (username: string) => string }>;
-        expect(serviceOptions.emptyMessage?.("yorunoken")).toBe(
-            "It seems like `yorunoken` hasn't set any recent plays in `mania`! :(",
-        );
+        expect(serviceOptions.emptyMessage?.("yorunoken")).toBe("No recent `mania` plays found for `yorunoken`. Time to set one :3");
     });
 });

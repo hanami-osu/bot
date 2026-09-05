@@ -1,5 +1,6 @@
-import { describe, expect, mock, test } from "bun:test";
+import { beforeEach, describe, expect, mock, test } from "bun:test";
 import { CommandContext } from "../../../src/utils/command-context";
+import { EMBED_COLORS } from "../../../src/embed-builders/common";
 import { Tables } from "../../../src/types/database";
 import type { Client } from "lilybird";
 import type { Message } from "@lilybird/transformers";
@@ -19,8 +20,10 @@ const whatIfBuilderMock = mock(({ user, projection, projectedRank }: any) => [
     },
 ]);
 interface ReplyPayload {
-    embeds: Array<{ title?: string; description?: string }>;
+    embeds: Array<{ title?: string; description?: string; color?: number }>;
 }
+
+let inferredBeatmapId: number | null = 72727;
 
 function parseMockBigInt(value: string | number | bigint, fieldName = "value"): bigint {
     if (typeof value === "bigint") return value;
@@ -48,13 +51,13 @@ mock.module("@utils/database", () => ({
 
 mock.module("@builders", () => ({
     playBuilder: playBuilderMock,
-    simpleErrorEmbed: mock((description: string, title = "Uh oh! :x:") => ({ title, description })),
+    simpleErrorEmbed: mock((description: string, title = "Something went wrong") => ({ title, description })),
     simulateBuilder: simulateBuilderMock,
     whatIfBuilder: whatIfBuilderMock,
 }));
 mock.module("../../../src/embed-builders/index.ts", () => ({
     playBuilder: playBuilderMock,
-    simpleErrorEmbed: mock((description: string, title = "Uh oh! :x:") => ({ title, description })),
+    simpleErrorEmbed: mock((description: string, title = "Something went wrong") => ({ title, description })),
     simulateBuilder: simulateBuilderMock,
     whatIfBuilder: whatIfBuilderMock,
 }));
@@ -63,7 +66,7 @@ mock.module("../../../src/embed-builders/simulate.ts", () => ({
 }));
 
 mock.module("@utils/osu", () => ({
-    getBeatmapIdFromContext: mock(() => Promise.resolve(72727)),
+    getBeatmapIdFromContext: mock(() => Promise.resolve(inferredBeatmapId)),
     accuracyCalculator: mock(() => 100),
     downloadBeatmap: mock(() => Promise.resolve({ id: 72727, contents: "osu file format v14\n[Metadata]\n[HitObjects]" })),
     formatDuration: mock(() => "1:00"),
@@ -78,25 +81,27 @@ mock.module("@utils/osu", () => ({
 
 const { run } = await import("../../../src/commands/osu/simulate");
 
+function createMessageContext(args: Array<string>) {
+    const mockClient = { rest: {} } as unknown as Client;
+    const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
+    const mockMessage = {
+        author: { id: "123", username: "test_user" },
+        guildId: "guild",
+        channelId: "channel123",
+        reply,
+    } as unknown as Message;
+    const ctx = new CommandContext(mockClient, undefined, mockMessage, args, "!", "simulate");
+    ctx.defer = mock(() => Promise.resolve());
+    return { ctx, reply };
+}
+
 describe("simulate command", () => {
+    beforeEach(() => {
+        inferredBeatmapId = 72727;
+    });
+
     test("passes validated prefix inputs through the builder contract", async () => {
-        const mockClient = { rest: {} } as unknown as Client;
-        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
-        const mockMessage = {
-            author: { id: "123", username: "test_user" },
-            guildId: "guild",
-            channelId: "channel123",
-            reply,
-        } as unknown as Message;
-        const ctx = new CommandContext(
-            mockClient,
-            undefined,
-            mockMessage,
-            ["https://osu.ppy.sh/b/72727", "+HDHR", "combo=1234", "acc=98.5"],
-            "!",
-            "simulate",
-        );
-        ctx.defer = mock(() => Promise.resolve());
+        const { ctx } = createMessageContext(["https://osu.ppy.sh/b/72727", "+HDHR", "combo=1234", "acc=98.5"]);
 
         await run(ctx);
 
@@ -110,22 +115,31 @@ describe("simulate command", () => {
     });
 
     test("returns a validation error for invalid numeric input", async () => {
-        const mockClient = { rest: {} } as unknown as Client;
-        const reply = mock((_options: ReplyPayload) => Promise.resolve({ edit: mock(() => Promise.resolve({})) }));
-        const mockMessage = {
-            author: { id: "123", username: "test_user" },
-            guildId: "guild",
-            channelId: "channel123",
-            reply,
-        } as unknown as Message;
-        const ctx = new CommandContext(mockClient, undefined, mockMessage, ["combo=1.5"], "!", "simulate");
-        ctx.defer = mock(() => Promise.resolve());
+        const { ctx, reply } = createMessageContext(["combo=1.5"]);
 
         await run(ctx);
 
         const replyCall = reply.mock.calls[0]?.[0];
         if (!replyCall) throw new Error("Expected reply payload");
-        expect(replyCall.embeds[0].title).toBe("Invalid simulation input");
-        expect(replyCall.embeds[0].description).toContain("combo");
+        expect(replyCall.embeds[0]).toMatchObject({
+            title: "Check your input",
+            description: expect.stringContaining("combo"),
+            color: EMBED_COLORS.error,
+        });
+    });
+
+    test("explains when no beatmap can be inferred", async () => {
+        inferredBeatmapId = null;
+        const { ctx, reply } = createMessageContext([]);
+
+        await run(ctx);
+
+        const replyCall = reply.mock.calls[0]?.[0];
+        if (!replyCall) throw new Error("Expected reply payload");
+        expect(replyCall.embeds[0]).toMatchObject({
+            title: "Nothing found",
+            description: "I couldn't find a beatmap in your command or recent channel messages.",
+            color: EMBED_COLORS.error,
+        });
     });
 });

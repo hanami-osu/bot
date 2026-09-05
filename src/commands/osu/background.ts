@@ -1,4 +1,5 @@
-import { backgroundBuilder, simpleErrorEmbed } from "@builders";
+import { backgroundBuilder } from "../../embed-builders/background";
+import { beatmapNotFoundEmbed, missingBeatmapEmbed } from "../../embed-builders/common";
 import { EmbedBuilderType } from "@type/builders";
 import { CommandData } from "@type/commands";
 import { Mode, type Beatmap } from "@type/osu";
@@ -18,7 +19,7 @@ export async function run(ctx: CommandContext) {
         parsedArgs = await parseCommandArgs(ctx, Mode.OSU);
     } catch (error) {
         if (error instanceof CommandValidationError) {
-            await ctx.editReply(error.message);
+            await ctx.respondError(error.message, "Check your input");
             return;
         }
         throw error;
@@ -34,12 +35,12 @@ export async function run(ctx: CommandContext) {
 
 async function getEmbed(beatmapId: string | number | null, authorId: string) {
     if (typeof beatmapId === "undefined" || beatmapId === null) {
-        return [simpleErrorEmbed("It seems like the beatmap ID couldn't be found :(\n")];
+        return [missingBeatmapEmbed()];
     }
 
     const beatmapRequest = await safeParse(v2.beatmaps.details({ type: "difficulty", id: Number(beatmapId) }));
     if (!beatmapRequest.success) {
-        return [simpleErrorEmbed("It seems like this beatmap doesn't exist! :(")];
+        return [beatmapNotFoundEmbed()];
     }
     const beatmap = beatmapRequest.data;
 

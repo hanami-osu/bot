@@ -4,6 +4,7 @@ import { cooldownsCache } from "../../src/state/cooldowns";
 import { guildPrefixesCache } from "../../src/state/guild-prefixes";
 import { handler } from "../../src/utils/lilybird-handler";
 import type { CommandFileData } from "../../src/types/commands";
+import { EMBED_COLORS } from "../../src/embed-builders/common";
 
 await import("../../src/listeners/message-create");
 
@@ -45,8 +46,14 @@ describe("messageCreate listener", () => {
         });
 
         expect(reply).toHaveBeenCalledWith({
-            content: "The `config` command can only be used as a slash command. Try </config:command123>.",
             allowed_mentions: { replied_user: false, parse: [], roles: [], users: [] },
+            embeds: [
+                expect.objectContaining({
+                    title: "Slash command only",
+                    description: "The `config` command can only be used as a slash command. Try </config:command123>.",
+                    color: EMBED_COLORS.brand,
+                }),
+            ],
         });
         expect(run).not.toHaveBeenCalled();
         expect(fetchChannel).not.toHaveBeenCalled();
