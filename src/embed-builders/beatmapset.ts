@@ -99,7 +99,7 @@ export function beatmapsetBuilder(options: BeatmapsetBuilderOptions): {
                 description: [
                     `:heart: **${beatmapset.favourite_count.toLocaleString()}** :play_pause: **${beatmapset.play_count.toLocaleString()}**`,
                     links.join(" · "),
-                    pageDifficulties.length === 0 ? "No difficulties found in this beatmapset." : "Base difficulty stats are shown as NM.",
+                    pageDifficulties.length === 0 ? "No difficulties found in this beatmapset." : "",
                 ].join("\n"),
                 fields: pageDifficulties.map(formatDifficultyField),
             },
