@@ -52,12 +52,6 @@ interface NormalizedCommandOptions {
     grade?: string;
 }
 
-export interface SlashCommandArgs extends NormalizedCommandOptions {
-    user: User;
-    mods: Mods;
-    difficultySettings?: DifficultyOptions;
-}
-
 export interface Mods {
     include: boolean | null;
     exclude: boolean | null;

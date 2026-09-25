@@ -3,7 +3,7 @@ import { Mode } from "@type/osu";
 import { UserType } from "@type/command-args";
 import { Tables } from "@type/database";
 import { enums } from "osu-api-extended";
-import type { SlashCommandArgs, DifficultyOptions, Mods, PrefixCommandArgs, User, CommandArgs } from "@type/command-args";
+import type { DifficultyOptions, Mods, PrefixCommandArgs, User, CommandArgs } from "@type/command-args";
 import type { CommandContext } from "./command-context";
 import type { ApplicationCommandData, DMInteraction, GuildInteraction, Interaction, Message } from "@lilybird/transformers";
 import { getSlashCommandMention } from "../state/command-registry";
@@ -227,7 +227,7 @@ async function parseSlashCommandArgs(
     fallbackMode?: Mode,
     getAttributes?: boolean,
     allowBeatmapset = false,
-): Promise<SlashCommandArgs> {
+): Promise<CommandArgs> {
     const { data } = interaction;
 
     // This is so fucking annoying holy shit I can't get it right

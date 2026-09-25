@@ -97,13 +97,6 @@ export interface PerformanceInfo {
     mods: Array<string>;
 }
 
-export type AuthScope = "public" | "chat.write" | "delegate" | "forum.write" | "friends.read" | "identify";
-
-export interface AccessTokenJSON {
-    access_token: string;
-    expires_in: number;
-}
-
 export interface ScoreStatistics {
     count_300?: number;
     count_100?: number;
@@ -133,19 +126,6 @@ export interface ScoreStatistics {
 export type ISOTimestamp = string;
 export type Rank = "XH" | "X" | "SH" | "S" | "A" | "B" | "C" | "D" | "F" | "SSH" | "SS";
 export type GameMode = "osu" | "taiko" | "fruits" | "mania" | string;
-
-export interface Country {
-    code: string;
-    name: string;
-}
-export interface UserStatistics {
-    grade_counts: Record<string, number>;
-}
-export interface Cover {
-    custom_url: string;
-    url: string;
-    id?: string;
-}
 
 // Re-use osu-api-extended's exact user details interface
 export type UserExtended = v2_users_details.UsersDetailsResponse;
