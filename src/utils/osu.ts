@@ -27,6 +27,13 @@ const rulesetIds: Record<Mode, number> = {
     [Mode.MANIA]: 3,
 };
 
+export class SupporterRequiredError extends Error {
+    constructor() {
+        super("osu!supporter is required for this leaderboard");
+        this.name = "SupporterRequiredError";
+    }
+}
+
 export async function getBeatmapTopScores({
     beatmapId,
     isGlobal,
@@ -55,15 +62,18 @@ export async function getBeatmapTopScores({
     const req = await fetch(url, {
         headers: {
             "Content-Type": "application/json",
+            "Accept": "application/json",
             "Cookie": `osu_session=${process.env.OSU_ACCESS_TOKEN}`,
         },
     });
 
-    const data = (await req.json()) as unknown as LeaderboardScoresRaw;
-
     if (!req.ok) {
+        const error = (await req.json().catch(() => null)) as { error?: string } | null;
+        if (req.status === 422 && error?.error?.includes("osu!supporter")) throw new SupporterRequiredError();
         throw new Error("Failed to fetch top scores");
     }
+
+    const data = (await req.json()) as unknown as LeaderboardScoresRaw;
 
     const scores = data.scores;
     if (!Array.isArray(scores)) {

@@ -57,3 +57,12 @@ export function missingBeatmapEmbed(): Embed.Structure {
 export function beatmapNotFoundEmbed(): Embed.Structure {
     return simpleErrorEmbed("I couldn't find that beatmap.", "Nothing found");
 }
+
+export function supporterRequiredEmbed(): Embed.Structure {
+    return simpleErrorEmbed(
+        "This leaderboard needs an active osu!supporter tag on the bot's osu! account. "
+        + "It looks like supporter has run out. Consider donating to keep this feature running :3\n"
+        + "https://hanami.yorunoken.com/#support",
+        "osu!supporter required",
+    );
+}

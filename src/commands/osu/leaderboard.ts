@@ -4,18 +4,20 @@ import {
     missingBeatmapEmbed,
     simpleErrorEmbed,
     simpleInfoEmbed,
+    supporterRequiredEmbed,
 } from "../../embed-builders/common";
 import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
 import { CommandData } from "@type/commands";
 import { CommandValidationError, parseCommandArgs } from "@utils/args";
-import { getBeatmapIdFromContext, getBeatmapTopScores } from "@utils/osu";
+import { getBeatmapIdFromContext, getBeatmapTopScores, SupporterRequiredError } from "@utils/osu";
 import { createPaginationActionRow, ITEMS_PER_PAGE } from "@utils/pagination";
 import { ApplicationCommandOptionType } from "lilybird";
 import type { LeaderboardBuilderOptions } from "@type/builders";
 import { v2 } from "osu-api-extended";
-import { safeParse } from "@utils/safe-parse";
 import type { GameMode, Beatmap } from "@type/osu";
+import { safeParse } from "@utils/safe-parse";
+import type { LeaderboardScore } from "@type/osu";
 import { modsOption } from "./options";
 
 const modeAliases: Record<string, { isGlobal: boolean }> = {
@@ -104,8 +106,9 @@ async function getEmbeds(
         };
     }
 
-    const scoresRequest = await safeParse(
-        getBeatmapTopScores({
+    let scores: Array<LeaderboardScore>;
+    try {
+        scores = await getBeatmapTopScores({
             beatmapId: Number(resolvedBeatmapId),
             mode: beatmap.mode as GameMode,
             isGlobal,
@@ -113,18 +116,21 @@ async function getEmbeds(
             mods: mods.name
                 ? ((typeof mods.name === "string" ? mods.name : mods.name.acronym).match(/.{1,2}/g) as Array<string>)
                 : undefined,
-        }),
-    );
-
-    if (!scoresRequest.success) {
+        });
+    } catch (error) {
+        if (error instanceof SupporterRequiredError) {
+            return {
+                reply: {
+                    embeds: [supporterRequiredEmbed()],
+                },
+            };
+        }
         return {
             reply: {
                 embeds: [simpleErrorEmbed("I couldn't fetch that leaderboard right now. Try again in a moment.")],
             },
         };
     }
-
-    const scores = scoresRequest.data;
 
     if (scores.length === 0) {
         return {
