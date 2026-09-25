@@ -1,12 +1,12 @@
 import {
     calculateWhatIfProjection,
+    isValidPpValue,
     MAX_WHATIF_PLAYS,
     MAX_WHATIF_PP,
+    parsePositivePpToken,
     WhatIfValidationError,
     type WhatIfProjection,
 } from "@utils/whatif";
-
-export const MAX_PP_REQUIREMENT_PLAYS = MAX_WHATIF_PLAYS;
 
 export interface PpRequirementInput {
     targetTotalPp: number;
@@ -49,29 +49,25 @@ export class PpRequirementValidationError extends Error {
     }
 }
 
-function isValidPp(value: number): boolean {
-    return Number.isFinite(value) && value > 0 && value <= MAX_WHATIF_PP;
-}
-
 function ceilToHundredths(value: number): number {
     return Math.ceil((value + Number.EPSILON) * 100) / 100;
 }
 
 function validateTarget(targetTotalPp: number): void {
-    if (!isValidPp(targetTotalPp)) {
+    if (!isValidPpValue(targetTotalPp)) {
         throw new PpRequirementValidationError(`Target pp must be a positive number up to ${MAX_WHATIF_PP.toLocaleString()}pp.`);
     }
 }
 
 function validatePlayPp(playPp: number): void {
-    if (!isValidPp(playPp)) {
+    if (!isValidPpValue(playPp)) {
         throw new PpRequirementValidationError(`Play pp must be a positive number up to ${MAX_WHATIF_PP.toLocaleString()}pp.`);
     }
 }
 
 function validatePlayCount(playCount: number): void {
-    if (!Number.isInteger(playCount) || playCount < 1 || playCount > MAX_PP_REQUIREMENT_PLAYS) {
-        throw new PpRequirementValidationError(`Play count must be a whole number between 1 and ${MAX_PP_REQUIREMENT_PLAYS}.`);
+    if (!Number.isInteger(playCount) || playCount < 1 || playCount > MAX_WHATIF_PLAYS) {
+        throw new PpRequirementValidationError(`Play count must be a whole number between 1 and ${MAX_WHATIF_PLAYS}.`);
     }
 }
 
@@ -116,10 +112,8 @@ function calculateRequiredPlayCount(
     targetTotalPp: number,
     playPp: number,
 ): PpRequirementResult {
-    validatePlayPp(playPp);
-
     let maxProjection: WhatIfProjection | null = null;
-    for (let playCount = 1; playCount <= MAX_PP_REQUIREMENT_PLAYS; playCount++) {
+    for (let playCount = 1; playCount <= MAX_WHATIF_PLAYS; playCount++) {
         const projection = calculateWhatIfProjection(currentTotalPp, currentPlayPps, repeatedPlayPps(playPp, playCount));
         maxProjection = projection;
 
@@ -147,8 +141,6 @@ function calculateRequiredPlayPp(
     targetTotalPp: number,
     playCount: number,
 ): PpRequirementResult {
-    validatePlayCount(playCount);
-
     const maxProjection = calculateWhatIfProjection(currentTotalPp, currentPlayPps, repeatedPlayPps(MAX_WHATIF_PP, playCount));
     if (maxProjection.projectedTotalPp < targetTotalPp) {
         return { kind: "unreachable", targetTotalPp, playCount, maxProjection };
@@ -173,14 +165,6 @@ function calculateRequiredPlayPp(
         requiredPlayPp,
         projection,
     };
-}
-
-export function parsePositivePpToken(token: string): number | null {
-    const normalized = token.trim().replace(/pp$/i, "");
-    if (!/^\d+(?:\.\d+)?$/.test(normalized)) return null;
-
-    const pp = Number(normalized);
-    return isValidPp(pp) ? pp : null;
 }
 
 export function parsePpRequirementPrefixArgs(args: Array<string>): { input: PpRequirementInput; remainingArgs: Array<string> } {

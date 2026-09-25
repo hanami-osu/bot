@@ -32,11 +32,11 @@ export class WhatIfValidationError extends Error {
     }
 }
 
-function isValidPpValue(value: number): boolean {
+export function isValidPpValue(value: number): boolean {
     return Number.isFinite(value) && value > 0 && value <= MAX_WHATIF_PP;
 }
 
-function parsePpToken(token: string): number | null {
+export function parsePositivePpToken(token: string): number | null {
     const normalized = token.trim().replace(/pp$/i, "");
     if (!/^\d+(?:\.\d+)?$/.test(normalized)) return null;
 
@@ -58,7 +58,7 @@ export function parseWhatIfPlayPps(input: string): Array<number> {
         throw new WhatIfValidationError(`Please provide ${MAX_WHATIF_PLAYS} or fewer pp values.`);
     }
 
-    const playPps = tokens.map(token => parsePpToken(token));
+    const playPps = tokens.map(token => parsePositivePpToken(token));
     if (playPps.some(pp => pp === null)) {
         throw new WhatIfValidationError(`PP values must be positive numbers up to ${MAX_WHATIF_PP.toLocaleString()}pp.`);
     }
@@ -77,7 +77,7 @@ export function extractWhatIfPlayPps(args: Array<string>): { playPps: Array<numb
             .filter(Boolean);
 
         if (tokens.length > 0) {
-            const parsedTokens = tokens.map(token => parsePpToken(token));
+            const parsedTokens = tokens.map(token => parsePositivePpToken(token));
             if (parsedTokens.every(pp => pp !== null)) {
                 playPps.push(...(parsedTokens as Array<number>));
                 continue;
