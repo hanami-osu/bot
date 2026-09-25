@@ -1,11 +1,6 @@
-import { afterEach, describe, expect, mock, test } from "bun:test";
+import { afterEach, describe, expect, test } from "bun:test";
 import { commandsCache, commandAliasesCache } from "../../src/state/command-registry";
 import type { CommandFileData } from "../../src/types/commands";
-
-mock.module("@utils/database", () => ({
-    getRowCount: mock(() => Promise.resolve(0)),
-    getRowSum: mock(() => Promise.resolve(0)),
-}));
 
 const { formatCooldown, helpBuilder } = await import("../../src/embed-builders/help");
 
