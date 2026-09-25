@@ -1,5 +1,5 @@
 import type { EmbedBuilderOptions } from "@type/builders";
-import { getRedisClient, isRedisAvailable, stringifyForCache } from "./redis";
+import { getRedisClient, isRedisAvailable } from "./redis";
 
 const BUTTON_STATE_VERSION = 1;
 const BUTTON_STATE_TTL_SECONDS = 3600;
@@ -11,7 +11,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 export function encodeButtonState(state: EmbedBuilderOptions): string {
-    return stringifyForCache({ version: BUTTON_STATE_VERSION, state });
+    return JSON.stringify({ version: BUTTON_STATE_VERSION, state }, (_key, value: unknown) =>
+        typeof value === "bigint" ? value.toString() : value,
+    );
 }
 
 export function decodeButtonState(serialized: string): EmbedBuilderOptions | null {
@@ -44,13 +46,12 @@ export class ButtonStateCache {
         return data ? decodeButtonState(data) : null;
     }
 
-    static async set(messageId: string, value: EmbedBuilderOptions): Promise<boolean> {
+    static async set(messageId: string, value: EmbedBuilderOptions): Promise<void> {
         const key = buttonStateKey(messageId);
         if (!isRedisAvailable()) {
             throw new Error(`Redis is not available for SET operation on key: ${key}`);
         }
 
         await getRedisClient().setEx(key, BUTTON_STATE_TTL_SECONDS, encodeButtonState(value));
-        return true;
     }
 }

@@ -42,12 +42,6 @@ export function isRedisAvailable(): boolean {
     return redisClient && redisClient.isOpen;
 }
 
-export function stringifyForCache(value: unknown): string {
-    return JSON.stringify(value, (_key, nestedValue: unknown) =>
-        typeof nestedValue === "bigint" ? nestedValue.toString() : nestedValue,
-    );
-}
-
 export function getRedisClient(): RedisClientType {
     return redisClient;
 }
