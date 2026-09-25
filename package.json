@@ -10,17 +10,12 @@
         "dev:no-app": "DEV=true bun src/index.ts --no-application",
         "start": "DEV=false bun src/index.ts",
         "check": "tsc --noEmit && eslint",
-        "format": "prettier --write .",
-        "test": "bun test --isolate",
-        "test:unit": "bun test tests/utils tests/commands tests/embed-builders tests/interactions tests/listeners tests/services tests/state --timeout 5000 --isolate",
-        "test:integration": "sh -c 'if find tests/integration -name \"*.test.ts\" -print -quit | grep -q .; then bun test tests/integration --timeout 30000 --isolate; fi'",
-        "test:all": "bun test --timeout 30000 --isolate"
+        "test": "bun test --isolate"
     },
     "dependencies": {
         "@lilybird/handlers": "^0.6.0",
         "@lilybird/transformers": "^0.4.3",
         "@prisma/client": "6",
-        "dotenv": "^17.4.2",
         "lilybird": "^0.8.0",
         "osu-api-extended": "^3.2.1",
         "redis": "^5.12.1",
