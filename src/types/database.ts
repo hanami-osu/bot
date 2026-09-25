@@ -79,30 +79,14 @@ export enum ScoreData {
     Lazer = 1,
 }
 
-export type TableToArgument<T extends Tables> = T extends "users"
-    ? keyof User
-    : T extends "guilds"
-        ? keyof Guild
-        : T extends "maps"
-            ? keyof Map
-            : T extends "commands"
-                ? keyof Command
-                : T extends "osu_scores"
-                    ? keyof Score
-                    : T extends "osu_scores_pp"
-                        ? keyof ScorePp
-                        : never;
+interface TableTypes {
+    users: User;
+    guilds: Guild;
+    maps: Map;
+    commands: Command;
+    osu_scores: Score;
+    osu_scores_pp: ScorePp;
+}
 
-export type TableToType<T extends Tables> = T extends "users"
-    ? User
-    : T extends "guilds"
-        ? Guild
-        : T extends "maps"
-            ? Map
-            : T extends "commands"
-                ? Command
-                : T extends "osu_scores"
-                    ? Score
-                    : T extends "osu_scores_pp"
-                        ? ScorePp
-                        : never;
+export type TableToArgument<T extends Tables> = T extends Tables ? keyof TableTypes[T] : never;
+export type TableToType<T extends Tables> = T extends Tables ? TableTypes[T] : never;

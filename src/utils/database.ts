@@ -8,7 +8,6 @@ const ENABLE_DB_PERF_MONITORING = process.env.NODE_ENV === "development";
 interface PrismaModel {
     findUnique(args: { where: { id: string | bigint } }): unknown;
     delete(args: { where: { id: string | bigint } }): unknown;
-    count(): Promise<number>;
     createMany(args: { data: Record<string, unknown>; skipDuplicates: boolean }): unknown;
     upsert(args: { where: { id: string | bigint }; create: Record<string, unknown>; update: Record<string, unknown> }): unknown;
 }
@@ -140,29 +139,18 @@ function mapToPrismaData(
     return obj;
 }
 
-async function withPerfMonitoring<T>(operation: string, fn: () => Promise<T>): Promise<T> {
-    if (!ENABLE_DB_PERF_MONITORING) {
-        return fn();
-    }
+export async function getEntry<T extends Tables>(table: T, id: string | number): Promise<TableToType<T> | null> {
+    const start = ENABLE_DB_PERF_MONITORING ? performance.now() : undefined;
+    const model = getPrismaModel(table);
+    const data = await Promise.resolve(model.findUnique({ where: { id: getPrismaId(table, id) } }));
+    const result = mapFromPrismaValue(data) as TableToType<T> | null;
 
-    const start = performance.now();
-    const result = await fn();
-    const end = performance.now();
-
-    if (end - start > 10) {
-        // Log slow queries (>10ms)
-        logger.warn(`Slow DB operation: ${operation} took ${(end - start).toFixed(2)}ms`);
+    if (start !== undefined) {
+        const duration = performance.now() - start;
+        if (duration > 10) logger.warn(`Slow DB operation: getEntry: ${table} took ${duration.toFixed(2)}ms`);
     }
 
     return result;
-}
-
-export async function getEntry<T extends Tables>(table: T, id: string | number): Promise<TableToType<T> | null> {
-    return withPerfMonitoring(`getEntry: ${table}`, async () => {
-        const model = getPrismaModel(table);
-        const data = await Promise.resolve(model.findUnique({ where: { id: getPrismaId(table, id) } }));
-        return mapFromPrismaValue(data) as TableToType<T> | null;
-    });
 }
 
 function isNotFoundError(error: unknown): boolean {
@@ -178,22 +166,6 @@ export async function removeEntry(table: Tables, id: string | number): Promise<b
         if (isNotFoundError(error)) return false;
         throw new Error(`Failed to delete ${table} entry ${id}`);
     }
-}
-
-export async function getRowCount(table: Tables): Promise<number> {
-    const model = getPrismaModel(table);
-    return model.count();
-}
-
-export async function getRowSum(table: Tables): Promise<number> {
-    // Only used for commands count right now
-    if (table === "commands") {
-        const aggr = await prisma.command.aggregate({
-            _sum: { count: true },
-        });
-        return aggr._sum.count ?? 0;
-    }
-    return 0; // fallback if used on other tables
 }
 
 export async function insertData<T extends Tables>(
