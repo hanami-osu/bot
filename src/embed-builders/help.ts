@@ -9,7 +9,7 @@ const COMMAND_CATEGORIES = {
     "Hanami": ["help", "ping", "config", "prefix", "invite", "vote"],
 } as const;
 
-export async function helpBuilder(commandName?: string, preferSlash?: boolean): Promise<Array<Embed.Structure>> {
+export function helpBuilder(commandName?: string, preferSlash?: boolean): Array<Embed.Structure> {
     if (commandName) return displayCommandInfo(commandName, preferSlash);
     return displayAllCommands();
 }
@@ -110,7 +110,7 @@ function formatCommandList(commandNames: ReadonlyArray<string>): string {
         .join(", ");
 }
 
-async function displayAllCommands(): Promise<Array<Embed.Structure>> {
+function displayAllCommands(): Array<Embed.Structure> {
     const fields: Array<{ name: string; value: string; inline?: boolean }> = [
         {
             name: "Start here",

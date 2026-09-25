@@ -1,6 +1,5 @@
 import { missingBeatmapEmbed } from "../../embed-builders/common";
 import { simulateBuilder } from "../../embed-builders/simulate";
-import { MessageReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
 import { CommandData } from "@type/commands";
 import { Mode } from "@type/osu";
@@ -70,8 +69,15 @@ export async function run(ctx: CommandContext) {
         throw error;
     }
 
-    const reply = await getEmbeds(String(beatmapId), ctx.user.id, simulationOptions);
-    await ctx.editReply(reply);
+    await ctx.editReply({
+        embeds: await simulateBuilder({
+            type: EmbedBuilderType.SIMULATE,
+            initiatorId: ctx.user.id,
+            beatmapId: Number(beatmapId),
+            mods: simulationOptions.mods,
+            options: simulationOptions.options,
+        }),
+    });
 }
 
 function optionalNumber(value: number | string | null | undefined, label: string): number | undefined {
@@ -105,18 +111,6 @@ function optionalInteger(value: number | string | null | undefined, label: strin
 function splitMods(mods: string | null | undefined): Array<string> | null {
     if (!mods || mods.toUpperCase() === "NM") return null;
     return mods.toUpperCase().match(/.{1,2}/g) ?? null;
-}
-
-async function getEmbeds(beatmapId: string, authorId: string, simulationOptions: SimulationOptions): Promise<MessageReplyOptions> {
-    const embeds = await simulateBuilder({
-        type: EmbedBuilderType.SIMULATE,
-        initiatorId: authorId,
-        beatmapId: Number(beatmapId),
-        mods: simulationOptions.mods,
-        options: simulationOptions.options,
-    });
-
-    return { embeds };
 }
 
 export const data = {

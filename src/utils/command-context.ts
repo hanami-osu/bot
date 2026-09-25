@@ -204,20 +204,12 @@ export class CommandContext {
             && "id" in sentMessage
             && typeof sentMessage.id === "string"
         ) {
-            if (this.interaction) {
-                try {
-                    await ButtonStateCache.set(sentMessage.id, embedOptions);
-                } catch (error) {
-                    const { logger } = await import("./logger");
-                    await logger.warn("Could not cache interaction pagination state", { error });
-                }
-            } else {
-                try {
-                    await ButtonStateCache.set(sentMessage.id, embedOptions);
-                } catch (error) {
-                    const { logger } = await import("./logger");
-                    await logger.warn("Could not cache message pagination state", { error });
-                }
+            try {
+                await ButtonStateCache.set(sentMessage.id, embedOptions);
+            } catch (error) {
+                const { logger } = await import("./logger");
+                const source = this.interaction ? "interaction" : "message";
+                await logger.warn(`Could not cache ${source} pagination state`, { error });
             }
             return;
         }

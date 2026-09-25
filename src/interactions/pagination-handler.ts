@@ -42,7 +42,7 @@ async function handleComponent(interaction: Interaction): Promise<void> {
     if (!interaction.isMessageComponentInteraction()) return;
 
     const builderOptions = await ButtonStateCache.get(interaction.message.id);
-    if (builderOptions === null || builderOptions === undefined) {
+    if (!builderOptions) {
         await interaction.reply({
             ephemeral: true,
             embeds: [simpleWarningEmbed("Run the command again to get fresh controls.", "Controls expired")],
@@ -150,7 +150,7 @@ async function handlePaginationModal(interaction: Interaction): Promise<boolean>
     const requestedValue = rawValue ? Number(rawValue.trim()) : Number.NaN;
 
     const builderOptions = await ButtonStateCache.get(modalData.messageId);
-    if (builderOptions === null || builderOptions === undefined) {
+    if (!builderOptions) {
         await interaction.reply({
             ephemeral: true,
             embeds: [simpleWarningEmbed("Run the command again to get a fresh page picker.", "Page picker expired")],
