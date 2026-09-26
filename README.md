@@ -16,12 +16,12 @@ Hanami is a comprehensive osu! Discord bot that provides detailed statistics and
 - **Recent Activity**: Track recent plays and scores
 - **Score Analysis**: Compare scores, calculate performance points, and analyze plays
 - **Beatmap Information**: Get detailed beatmap statistics, backgrounds, and metadata
-- **Account Linking**: Link your osu! account with `/link` for personalized commands
+- **Account Linking**: Run `/link` in Discord for a private, one-time link, or connect your account from [Hanami Web](https://hanami.yorunoken.com/profile)
 - **Server Customization**: Custom prefixes and configuration options
 
 The bot supports both slash commands and traditional prefix commands, with full osu! game mode support (Standard, Taiko, Catch, Mania).
 
-Use `/help` to see all available commands.
+Use `/help` to see all available commands. Linking from Hanami Web requires signing in with Discord first, then connecting your osu! account in your profile settings.
 
 ## Invite the bot
 

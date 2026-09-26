@@ -3,7 +3,7 @@
   "configVersion": 0,
   "workspaces": {
     "": {
-      "name": "hanamibot",
+      "name": "hanami-bot",
       "dependencies": {
         "@lilybird/handlers": "^0.6.0",
         "@lilybird/transformers": "^0.4.3",
