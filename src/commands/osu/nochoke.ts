@@ -91,8 +91,7 @@ export async function run(ctx: CommandContext): Promise<void> {
 
     const currentTotalPp = osuUser.statistics.pp ?? 0;
     const currentWeightedPp = calculateWeightedPp(evaluatedScores.map(result => result.currentPp));
-    const bonusPp = Math.max(0, currentTotalPp - currentWeightedPp);
-    const noChokeTotalPp = calculateWeightedPp(evaluatedScores.map(result => result.fcPp)) + bonusPp;
+    const noChokeTotalPp = currentTotalPp + calculateWeightedPp(evaluatedScores.map(result => result.fcPp)) - currentWeightedPp;
     const gains = evaluatedScores
         .filter(result => result.fcPp > result.currentPp)
         .sort((first, second) => second.fcPp - second.currentPp - (first.fcPp - first.currentPp))
