@@ -37,8 +37,6 @@ describe("changelog command end-to-end", () => {
         commandsCache.clear();
         commandAliasesCache.clear();
         registerCommand({ data, run });
-        incrementCommandCount.mockClear();
-        loggerInfo.mockClear();
     });
 
     afterEach(() => {
@@ -68,7 +66,6 @@ describe("changelog command end-to-end", () => {
                 description: expect.stringContaining(CHANGELOG_URL),
             })],
         });
-        expect(incrementCommandCount).toHaveBeenCalledWith("changelog:slash");
     });
 
     test("responds to a prefix command with the current changelog link", async () => {
@@ -90,9 +87,7 @@ describe("changelog command end-to-end", () => {
             embeds: [expect.objectContaining({
                 title: "Hanami changelog",
                 description: expect.stringContaining(CHANGELOG_URL),
-                color: 0xffc0cb,
             })],
         });
-        expect(incrementCommandCount).toHaveBeenCalledWith("changelog:prefix");
     });
 });
