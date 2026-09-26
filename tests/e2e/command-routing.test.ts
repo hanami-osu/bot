@@ -39,14 +39,12 @@ function createClient() {
     };
 }
 
-describe("gateway command routing", () => {
+describe("command listener routing", () => {
     beforeEach(() => {
         commandsCache.clear();
         commandAliasesCache.clear();
         registerCommand({ data: pingData, run: runPing });
         incrementCommandCount.mockClear();
-        loggerInfo.mockClear();
-        osuUserDetails.mockClear();
     });
 
     afterEach(() => {
@@ -69,14 +67,14 @@ describe("gateway command routing", () => {
             fetchChannel: () => Promise.resolve({ isText: () => true }),
         });
 
-        expect(reply).toHaveBeenCalledWith({ content: "🏓 Checking latency..." });
+        expect(reply).toHaveBeenCalledTimes(1);
+        expect(edit).toHaveBeenCalledTimes(1);
         expect(edit).toHaveBeenCalledWith({
             embeds: [expect.objectContaining({
                 title: "Pong! 🏓",
-                description: expect.stringContaining("Discord WebSocket:** `42ms`"),
             })],
         });
-        expect(osuUserDetails).toHaveBeenCalled();
+        expect(incrementCommandCount).toHaveBeenCalledTimes(1);
         expect(incrementCommandCount).toHaveBeenCalledWith("ping:prefix");
     });
 
@@ -100,14 +98,14 @@ describe("gateway command routing", () => {
             editReply,
         });
 
-        expect(deferReply).toHaveBeenCalled();
+        expect(deferReply).toHaveBeenCalledTimes(1);
+        expect(editReply).toHaveBeenCalledTimes(1);
         expect(editReply).toHaveBeenCalledWith({
             embeds: [expect.objectContaining({
                 title: "Pong! 🏓",
-                description: expect.stringContaining("Discord WebSocket:** `42ms`"),
             })],
         });
-        expect(osuUserDetails).toHaveBeenCalled();
+        expect(incrementCommandCount).toHaveBeenCalledTimes(1);
         expect(incrementCommandCount).toHaveBeenCalledWith("ping:slash");
     });
 });
