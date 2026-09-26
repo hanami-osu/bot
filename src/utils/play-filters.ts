@@ -6,6 +6,16 @@ export type FilterablePlay = UserBestScore | UserScore | UserBestScoreV2 | UserS
 interface PlayFilterOptions {
     mods?: ModStructure;
     titleFilter?: string | null;
+    grade?: string | null;
+}
+
+function playMatchesGrade(play: FilterablePlay, grade: string): boolean {
+    const rank = play.rank.toUpperCase();
+    const normalizedGrade = grade.toUpperCase();
+
+    if (normalizedGrade === "SS") return ["SS", "SSH", "X", "XH"].includes(rank);
+    if (normalizedGrade === "S") return ["S", "SH"].includes(rank);
+    return rank === normalizedGrade;
 }
 
 function playMatchesMods(play: FilterablePlay, mods: ModStructure): boolean {
@@ -34,10 +44,13 @@ function playMatchesTitle(play: FilterablePlay, titleFilter: string): boolean {
     return titles.some(title => title.toLocaleLowerCase().includes(normalizedFilter));
 }
 
-export function filterPlays(plays: Array<FilterablePlay>, { mods, titleFilter }: PlayFilterOptions): Array<FilterablePlay> {
-    if (!mods?.name && !titleFilter) return plays;
+export function filterPlays(plays: Array<FilterablePlay>, { mods, titleFilter, grade }: PlayFilterOptions): Array<FilterablePlay> {
+    if (!mods?.name && !titleFilter && !grade) return plays;
 
     return plays.filter(
-        play => (!mods?.name || playMatchesMods(play, mods)) && (!titleFilter || playMatchesTitle(play, titleFilter)),
+        play =>
+            (!mods?.name || playMatchesMods(play, mods))
+            && (!titleFilter || playMatchesTitle(play, titleFilter))
+            && (!grade || playMatchesGrade(play, grade)),
     );
 }

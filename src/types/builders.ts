@@ -53,6 +53,7 @@ export interface CompareBuilderOptions extends BuilderOptions {
     authorDb: User | null;
     mods?: ModStructure;
     page?: number;
+    grade?: string;
 }
 
 export interface LeaderboardBuilderOptions extends BuilderOptions {
@@ -123,6 +124,7 @@ export interface PlayPaginationOptions extends BuilderOptions {
     isPage?: boolean;
     mods?: ModStructure;
     titleFilter?: string;
+    grade?: string;
 }
 
 export interface PlaysBuilderOptions {

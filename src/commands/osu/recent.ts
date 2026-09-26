@@ -72,6 +72,7 @@ export async function run(ctx: CommandContext) {
         includeFails,
         mods,
         titleFilter,
+        grade: parsedArgs.grade,
         emptyMessage: username => `No recent \`${user.mode}\` plays found for \`${username}\`. Time to set one :3`,
     });
     if (embedOptions) {

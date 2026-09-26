@@ -61,6 +61,7 @@ export async function run(ctx: CommandContext) {
         sortByDate: true,
         mods,
         titleFilter,
+        grade: parsedArgs.grade,
         emptyMessage: username => `No top plays found for \`${username}\`. Time to set one :3`,
     });
     if (embedOptions) {

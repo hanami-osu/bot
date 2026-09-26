@@ -120,24 +120,35 @@ async function handleComponent(interaction: Interaction): Promise<void> {
     if (!buttonAction) {
         await interaction.editReply({
             embeds: [simpleErrorEmbed("Run the command again to get fresh controls.")],
+            components: createPaginationActionRow(builderOptions),
         });
         return;
     }
 
     const updatedOptions = updateBuilderOptions(builderOptions, buttonAction.action, buttonAction.type);
+    let stateUpdated = false;
+    try {
+        const options = await buildPaginationMessageOptions(updatedOptions);
 
-    await ButtonStateCache.set(interaction.message.id, updatedOptions);
+        if (!options) {
+            await interaction.editReply({
+                embeds: [simpleErrorEmbed("Run the command again to get fresh controls.")],
+                components: createPaginationActionRow(builderOptions),
+            });
+            return;
+        }
 
-    const options = await buildPaginationMessageOptions(updatedOptions);
-
-    if (!options) {
+        await ButtonStateCache.set(interaction.message.id, updatedOptions);
+        stateUpdated = true;
+        await interaction.editReply(applyDefaultEmbedColor(options));
+    } catch (error) {
+        if (stateUpdated) await ButtonStateCache.set(interaction.message.id, builderOptions).catch(() => undefined);
         await interaction.editReply({
-            embeds: [simpleErrorEmbed("Run the command again to get fresh controls.")],
+            embeds: [simpleErrorEmbed("I couldn't update these controls. Please try again.")],
+            components: createPaginationActionRow(builderOptions),
         });
-        return;
+        throw error;
     }
-
-    await interaction.editReply(applyDefaultEmbedColor(options));
 }
 
 async function handlePaginationModal(interaction: Interaction): Promise<boolean> {
@@ -180,18 +191,28 @@ async function handlePaginationModal(interaction: Interaction): Promise<boolean>
     }
 
     const updatedOptions = updateBuilderOptionsValue(builderOptions, requestedValue - 1, modalData.type);
-    await ButtonStateCache.set(modalData.messageId, updatedOptions);
+    let stateUpdated = false;
+    try {
+        const options = await buildPaginationMessageOptions(updatedOptions);
+        if (!options) {
+            await interaction.reply({
+                ephemeral: true,
+                embeds: [simpleErrorEmbed("Run the command again to get fresh controls.")],
+            });
+            return true;
+        }
 
-    const options = await buildPaginationMessageOptions(updatedOptions);
-    if (!options) {
+        await ButtonStateCache.set(modalData.messageId, updatedOptions);
+        stateUpdated = true;
+        await interaction.updateComponents(applyDefaultEmbedColor(options));
+    } catch (error) {
+        if (stateUpdated) await ButtonStateCache.set(modalData.messageId, builderOptions).catch(() => undefined);
         await interaction.reply({
             ephemeral: true,
-            embeds: [simpleErrorEmbed("Run the command again to get fresh controls.")],
+            embeds: [simpleErrorEmbed("I couldn't update that page. Please try again.")],
         });
-        return true;
+        throw error;
     }
-
-    await interaction.updateComponents(applyDefaultEmbedColor(options));
     return true;
 }
 

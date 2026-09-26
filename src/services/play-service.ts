@@ -27,6 +27,7 @@ interface FetchedPlayReplyOptions {
     sortByDate?: boolean;
     mods?: ModStructure;
     titleFilter?: string;
+    grade?: string;
 }
 
 interface FetchedPlayReply {
@@ -52,6 +53,7 @@ export async function getFetchedPlayReply({
     sortByDate,
     mods,
     titleFilter,
+    grade,
 }: FetchedPlayReplyOptions): Promise<FetchedPlayReply> {
     const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
     if (!osuUserRequest.success) {
@@ -75,7 +77,6 @@ export async function getFetchedPlayReply({
         },
         user.authorDb,
     );
-
     if (plays.length === 0) {
         return {
             reply: {
@@ -98,6 +99,7 @@ export async function getFetchedPlayReply({
         sortByDate,
         mods,
         titleFilter,
+        grade,
     };
 
     return {
@@ -125,6 +127,7 @@ async function getPlayBuilderOptions({
     authorDb,
     sortByDate,
     titleFilter,
+    grade,
 }: PlayPaginationOptions): Promise<PlaysBuilderOptions> {
     await saveScoreDatas(rawPlays, mode);
 
@@ -133,7 +136,7 @@ async function getPlayBuilderOptions({
         else index = 0;
     }
 
-    let plays = filterPlays(rawPlays, { mods, titleFilter }) as Array<Score>;
+    let plays = filterPlays(rawPlays, { mods, titleFilter, grade }) as Array<Score>;
 
     if (sortByDate) {
         plays = [...plays].sort((a, b) => {

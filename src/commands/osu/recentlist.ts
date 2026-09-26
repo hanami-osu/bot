@@ -80,6 +80,7 @@ export async function run(ctx: CommandContext) {
         isMultiple: true,
         mods,
         titleFilter,
+        grade: parsedArgs.grade,
         emptyMessage: username =>
             `No \`${user.mode}\` plays found for \`${username}\` in the last 24 hours. A quiet day :3`,
     });

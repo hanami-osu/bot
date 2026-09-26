@@ -48,14 +48,14 @@ export async function run(ctx: CommandContext) {
         throw error;
     }
 
-    const { user, mods } = parsedArgs;
+    const { user, mods, grade } = parsedArgs;
 
     if (user.type === UserType.FAIL) {
         await ctx.respondError(user.failMessage, "Account not linked");
         return;
     }
 
-    const { reply, embedOptions } = await getEmbeds(user, ctx.user.id, mods, ctx);
+    const { reply, embedOptions } = await getEmbeds(user, ctx.user.id, mods, grade, ctx);
     if (embedOptions) {
         await ctx.sendWithPagination(reply, embedOptions);
     } else {
@@ -67,6 +67,7 @@ async function getEmbeds(
     user: SuccessUser,
     authorId: string,
     mods: ModStructure,
+    grade: string | undefined,
     context: CommandContext,
 ): Promise<{ reply: MessageReplyOptions; embedOptions?: CompareBuilderOptions }> {
     const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
@@ -125,6 +126,7 @@ async function getEmbeds(
         beatmap: beatmap as Beatmap,
         plays,
         mods,
+        grade,
         page: 0,
     };
 

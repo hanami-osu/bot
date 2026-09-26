@@ -2,6 +2,7 @@ import { getFormattedProfile, getFormattedScore } from "@utils/formatter";
 import { SPACE } from "@utils/constants";
 import { getEntry } from "@utils/database";
 import { downloadBeatmap, saveScoreDatas } from "@utils/osu";
+import { filterPlays } from "@utils/play-filters";
 import { ITEMS_PER_PAGE } from "@utils/pagination";
 import { Tables } from "@type/database";
 import { EmbedType } from "lilybird";
@@ -17,9 +18,12 @@ export async function compareBuilder({
     mode,
     authorDb,
     mods,
+    grade,
     page = 0,
 }: CompareBuilderOptions): Promise<Array<Embed.Structure>> {
-    saveScoreDatas(plays, mode, beatmap);
+    await saveScoreDatas(plays, mode, beatmap);
+
+    if (grade) plays = filterPlays(plays, { grade });
 
     const profile = getFormattedProfile(user, mode);
 
