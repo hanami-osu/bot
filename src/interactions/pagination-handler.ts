@@ -2,11 +2,12 @@ import { compareBuilder, leaderboardBuilder } from "@builders";
 import { beatmapBuilder } from "../embed-builders/beatmap";
 import { beatmapsetBuilder } from "../embed-builders/beatmapset";
 import { buildPlayPaginationMessageOptions } from "@services/play-service";
+import { buildNoChokePaginationMessageOptions } from "@services/nochoke-service";
 import { ComponentType, TextInputStyle } from "lilybird";
 import type { Message } from "lilybird";
 import type { Interaction, InteractionReplyOptions } from "@lilybird/transformers";
 import { EmbedBuilderType } from "@type/builders";
-import type { CompareBuilderOptions, EmbedBuilderOptions, LeaderboardBuilderOptions, PlayPaginationOptions } from "@type/builders";
+import type { CompareBuilderOptions, EmbedBuilderOptions, LeaderboardBuilderOptions, NoChokePaginationOptions, PlayPaginationOptions } from "@type/builders";
 import {
     createJumpModalId,
     createPaginationActionRow,
@@ -279,6 +280,8 @@ async function buildPaginationMessageOptions(updatedOptions: EmbedBuilderOptions
             break;
         case EmbedBuilderType.PLAYS:
             return await buildPlayPaginationMessageOptions(updatedOptions as PlayPaginationOptions);
+        case EmbedBuilderType.NOCHOKE:
+            return await buildNoChokePaginationMessageOptions(updatedOptions as NoChokePaginationOptions);
         case EmbedBuilderType.COMPARE:
             options.embeds = await compareBuilder(updatedOptions as CompareBuilderOptions);
             break;

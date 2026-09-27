@@ -1,26 +1,22 @@
 import type { CommandData } from "@type/commands";
 import { UserType } from "@type/command-args";
-import { PlayType, type Score } from "@type/osu";
+import { PlayType } from "@type/osu";
+import { EmbedBuilderType, type NoChokePaginationOptions } from "@type/builders";
 import { simpleErrorEmbed, simpleInfoEmbed } from "../../embed-builders/common";
-import { CommandValidationError, parseCommandArgs } from "@utils/args";
-import { getUserScores } from "@utils/score-api";
+import { buildNoChokePaginationMessageOptions } from "@services/nochoke-service";
+import { CommandValidationError, parseCommandArgs, validatePage } from "@utils/args";
+import { filterPlays } from "@utils/play-filters";
+import { ITEMS_PER_PAGE } from "@utils/pagination";
+import { getUserScores, USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
 import { calculateWeightedPp } from "@utils/whatif";
 import { getPerformanceResults } from "@utils/osu";
 import { safeParse } from "@utils/safe-parse";
 import { v2 } from "osu-api-extended";
-import { discordOption, modeOption, usernameOption } from "./options";
+import { discordOption, filterOption, gradeOption, modeOption, modsActionOption, modsOption, usernameOption } from "./options";
+import { ApplicationCommandOptionType } from "lilybird";
 import { CommandContext } from "@utils/command-context";
 
-const TOP_SCORE_LIMIT = 100;
-const DISPLAY_SCORE_LIMIT = 5;
 const CALCULATION_BATCH_SIZE = 5;
-
-interface NoChokeScore {
-    score: Score;
-    currentPp: number;
-    fcPp: number;
-    calculated: boolean;
-}
 
 export async function run(ctx: CommandContext): Promise<void> {
     await ctx.defer();
@@ -28,6 +24,7 @@ export async function run(ctx: CommandContext): Promise<void> {
     let parsedArgs: Awaited<ReturnType<typeof parseCommandArgs>>;
     try {
         parsedArgs = await parseCommandArgs(ctx);
+        validatePage(parsedArgs.page);
     } catch (error) {
         if (error instanceof CommandValidationError) {
             await ctx.respondError(error.message, "Check your input");
@@ -36,7 +33,7 @@ export async function run(ctx: CommandContext): Promise<void> {
         throw error;
     }
 
-    const { user } = parsedArgs;
+    const { user, mods, titleFilter } = parsedArgs;
     if (user.type === UserType.FAIL) {
         await ctx.respondError(user.failMessage, "Account not linked");
         return;
@@ -52,7 +49,7 @@ export async function run(ctx: CommandContext): Promise<void> {
     const scores = await getUserScores(
         osuUser.id,
         PlayType.BEST,
-        { query: { mode: user.mode, limit: TOP_SCORE_LIMIT } },
+        { query: { mode: user.mode, limit: USER_SCORE_FETCH_LIMIT } },
         user.authorDb,
     );
 
@@ -61,11 +58,17 @@ export async function run(ctx: CommandContext): Promise<void> {
         return;
     }
 
-    const evaluatedScores: Array<NoChokeScore> = [];
-    for (let offset = 0; offset < scores.length; offset += CALCULATION_BATCH_SIZE) {
-        const batch = scores.slice(offset, offset + CALCULATION_BATCH_SIZE);
+    const filteredScores = filterPlays(scores, { mods, titleFilter, grade: parsedArgs.grade });
+    if (filteredScores.length === 0) {
+        await ctx.editReply({ embeds: [simpleInfoEmbed(`No top plays match the specified filters for \`${osuUser.username}\`.`, "Nothing to show")] });
+        return;
+    }
+
+    const evaluatedScores: Array<{ currentPp: number; fcPp: number; index: number }> = [];
+    for (let offset = 0; offset < filteredScores.length; offset += CALCULATION_BATCH_SIZE) {
+        const batch = filteredScores.slice(offset, offset + CALCULATION_BATCH_SIZE);
         evaluatedScores.push(
-            ...(await Promise.all(batch.map(async (score) => {
+            ...(await Promise.all(batch.map(async (score, batchOffset) => {
                 const performance = await getPerformanceResults({
                     play: score,
                     mode: user.mode,
@@ -80,10 +83,9 @@ export async function run(ctx: CommandContext): Promise<void> {
                 const fcPp = performance?.fc.pp ?? currentPp;
 
                 return {
-                    score,
                     currentPp,
                     fcPp: Math.max(currentPp, fcPp),
-                    calculated: performance !== null,
+                    index: offset + batchOffset,
                 };
             }))),
         );
@@ -94,22 +96,28 @@ export async function run(ctx: CommandContext): Promise<void> {
     const noChokeTotalPp = currentTotalPp + calculateWeightedPp(evaluatedScores.map(result => result.fcPp)) - currentWeightedPp;
     const gains = evaluatedScores
         .filter(result => result.fcPp > result.currentPp)
-        .sort((first, second) => second.fcPp - second.currentPp - (first.fcPp - first.currentPp))
-        .slice(0, DISPLAY_SCORE_LIMIT);
+        .sort((first, second) => second.fcPp - second.currentPp - (first.fcPp - first.currentPp));
 
-    const lines = [
-        `**Current total:** ${currentTotalPp.toFixed(2)}pp`,
-        `**No-choke top ${scores.length}:** ${noChokeTotalPp.toFixed(2)}pp (+${(noChokeTotalPp - currentTotalPp).toFixed(2)}pp)`,
-        ...gains.map(({ score, currentPp, fcPp }) =>
-            `**#${score.position}** ${score.beatmapset.artist} - ${score.beatmapset.title} [${score.beatmap.version}]: ${currentPp.toFixed(2)} → ${fcPp.toFixed(2)}pp (+${(fcPp - currentPp).toFixed(2)}pp)`,
-        ),
-    ];
-    const unavailableCount = evaluatedScores.filter(result => !result.calculated).length;
-    if (unavailableCount > 0) {
-        lines.push(`Could not recalculate ${unavailableCount} beatmap${unavailableCount === 1 ? "" : "s"}; their current pp was kept.`);
+    if (gains.length === 0) {
+        await ctx.editReply({ embeds: [simpleInfoEmbed("No top plays would gain pp from a full combo.", "Nothing to show")] });
+        return;
     }
 
-    await ctx.editReply({ embeds: [simpleInfoEmbed(lines.join("\n"), `${osuUser.username}'s no-choke estimate`)] });
+    const embedOptions: NoChokePaginationOptions = {
+        type: EmbedBuilderType.NOCHOKE,
+        initiatorId: ctx.user.id,
+        user: osuUser,
+        mode: user.mode,
+        authorDb: user.authorDb,
+        scores: filteredScores,
+        gains,
+        currentTotalPp,
+        noChokeTotalPp,
+        page: parsedArgs.page ?? 0,
+    };
+
+    const reply = await buildNoChokePaginationMessageOptions(embedOptions);
+    await ctx.sendWithPagination(reply, embedOptions);
 }
 
 export const data: CommandData = {
@@ -120,6 +128,21 @@ export const data: CommandData = {
         aliases: ["nc"],
     },
     application: {
-        options: [usernameOption(), modeOption(), discordOption()],
+        options: [
+            usernameOption(),
+            modeOption(),
+            {
+                type: ApplicationCommandOptionType.INTEGER,
+                name: "page",
+                description: "Specify a page, defaults to 1.",
+                min_value: 1,
+                max_value: Math.ceil(USER_SCORE_FETCH_LIMIT / ITEMS_PER_PAGE),
+            },
+            modsOption(),
+            modsActionOption(),
+            gradeOption(),
+            filterOption(),
+            discordOption(),
+        ],
     },
 };

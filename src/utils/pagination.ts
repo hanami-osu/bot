@@ -138,6 +138,8 @@ export function getTotalItems(options: EmbedBuilderOptions): number {
             return options.scores.length;
         case EmbedBuilderType.MAPSET:
             return options.beatmapset.beatmaps.length;
+        case EmbedBuilderType.NOCHOKE:
+            return options.gains.length;
         case EmbedBuilderType.COMPARE:
         case EmbedBuilderType.PLAYS:
             return filterPlays(options.plays, options).length;
@@ -171,7 +173,7 @@ export function updateBuilderOptions(
 
     if (
         type === PaginationType.PAGE
-        && (options.type === EmbedBuilderType.LEADERBOARD || options.type === EmbedBuilderType.COMPARE || options.type === EmbedBuilderType.MAPSET)
+        && (options.type === EmbedBuilderType.LEADERBOARD || options.type === EmbedBuilderType.COMPARE || options.type === EmbedBuilderType.MAPSET || options.type === EmbedBuilderType.NOCHOKE)
     ) {
         return {
             ...options,
@@ -195,7 +197,7 @@ export function updateBuilderOptionsValue(
 
     if (
         type === PaginationType.PAGE
-        && (options.type === EmbedBuilderType.LEADERBOARD || options.type === EmbedBuilderType.COMPARE || options.type === EmbedBuilderType.MAPSET)
+        && (options.type === EmbedBuilderType.LEADERBOARD || options.type === EmbedBuilderType.COMPARE || options.type === EmbedBuilderType.MAPSET || options.type === EmbedBuilderType.NOCHOKE)
     ) {
         return { ...options, page: value };
     }
@@ -213,6 +215,7 @@ export function getCurrentValue(options: EmbedBuilderOptions, type: PaginationTy
         || options.type === EmbedBuilderType.COMPARE
         || options.type === EmbedBuilderType.MAPSET
         || options.type === EmbedBuilderType.PLAYS
+        || options.type === EmbedBuilderType.NOCHOKE
     ) {
         return options.page ?? 0;
     }
