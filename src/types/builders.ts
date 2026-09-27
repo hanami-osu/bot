@@ -24,6 +24,7 @@ export const enum EmbedBuilderType {
     MAP = "mapBuilder",
     MAPSET = "mapsetBuilder",
     PLAYS = "playBuilder",
+    NOCHOKE = "nochokeBuilder",
     PROFILE = "profileBuilder",
     AVATAR = "avatarBuilder",
     BACKGROUND = "backgroundBuilder",
@@ -138,6 +139,24 @@ export interface PlaysBuilderOptions {
     page?: number;
 }
 
+export interface NoChokeGain {
+    index: number;
+    currentPp: number;
+    fcPp: number;
+}
+
+export interface NoChokePaginationOptions extends BuilderOptions {
+    type: EmbedBuilderType.NOCHOKE;
+    user: UserExtended;
+    mode: Mode;
+    authorDb: User | null;
+    scores: Array<Score>;
+    gains: Array<NoChokeGain>;
+    currentTotalPp: number;
+    noChokeTotalPp: number;
+    page?: number;
+}
+
 export interface ProfileBuilderOptions extends BuilderOptions {
     type: EmbedBuilderType.PROFILE;
     user: UserExtended;
@@ -174,6 +193,7 @@ export type EmbedBuilderOptions
         | BeatmapBuilderOptions
         | BeatmapsetBuilderOptions
         | PlayPaginationOptions
+        | NoChokePaginationOptions
         | ProfileBuilderOptions
         | AvatarBuilderOptions
         | BackgroundBuilderOptions

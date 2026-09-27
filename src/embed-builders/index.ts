@@ -8,6 +8,7 @@ export * from "./compare";
 export * from "./help";
 export * from "./leaderboard";
 export * from "./beatmap";
+export * from "./nochoke";
 export * from "./plays";
 export * from "./pp";
 export * from "./prefix";
