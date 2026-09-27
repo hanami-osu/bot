@@ -21,7 +21,8 @@ const { run, data } = await import("../../src/commands/general/changelog");
 const { commandsCache, commandAliasesCache } = await import("../../src/state/command-registry");
 const { registerCommand } = await import("../../src/state/command-registry");
 
-const CHANGELOG_URL = "https://github.com/hanami-osu/bot/commits/main";
+const RELEASES_URL = "https://github.com/hanami-osu/bot/releases";
+const originalFetch = globalThis.fetch;
 
 function createClient() {
     return {
@@ -37,15 +38,24 @@ describe("changelog command end-to-end", () => {
         commandsCache.clear();
         commandAliasesCache.clear();
         registerCommand({ data, run });
+        globalThis.fetch = mock(() => Promise.resolve(new Response(null, { status: 404 }))) as unknown as typeof fetch;
     });
 
     afterEach(() => {
         commandsCache.clear();
         commandAliasesCache.clear();
+        globalThis.fetch = originalFetch;
     });
 
-    test("responds to a slash command with the current changelog link", async () => {
-        const reply = mock(() => Promise.resolve());
+    test("shows the latest release notes in a slash command", async () => {
+        globalThis.fetch = mock(() => Promise.resolve(Response.json({
+            name: "Hanami 1.0",
+            tag_name: "v1.0.0",
+            body: "Better score filters and pagination.",
+            html_url: `${RELEASES_URL}/tag/v1.0.0`,
+        }))) as unknown as typeof fetch;
+        const deferReply = mock(() => Promise.resolve());
+        const editReply = mock((_options: { embeds: Array<{ description: string }> }) => Promise.resolve());
         const client = createClient();
 
         await dispatchApplicationCommand({
@@ -57,18 +67,21 @@ describe("changelog command end-to-end", () => {
             member: { user: { id: "user-1", username: "tester" } },
             data: { name: "changelog", subCommand: undefined },
             client,
-            reply,
+            deferReply,
+            editReply,
         } as never);
 
-        expect(reply).toHaveBeenCalledWith({
+        expect(deferReply).toHaveBeenCalled();
+        expect(editReply).toHaveBeenCalledWith({
             embeds: [expect.objectContaining({
                 title: "Hanami changelog",
-                description: expect.stringContaining(CHANGELOG_URL),
+                description: expect.stringContaining("Better score filters and pagination."),
             })],
         });
+        expect(editReply.mock.calls[0]?.[0].embeds[0].description).toContain(`${RELEASES_URL}/tag/v1.0.0`);
     });
 
-    test("responds to a prefix command with the current changelog link", async () => {
+    test("shows the releases page before a release is published", async () => {
         const reply = mock(() => Promise.resolve());
         const client = createClient();
 
@@ -86,7 +99,7 @@ describe("changelog command end-to-end", () => {
         expect(reply).toHaveBeenCalledWith({
             embeds: [expect.objectContaining({
                 title: "Hanami changelog",
-                description: expect.stringContaining(CHANGELOG_URL),
+                description: expect.stringContaining(`No releases have been published yet. [View releases](<${RELEASES_URL}>)`),
             })],
         });
     });
