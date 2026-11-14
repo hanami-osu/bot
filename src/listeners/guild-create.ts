@@ -43,29 +43,33 @@ $listener({
         // build temporarily unavailable, return.
         if (!("name" in guild)) return;
 
-        const document = await getEntry(Tables.GUILD, guild.id);
+        try {
+            const document = await getEntry(Tables.GUILD, guild.id);
 
-        const metadata: Array<{ key: keyof Guild; value: string | number | null }> = [
-            { key: "name", value: guild.name },
-            { key: "owner_id", value: guild.ownerId },
-            { key: "joined_at", value: guild.joinedAt },
-        ];
+            const metadata: Array<{ key: keyof Guild; value: string | number | null }> = [
+                { key: "name", value: guild.name },
+                { key: "owner_id", value: guild.ownerId },
+                { key: "joined_at", value: guild.joinedAt },
+            ];
 
-        const created = await insertData(
-            {
+            const created = await insertData(
+                {
+                    table: Tables.GUILD,
+                    id: guild.id,
+                    data: [...metadata, { key: "prefixes", value: null }],
+                },
+                true,
+            );
+            if (!created) await insertData({
                 table: Tables.GUILD,
                 id: guild.id,
-                data: [...metadata, { key: "prefixes", value: null }],
-            },
-            true,
-        );
-        if (!created) await insertData({
-            table: Tables.GUILD,
-            id: guild.id,
-            data: metadata,
-        });
+                data: metadata,
+            });
 
-        if (document?.prefixes) guildPrefixesCache.set(guild.id, document.prefixes);
-        if (created) await sendWelcomeMessage(guild);
+            if (document?.prefixes) guildPrefixesCache.set(guild.id, document.prefixes);
+            if (created) await sendWelcomeMessage(guild);
+        } catch (error) {
+            await logger.error("Guild create listener failed", error, { guildId: guild.id });
+        }
     },
 });

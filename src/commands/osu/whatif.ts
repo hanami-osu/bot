@@ -104,7 +104,7 @@ export async function run(ctx: CommandContext) {
 }
 
 async function getEmbeds(user: SuccessUser, playPps: Array<number>, initiatorId: string): Promise<MessageReplyOptions> {
-    const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
+    const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode, key: user.lookupKey }));
     if (!osuUserRequest.success) {
         return {
             embeds: [userNotFoundEmbed(user.banchoId)],

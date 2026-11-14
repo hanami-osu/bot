@@ -10,6 +10,7 @@ import { ITEMS_PER_PAGE } from "@utils/pagination";
 import { getUserScores, USER_SCORE_FETCH_LIMIT } from "@utils/score-api";
 import { calculateWeightedPp } from "@utils/whatif";
 import { getPerformanceResults } from "@utils/osu";
+import { normalizeScoreStatistics } from "@utils/formatter";
 import { safeParse } from "@utils/safe-parse";
 import { v2 } from "osu-api-extended";
 import { discordOption, filterOption, gradeOption, modeOption, modsActionOption, modsOption, usernameOption } from "./options";
@@ -39,7 +40,7 @@ export async function run(ctx: CommandContext): Promise<void> {
         return;
     }
 
-    const userRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
+    const userRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode, key: user.lookupKey }));
     if (!userRequest.success) {
         await ctx.editReply({ embeds: [simpleErrorEmbed("I couldn't find that osu! user.", "Nothing to show")] });
         return;
@@ -74,7 +75,7 @@ export async function run(ctx: CommandContext): Promise<void> {
                     mode: user.mode,
                     beatmapId: score.beatmap.id,
                     maxCombo: score.max_combo,
-                    hitValues: score.statistics,
+                    hitValues: normalizeScoreStatistics(score.statistics),
                     mods: score.mods,
                     passed: score.passed,
                     scoreData: user.authorDb?.score_data,
@@ -91,9 +92,12 @@ export async function run(ctx: CommandContext): Promise<void> {
         );
     }
 
+    // Weight against the full top plays list so filtered plays keep their real positions.
+    const evaluatedByScore = new Map(evaluatedScores.map(result => [filteredScores[result.index], result]));
+    const allCurrentPps = scores.map(score => evaluatedByScore.get(score)?.currentPp ?? score.pp ?? 0);
+    const allFcPps = scores.map(score => evaluatedByScore.get(score)?.fcPp ?? score.pp ?? 0);
     const currentTotalPp = osuUser.statistics.pp ?? 0;
-    const currentWeightedPp = calculateWeightedPp(evaluatedScores.map(result => result.currentPp));
-    const noChokeTotalPp = currentTotalPp + calculateWeightedPp(evaluatedScores.map(result => result.fcPp)) - currentWeightedPp;
+    const noChokeTotalPp = currentTotalPp + calculateWeightedPp(allFcPps) - calculateWeightedPp(allCurrentPps);
     const gains = evaluatedScores
         .filter(result => result.fcPp > result.currentPp)
         .sort((first, second) => second.fcPp - second.currentPp - (first.fcPp - first.currentPp));

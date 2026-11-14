@@ -30,7 +30,8 @@ export async function run(ctx: CommandContext) {
     }
 
     const { user, mods, beatmapsetId } = parsedArgs;
-    const selectedMods = ((typeof mods.name === "string" ? mods.name : mods.name?.acronym)?.match(/.{1,2}/g) as Array<Mod> | null) ?? null;
+    const modName = typeof mods.name === "string" ? mods.name : mods.name?.acronym;
+    const selectedMods = modName && modName !== "NM" ? modName.match(/.{1,2}/g) as Array<Mod> | null : null;
 
     if (beatmapsetId) {
         const request = await safeParse(v2.beatmaps.details({ type: "set", id: Number(beatmapsetId) }));

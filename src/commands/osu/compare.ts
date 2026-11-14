@@ -70,7 +70,7 @@ async function getEmbeds(
     grade: string | undefined,
     context: CommandContext,
 ): Promise<{ reply: MessageReplyOptions; embedOptions?: CompareBuilderOptions }> {
-    const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
+    const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode, key: user.lookupKey }));
     if (!osuUserRequest.success) {
         return {
             reply: {
@@ -107,12 +107,14 @@ async function getEmbeds(
         };
     }
 
-    const plays = await getBeatmapUserScores(beatmap.id, osuUser.id, { query: { mode: user.mode } }, user.authorDb);
+    // Only osu!standard maps convert to other modes, so other maps can only have scores in their own mode.
+    const mode = beatmap.mode === Mode.OSU ? user.mode : beatmap.mode as Mode;
+    const plays = await getBeatmapUserScores(beatmap.id, osuUser.id, { query: { mode } }, user.authorDb);
 
     if (plays.length === 0) {
         return {
             reply: {
-                embeds: [simpleInfoEmbed(`\`${osuUser.username}\` has no plays on that beatmap in \`${user.mode}\` yet.`, "Nothing to show")],
+                embeds: [simpleInfoEmbed(`\`${osuUser.username}\` has no plays on that beatmap in \`${mode}\` yet.`, "Nothing to show")],
             },
         };
     }
@@ -120,7 +122,7 @@ async function getEmbeds(
     const embedOptions: CompareBuilderOptions = {
         type: EmbedBuilderType.COMPARE,
         initiatorId: authorId,
-        mode: user.mode,
+        mode,
         authorDb: user.authorDb,
         user: osuUser,
         beatmap: beatmap as Beatmap,

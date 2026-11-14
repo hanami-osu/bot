@@ -1,5 +1,5 @@
 import { initializeDatabase, initializeOsuApi } from "@utils/initialize";
-import { logger } from "@utils/logger";
+import { asError, logger } from "@utils/logger";
 import { closeRedis, initializeRedis } from "./state/redis";
 import { prisma } from "@utils/database";
 import { clearReady } from "@utils/readiness";
@@ -11,10 +11,6 @@ const SHUTDOWN_TIMEOUT_MS = 8_000;
 
 let discordClient: Client | null = null;
 let shutdownPromise: Promise<void> | null = null;
-
-function asError(error: unknown): Error {
-    return error instanceof Error ? error : new Error(String(error));
-}
 
 function withTimeout<T>(promise: Promise<T>, label: string, timeoutMs = SHUTDOWN_TIMEOUT_MS): Promise<T> {
     return Promise.race([

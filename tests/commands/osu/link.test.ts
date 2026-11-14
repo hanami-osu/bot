@@ -88,7 +88,7 @@ describe("link command", () => {
         });
     });
 
-    test("finishes the deferred response when a stored Bancho ID is malformed", async () => {
+    test("still issues a link when the stored osu! account can't be fetched", async () => {
         getEntry.mockResolvedValueOnce({ banchoId: "malformed" });
         getUserDetails.mockRejectedValueOnce(new Error("invalid user"));
         globalThis.fetch = mock(() =>
@@ -104,7 +104,12 @@ describe("link command", () => {
         await run(ctx);
 
         expect(editReply).toHaveBeenCalledWith({
-            embeds: [expect.objectContaining({ color: EMBED_COLORS.error })],
+            embeds: [
+                expect.objectContaining({
+                    title: "Link your osu! account",
+                    description: expect.stringContaining("https://hanami.example/link/ticket"),
+                }),
+            ],
         });
     });
 });

@@ -62,9 +62,9 @@ async function add({
 }): Promise<void> {
     if (!(await hasRequiredPermissions(interaction))) return;
 
-    const guild = await getEntry(Tables.GUILD, guildId);
-    if (typeof prefix === "undefined" || guild === null) return;
-    const { prefixes } = guild;
+    if (typeof prefix === "undefined") return;
+    // A missing guild row (e.g. joined while the bot was offline) just means no custom prefixes yet.
+    const prefixes = (await getEntry(Tables.GUILD, guildId))?.prefixes ?? null;
 
     if (prefixes && prefixes.length >= MAX_AMOUNT_OF_PREFIXES) {
         await interaction.editReply({
@@ -110,9 +110,9 @@ async function remove({
 }): Promise<void> {
     if (!(await hasRequiredPermissions(interaction))) return;
 
-    const guild = await getEntry(Tables.GUILD, guildId);
-    if (typeof prefix === "undefined" || guild === null) return;
-    const { prefixes } = guild;
+    if (typeof prefix === "undefined") return;
+    // A missing guild row (e.g. joined while the bot was offline) just means no custom prefixes yet.
+    const prefixes = (await getEntry(Tables.GUILD, guildId))?.prefixes ?? null;
 
     if (prefixes === null) {
         await interaction.editReply({
@@ -160,10 +160,7 @@ async function list({
     interaction: GuildInteraction<ApplicationCommandData>;
     guildId: string;
 }): Promise<void> {
-    const guild = await getEntry(Tables.GUILD, guildId);
-    if (guild === null) return;
-
-    const { prefixes } = guild;
+    const prefixes = (await getEntry(Tables.GUILD, guildId))?.prefixes ?? null;
 
     if (prefixes === null) {
         await interaction.editReply({

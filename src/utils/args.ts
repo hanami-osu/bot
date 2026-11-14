@@ -2,7 +2,6 @@ import { getEntry } from "./database";
 import { Mode } from "@type/osu";
 import { UserType } from "@type/command-args";
 import { Tables } from "@type/database";
-import { enums } from "osu-api-extended";
 import type { DifficultyOptions, Mods, PrefixCommandArgs, User, CommandArgs } from "@type/command-args";
 import type { CommandContext } from "./command-context";
 import type { ApplicationCommandData, DMInteraction, GuildInteraction, Interaction, Message } from "@lilybird/transformers";
@@ -22,7 +21,13 @@ interface BeatMapURL {
     id: string;
 }
 
-const allowedModAcronyms = new Set(Object.keys(enums.ModsEnum));
+// Two-letter acronyms only, since mod strings are parsed in pairs.
+const allowedModAcronyms = new Set([
+    "EZ", "NF", "HT", "DC", "HR", "SD", "PF", "DT", "NC", "HD", "FL", "BL", "ST", "AC", "TP", "DA", "CL", "RD", "MR", "AL",
+    "SG", "AT", "CN", "RX", "AP", "SO", "TR", "WG", "SI", "GR", "DF", "WU", "WD", "TC", "BR", "AD", "MU", "NS", "MG", "RP",
+    "AS", "FR", "BU", "SY", "DP", "TD", "SW", "FF", "FI", "DS", "IN", "CS", "HO", "1K", "2K", "3K", "4K", "5K", "6K", "7K",
+    "8K", "9K",
+]);
 const equivalentMods = [
     ["DT", "NC"],
     ["SD", "PF"],
@@ -81,7 +86,7 @@ function parseModsString(modsValue: string | null | undefined): string | null {
     if (!modsValue) return null;
 
     const normalized = modsValue.toUpperCase();
-    if (normalized === "NM") return null;
+    if (normalized === "NM") return normalized;
     if (!/^[A-Z0-9]+$/.test(normalized) || normalized.length % 2 !== 0) {
         throw new CommandValidationError("The mods value must be a valid two-letter mod combination.");
     }
@@ -294,7 +299,7 @@ async function parseSlashCommandArgs(
                         : `Please link your account to the bot using ${getSlashCommandMention("link")}!`,
                 }
         : userArg
-            ? { type: UserType.SUCCESS, banchoId: userArg, mode, beatmapId, authorDb: userAuthor }
+            ? { type: UserType.SUCCESS, banchoId: userArg, lookupKey: "username", mode, beatmapId, authorDb: userAuthor }
             : userAuthor?.banchoId
                 ? { type: UserType.SUCCESS, banchoId: userAuthor.banchoId, mode, beatmapId, authorDb: userAuthor }
                 : {
@@ -421,6 +426,7 @@ async function parsePrefixCommandArgs(
                 beatmapId: result.user.beatmapId,
                 type: UserType.SUCCESS,
                 banchoId: discordId ?? userArg,
+                lookupKey: discordId ? undefined : "username",
                 authorDb: userAuthor,
                 mode,
             };
