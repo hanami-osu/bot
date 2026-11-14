@@ -221,6 +221,33 @@ describe("args parser", () => {
             );
         });
 
+        test("looks up typed usernames by username but linked accounts by ID", async () => {
+            const typed = await parseCommandArgs(createPrefixContext(["727"]), Mode.OSU);
+            const linked = await parseCommandArgs(createPrefixContext(["<@123456789012345678>"]), Mode.OSU);
+
+            expect(typed.user.type === UserType.SUCCESS && typed.user.lookupKey).toBe("username");
+            expect(linked.user.type === UserType.SUCCESS && linked.user.lookupKey).toBeUndefined();
+        });
+
+        test("keeps NM as a mod filter", async () => {
+            const result = await parseCommandArgs(createPrefixContext(["peppy", "+nm"]), Mode.OSU);
+
+            expect(result.mods.include).toBe(true);
+            expect(result.mods.name).toBe("NM");
+        });
+
+        test("accepts lazer mod acronyms and rejects numeric mod values", async () => {
+            const result = await parseCommandArgs(createPrefixContext(["peppy", "+HDDC"]), Mode.OSU);
+            expect(result.mods.name).toBe("HDDC");
+
+            await expect(parseCommandArgs(createPrefixContext(["peppy", "+16"]), Mode.OSU)).rejects.toBeInstanceOf(
+                CommandValidationError,
+            );
+            await expect(parseCommandArgs(createPrefixContext(["peppy", "+HTDC"]), Mode.OSU)).rejects.toBeInstanceOf(
+                CommandValidationError,
+            );
+        });
+
         test("uses prefix command suffix indexes as zero-based indexes", async () => {
             const result = await parseCommandArgs(createPrefixContext(["peppy"], 2), Mode.OSU);
             expect(result.index).toBe(2);

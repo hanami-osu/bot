@@ -269,4 +269,52 @@ describe("nochoke command end-to-end", () => {
         expect(getLabels(nextReply.components)).toContain("2 / 2");
         expect(nextReply.embeds[0]?.title).toContain("Total pp");
     });
+
+    async function runPrefixNoChoke(content: string, authorId: string): Promise<{ title?: string; description?: string }> {
+        const reply = mock((_response: { embeds: Array<{ title?: string; description?: string }> }) =>
+            Promise.resolve({ id: "message-reply", edit: mock(() => Promise.resolve()) }));
+        const client = {
+            rest: {
+                triggerTypingIndicator: mock(() => Promise.resolve()),
+                getGuild: mock(() => Promise.resolve({ name: "test server" })),
+            },
+        };
+
+        const { dispatchPrefixCommand } = await import("../../src/commands/dispatch/prefix-dispatcher");
+        await dispatchPrefixCommand({
+            content,
+            guildId: "guild-1",
+            channelId: "channel-1",
+            author: { id: authorId, username: "tester", bot: false },
+            client,
+            reply,
+            react: mock(() => Promise.resolve()),
+            fetchChannel: () => Promise.resolve({ isText: () => true }),
+        } as never);
+
+        return reply.mock.calls[0]?.[0]?.embeds[0] ?? {};
+    }
+
+    test("reads lazer-style statistics keys the same as legacy ones", async () => {
+        osuScoresList.mockResolvedValueOnce(scores.map((play) => {
+            const { count_300, count_100, count_50, count_miss } = play.statistics;
+            return { ...play, statistics: { great: count_300, ok: count_100, meh: count_50, miss: count_miss } } as never;
+        }));
+
+        const embed = await runPrefixNoChoke(";nc peppy", "lazer-keys-user");
+
+        expect(embed.title).toBe("**Total pp:** 50.00pp → **77.00pp** (+27.00pp)");
+        expect(embed.description).toContain("9.99pp → **27.08pp** (+17.09pp)");
+    });
+
+    test("weights filtered plays at their real position in the top plays", async () => {
+        const hiddenScore = { ...score, mods: [{ acronym: "HD" }] };
+        osuScoresList.mockResolvedValueOnce([{ ...scores[0], pp: 1000 }, hiddenScore] as never);
+
+        const embed = await runPrefixNoChoke(";nc peppy +HD", "filtered-user");
+        const [, currentPp, fcPp] = /([\d.]+)pp → \*\*([\d.]+)pp\*\*/.exec(embed.description ?? "") ?? [];
+        const expectedTotal = 50 + (Number(fcPp) - Number(currentPp)) * 0.95;
+
+        expect(embed.title).toBe(`**Total pp:** 50.00pp → **${expectedTotal.toFixed(2)}pp** (+${(expectedTotal - 50).toFixed(2)}pp)`);
+    });
 });

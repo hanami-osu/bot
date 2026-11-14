@@ -245,11 +245,12 @@ export async function getPerformanceResults({
     } = hitValues ?? {};
 
     // Only calculate passedObjects for failed/incomplete plays.
-    // For completed plays, rosu-pp determines object count from the beatmap.
+    // For completed plays, rosu-pp determines object count from the beatmap. Mania counts MAX (geki) and 200 (katu) separately.
     let passedObjects: number | undefined;
     if (passed === false && hitValues) {
         passedObjects
-            = (hitValues.count_300 ?? 0) + (hitValues.count_100 ?? 0) + (hitValues.count_50 ?? 0) + (hitValues.count_miss ?? 0);
+            = (hitValues.count_300 ?? 0) + (hitValues.count_100 ?? 0) + (hitValues.count_50 ?? 0) + (hitValues.count_miss ?? 0)
+                + (rulesetId === 3 ? (hitValues.count_geki ?? 0) + (hitValues.count_katu ?? 0) : 0);
     }
 
     let current: PerformanceAttributes;

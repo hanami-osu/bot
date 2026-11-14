@@ -1,6 +1,6 @@
 import { v2 } from "osu-api-extended";
 import { safeParse } from "@utils/safe-parse";
-import { downloadBeatmap, getPerformanceResults } from "@utils/osu";
+import { downloadBeatmap, formatDuration, getPerformanceResults } from "@utils/osu";
 import { getEntry } from "@utils/database";
 import { rulesets } from "@utils/constants";
 import { Mode } from "@type/osu";
@@ -40,16 +40,15 @@ export async function beatmapBuilder({ beatmapId, mods }: BeatmapBuilderOptions)
         return [simpleErrorEmbed("I couldn't calculate performance for that beatmap. Please try again in a moment.")];
     }
 
-    const drainLengthInSeconds = map.total_length / a98.difficultyAttrs.clockRate;
-    const drainMinutes = Math.floor(drainLengthInSeconds / 60);
-    const drainSeconds = Math.ceil(drainLengthInSeconds % 60);
+    const { difficultyAttrs, mapValues } = a98;
+    const drainLength = formatDuration(map.total_length / difficultyAttrs.clockRate);
 
     const objects = map.count_circles + map.count_sliders + map.count_spinners;
 
     const infoField = [
-        `**Stars:** **\`${a98.current.difficulty.stars.toFixed(2)}\`** **Mods:** \`+${mods ?? "NM"}\` **BPM:** \`${a98.mapValues.bpm.toFixed(0)}\``,
-        `**Length:** \`${drainMinutes}:${drainSeconds < 10 ? `0${drainSeconds}` : drainSeconds}\` **Max Combo:** \`${a98.current.difficulty.maxCombo}\` **Objects:** \`${objects.toLocaleString()}\``,
-        `**AR:** \`${a98.mapValues.ar.toFixed(1)}\` **OD:** \`${a98.mapValues.od.toFixed(1)}\` **CS:** \`${a98.mapValues.cs.toFixed(1)}\` **HP:** \`${a98.mapValues.hp.toFixed(1)}\``,
+        `**Stars:** **\`${a98.current.difficulty.stars.toFixed(2)}\`** **Mods:** \`+${mods ? mods.join("") : "NM"}\` **BPM:** \`${(mapValues.bpm * difficultyAttrs.clockRate).toFixed(0)}\``,
+        `**Length:** \`${drainLength}\` **Max Combo:** \`${a98.current.difficulty.maxCombo}\` **Objects:** \`${objects.toLocaleString()}\``,
+        `**AR:** \`${difficultyAttrs.ar.toFixed(1)}\` **OD:** \`${difficultyAttrs.od.toFixed(1)}\` **CS:** \`${difficultyAttrs.cs.toFixed(1)}\` **HP:** \`${difficultyAttrs.hp.toFixed(1)}\``,
         `\n:heart: **${mapset.favourite_count.toLocaleString()}** :play_pause: **${mapset.play_count.toLocaleString()}**`,
     ];
 

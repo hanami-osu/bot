@@ -49,12 +49,19 @@ export function safeSerialize(value: unknown): string {
         if (SENSITIVE_KEY_PATTERN.test(key)) return "[REDACTED]";
         if (typeof nestedValue === "bigint") return nestedValue.toString();
         if (typeof nestedValue === "string") return redactString(nestedValue);
+        // Error properties aren't enumerable, so JSON.stringify would otherwise produce {}.
+        if (nestedValue instanceof Error) return { name: nestedValue.name, message: nestedValue.message, stack: nestedValue.stack };
         if (typeof nestedValue === "object" && nestedValue !== null) {
             if (seen.has(nestedValue)) return "[Circular]";
             seen.add(nestedValue);
         }
         return nestedValue;
     });
+}
+
+export function asError(error: unknown): Error {
+    if (error instanceof Error) return error;
+    return new Error(typeof error === "string" ? error : safeSerialize(error));
 }
 
 export class Logger {
@@ -168,7 +175,7 @@ export class Logger {
         }
     }
 
-    private async log(level: LogLevel, message: string, context?: Record<string, unknown>, error?: Error): Promise<void> {
+    private async log(level: LogLevel, message: string, context?: Record<string, unknown>, error?: unknown): Promise<void> {
         if (level < this.config.level) {
             return;
         }
@@ -178,7 +185,7 @@ export class Logger {
             level,
             message,
             context,
-            error,
+            error: typeof error === "undefined" ? undefined : asError(error),
         };
 
         // Console output
@@ -211,11 +218,11 @@ export class Logger {
         return this.log(LogLevel.WARN, message, context);
     }
 
-    error(message: string, error?: Error, context?: Record<string, unknown>): Promise<void> {
+    error(message: string, error?: unknown, context?: Record<string, unknown>): Promise<void> {
         return this.log(LogLevel.ERROR, message, context, error);
     }
 
-    fatal(message: string, error?: Error, context?: Record<string, unknown>): Promise<void> {
+    fatal(message: string, error?: unknown, context?: Record<string, unknown>): Promise<void> {
         return this.log(LogLevel.FATAL, message, context, error);
     }
 

@@ -23,8 +23,14 @@ function playMatchesMods(play: FilterablePlay, mods: ModStructure): boolean {
     const modName = typeof name === "string" ? name : name?.acronym;
     if (!modName) return true;
 
-    const playMods = play.mods.map(mod => (typeof mod === "string" ? mod : mod.acronym).toUpperCase());
-    const requestedMods = modName.toUpperCase().match(/.{1,2}/g) ?? [];
+    const normalizedModName = modName.toUpperCase();
+    const requestedMods: Array<string> = normalizedModName === "NM" ? [] : normalizedModName.match(/.{1,2}/g) ?? [];
+    // Stable scores carry CL in lazer-format responses; only count it when it was asked for.
+    const playMods = play.mods
+        .map(mod => (typeof mod === "string" ? mod : mod.acronym).toUpperCase())
+        .filter(mod => mod !== "CL" || requestedMods.includes("CL"));
+
+    if (requestedMods.length === 0) return exclude ? playMods.length > 0 : playMods.length === 0;
 
     if (exclude) return !requestedMods.every(requestedMod => playMods.includes(requestedMod));
     if (forceInclude)

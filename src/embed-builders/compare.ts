@@ -23,25 +23,9 @@ export async function compareBuilder({
 }: CompareBuilderOptions): Promise<Array<Embed.Structure>> {
     await saveScoreDatas(plays, mode, beatmap);
 
-    if (grade) plays = filterPlays(plays, { grade });
+    plays = filterPlays(plays, { mods, grade });
 
     const profile = getFormattedProfile(user, mode);
-
-    if (mods?.name) {
-        const { exclude, forceInclude, include, name } = mods;
-        const filteredPlays = [];
-        for (const play of plays) {
-            const modsStr = play.mods.map(mod => (typeof mod === "string" ? mod : mod.acronym)).join("");
-            const modName = typeof name === "string" ? name : name?.acronym;
-
-            if (modName) {
-                if (exclude && !modsStr.includes(modName.toUpperCase())) filteredPlays.push(play);
-                else if (forceInclude && modsStr === modName.toUpperCase()) filteredPlays.push(play);
-                else if (include && modsStr.includes(modName.toUpperCase())) filteredPlays.push(play);
-            } else if (!exclude && !forceInclude && !include) filteredPlays.push(play);
-        }
-        plays = filteredPlays;
-    }
 
     if (plays.length === 0) {
         return [simpleInfoEmbed(`\`${profile.username}\` has no matching scores on this beatmap.`, "Nothing to show")];

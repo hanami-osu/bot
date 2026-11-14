@@ -26,6 +26,20 @@ const rulesetModes: Record<number, Mode> = {
     3: "mania" as Mode,
 };
 
+export function normalizeScoreStatistics(statistics: ScoreStatistics): ScoreStatistics {
+    return {
+        count_300: statistics.count_300 ?? statistics.great ?? 0,
+        count_100: statistics.count_100 ?? statistics.ok ?? 0,
+        count_50: statistics.count_50 ?? statistics.meh ?? 0,
+        count_geki: statistics.count_geki ?? statistics.perfect ?? 0,
+        count_katu: statistics.count_katu ?? statistics.good ?? 0,
+        count_miss: statistics.count_miss ?? statistics.miss ?? 0,
+        large_tick_hit: statistics.large_tick_hit ?? 0,
+        small_tick_hit: statistics.small_tick_hit ?? 0,
+        slider_tail_hit: statistics.slider_tail_hit ?? 0,
+    };
+}
+
 function getScoreMode(
     play: UserBestScore | UserBestScoreV2 | UserScore | UserScoreV2 | Score | ScoreV2 | LeaderboardScore,
     fallback: Mode,
@@ -84,17 +98,7 @@ export async function getFormattedScore({
         beatmapset = set;
     }
 
-    const scoreStatistics: ScoreStatistics = {
-        count_300: play.statistics.count_300 ?? play.statistics.great ?? 0,
-        count_100: play.statistics.count_100 ?? play.statistics.ok ?? 0,
-        count_50: play.statistics.count_50 ?? play.statistics.meh ?? 0,
-        count_geki: play.statistics.count_geki ?? play.statistics.perfect ?? 0,
-        count_katu: play.statistics.count_katu ?? play.statistics.good ?? 0,
-        count_miss: play.statistics.count_miss ?? play.statistics.miss ?? 0,
-        large_tick_hit: play.statistics.large_tick_hit ?? 0,
-        small_tick_hit: play.statistics.small_tick_hit ?? 0,
-        slider_tail_hit: play.statistics.slider_tail_hit ?? 0,
-    };
+    const scoreStatistics = normalizeScoreStatistics(play.statistics);
     let user: string | undefined;
     let userId: number | undefined;
     let retries: number | undefined;

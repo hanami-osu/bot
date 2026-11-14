@@ -17,6 +17,8 @@ interface BaseUser {
 export interface SuccessUser extends BaseUser {
     type: UserType.SUCCESS;
     banchoId: string;
+    /** Set when banchoId is a typed username, so numeric names aren't looked up as IDs. */
+    lookupKey?: "username";
     mode: Mode;
 }
 

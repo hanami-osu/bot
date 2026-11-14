@@ -20,6 +20,29 @@ describe("logger serialization", () => {
         expect(serialized).toContain("[Circular]");
     });
 
+    test("serializes Error values in context instead of dropping them", () => {
+        const serialized = safeSerialize({ error: new Error("redis down") });
+        expect(serialized).toContain("\"message\":\"redis down\"");
+    });
+
+    test("logs thrown non-Error values without throwing", async () => {
+        const logDir = await mkdtemp(join(tmpdir(), "hanami-logger-"));
+
+        try {
+            const logger = new Logger({ logDir, enableConsole: false, enableFile: true });
+            await logger.error("String failure", "plain string");
+            await logger.error("Object failure", { code: 42 });
+            await logger.flush();
+
+            const [logFile] = await readdir(logDir);
+            const contents = await readFile(join(logDir, logFile), "utf8");
+            expect(contents).toContain("plain string");
+            expect(contents).toContain("{\"code\":42}");
+        } finally {
+            await rm(logDir, { recursive: true, force: true });
+        }
+    });
+
     test("redacts sensitive values from error messages and stack traces", async () => {
         const logDir = await mkdtemp(join(tmpdir(), "hanami-logger-"));
 

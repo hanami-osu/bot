@@ -34,7 +34,7 @@ export async function run(ctx: CommandContext) {
 }
 
 async function getEmbeds(user: SuccessUser, authorId: string) {
-    const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode }));
+    const osuUserRequest = await safeParse(v2.users.details({ user: user.banchoId, mode: user.mode, key: user.lookupKey }));
     if (!osuUserRequest.success) {
         return [userNotFoundEmbed(user.banchoId)];
     }

@@ -1,6 +1,9 @@
 import { afterEach, describe, expect, mock, test } from "bun:test";
 
 const removeEntry = mock(() => Promise.resolve(true));
+const loggerError = mock(() => Promise.resolve());
+
+mock.module("@utils/logger", () => ({ logger: { error: loggerError, info: mock(), warn: mock() } }));
 
 mock.module("@utils/database", () => ({
     removeEntry,
@@ -40,6 +43,16 @@ describe("guildDelete listener", () => {
         await listeners.guildDelete({}, { id: "guild123" });
 
         expect(removeEntry).toHaveBeenCalledTimes(1);
+        expect(guildPrefixesCache.has("guild123")).toBe(false);
+    });
+
+    test("logs database failures instead of rejecting", async () => {
+        removeEntry.mockRejectedValueOnce(new Error("db down"));
+        guildPrefixesCache.set("guild123", [";"]);
+
+        await listeners.guildDelete({}, { id: "guild123" });
+
+        expect(loggerError).toHaveBeenCalledTimes(1);
         expect(guildPrefixesCache.has("guild123")).toBe(false);
     });
 
