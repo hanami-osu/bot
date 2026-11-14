@@ -5,12 +5,14 @@ import type { CompareBuilderOptions } from "../../src/types/builders";
 import type { Score } from "../../src/types/osu";
 import { EMBED_COLORS } from "../../src/embed-builders/common";
 
-mock.module("@utils/database", () => ({
-    getEntry: mock(() => Promise.resolve({ data: "osu file format v14\n[Metadata]\nTitle:Test\n[HitObjects]\n" })),
-}));
+const mapData = "osu file format v14\n[Metadata]\nTitle:Test\n[HitObjects]\n";
+const getEntry = mock(() => Promise.resolve<{ data: string } | null>({ data: mapData }));
+const downloadBeatmap = mock(() => Promise.resolve({ contents: mapData }));
+
+mock.module("@utils/database", () => ({ getEntry }));
 
 mock.module("@utils/osu", () => ({
-    downloadBeatmap: mock(() => Promise.resolve({ contents: "osu file format v14\n[Metadata]\nTitle:Test\n[HitObjects]\n" })),
+    downloadBeatmap,
     saveScoreDatas: mock(() => Promise.resolve()),
 }));
 
@@ -95,6 +97,18 @@ describe("compare embed builder", () => {
             title: "Nothing to show",
             color: EMBED_COLORS.brand,
             description: "`peppy` has no matching scores on this beatmap.",
+        });
+    });
+
+    test("shows a friendly error when the beatmap can't be downloaded", async () => {
+        getEntry.mockResolvedValueOnce(null);
+        downloadBeatmap.mockRejectedValueOnce(new Error("Beatmap download failed with HTTP 500"));
+
+        const embeds = await compareBuilder(options([score(1, 100)]));
+
+        expect(embeds[0]).toMatchObject({
+            color: EMBED_COLORS.error,
+            description: "I couldn't calculate performance for that beatmap. Please try again in a moment.",
         });
     });
 });

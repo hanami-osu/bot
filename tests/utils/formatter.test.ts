@@ -480,3 +480,24 @@ SliderTickRate:1
         });
     });
 });
+
+describe("normalizeScoreStatistics", () => {
+    test("maps lazer catch drops, droplets and misses to legacy counts", async () => {
+        const { normalizeScoreStatistics } = await import("../../src/utils/formatter");
+
+        const statistics = normalizeScoreStatistics(
+            { great: 500, large_tick_hit: 40, large_tick_miss: 2, small_tick_hit: 300, small_tick_miss: 7, miss: 3 },
+            Mode.FRUITS,
+        );
+
+        expect(statistics).toMatchObject({ count_300: 500, count_100: 40, count_50: 300, count_katu: 7, count_miss: 5 });
+    });
+
+    test("keeps lazer judgement mapping for other modes", async () => {
+        const { normalizeScoreStatistics } = await import("../../src/utils/formatter");
+
+        const statistics = normalizeScoreStatistics({ great: 100, ok: 5, meh: 1, miss: 2, large_tick_hit: 30 }, Mode.OSU);
+
+        expect(statistics).toMatchObject({ count_300: 100, count_100: 5, count_50: 1, count_miss: 2, large_tick_hit: 30 });
+    });
+});

@@ -1,13 +1,12 @@
 import { describe, expect, mock, test } from "bun:test";
 import { EMBED_COLORS } from "../../src/embed-builders/common";
 
-mock.module("@utils/database", () => ({
-    getEntry: mock(() => Promise.resolve({ data: "osu file format v14\n[HitObjects]\n" })),
-}));
+const getEntry = mock(() => Promise.resolve<{ data: string } | null>({ data: "osu file format v14\n[HitObjects]\n" }));
+const downloadBeatmap = mock(() => Promise.resolve({ contents: "" }));
 
-mock.module("@utils/osu", () => ({
-    downloadBeatmap: mock(() => Promise.resolve({ contents: "" })),
-}));
+mock.module("@utils/database", () => ({ getEntry }));
+
+mock.module("@utils/osu", () => ({ downloadBeatmap }));
 
 mock.module("@utils/formatter", () => ({
     getFormattedScore: mock(() =>
@@ -56,5 +55,17 @@ describe("leaderboard embed builder", () => {
         } as never);
 
         expect(embeds[0]?.footer?.text).toBe("Ranked beatmapset by Mapper");
+    });
+
+    test("shows a friendly error when the beatmap can't be downloaded", async () => {
+        getEntry.mockResolvedValueOnce(null);
+        downloadBeatmap.mockRejectedValueOnce(new Error("Beatmap download failed with HTTP 500"));
+
+        const embeds = await leaderboardBuilder({ scores: [{ id: 1 }], beatmap: { id: 72727, mode: "osu" }, authorDb: null } as never);
+
+        expect(embeds[0]).toMatchObject({
+            color: EMBED_COLORS.error,
+            description: "I couldn't calculate performance for that beatmap. Please try again in a moment.",
+        });
     });
 });
