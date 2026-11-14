@@ -26,14 +26,16 @@ const rulesetModes: Record<number, Mode> = {
     3: "mania" as Mode,
 };
 
-export function normalizeScoreStatistics(statistics: ScoreStatistics): ScoreStatistics {
+export function normalizeScoreStatistics(statistics: ScoreStatistics, mode: Mode): ScoreStatistics {
+    // Lazer catch scores report drops and droplets as tick results.
+    const isFruits = mode === "fruits";
     return {
         count_300: statistics.count_300 ?? statistics.great ?? 0,
-        count_100: statistics.count_100 ?? statistics.ok ?? 0,
-        count_50: statistics.count_50 ?? statistics.meh ?? 0,
+        count_100: statistics.count_100 ?? (isFruits ? statistics.large_tick_hit : statistics.ok) ?? 0,
+        count_50: statistics.count_50 ?? (isFruits ? statistics.small_tick_hit : statistics.meh) ?? 0,
         count_geki: statistics.count_geki ?? statistics.perfect ?? 0,
-        count_katu: statistics.count_katu ?? statistics.good ?? 0,
-        count_miss: statistics.count_miss ?? statistics.miss ?? 0,
+        count_katu: statistics.count_katu ?? (isFruits ? statistics.small_tick_miss : statistics.good) ?? 0,
+        count_miss: statistics.count_miss ?? (statistics.miss ?? 0) + (isFruits ? (statistics.large_tick_miss ?? 0) : 0),
         large_tick_hit: statistics.large_tick_hit ?? 0,
         small_tick_hit: statistics.small_tick_hit ?? 0,
         slider_tail_hit: statistics.slider_tail_hit ?? 0,
@@ -98,7 +100,7 @@ export async function getFormattedScore({
         beatmapset = set;
     }
 
-    const scoreStatistics = normalizeScoreStatistics(play.statistics);
+    const scoreStatistics = normalizeScoreStatistics(play.statistics, scoreMode);
     let user: string | undefined;
     let userId: number | undefined;
     let retries: number | undefined;

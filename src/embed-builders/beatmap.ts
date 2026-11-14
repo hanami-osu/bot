@@ -7,7 +7,7 @@ import { Mode } from "@type/osu";
 import { Tables } from "@type/database";
 import type { BeatmapBuilderOptions } from "@type/builders";
 import type { Embed } from "lilybird";
-import { beatmapNotFoundEmbed, simpleErrorEmbed } from "./common";
+import { beatmapNotFoundEmbed, performanceUnavailableEmbed } from "./common";
 
 export async function beatmapBuilder({ beatmapId, mods }: BeatmapBuilderOptions): Promise<Array<Embed.Structure>> {
     const beatmapRequest = await safeParse(v2.beatmaps.details({ type: "difficulty", id: Number(beatmapId) }));
@@ -18,7 +18,9 @@ export async function beatmapBuilder({ beatmapId, mods }: BeatmapBuilderOptions)
 
     const { beatmapset: mapset, mode, version } = map;
 
-    const mapData = (await getEntry(Tables.MAP, beatmapId))?.data ?? (await downloadBeatmap(beatmapId)).contents;
+    const mapData = (await getEntry(Tables.MAP, beatmapId))?.data
+        ?? (await downloadBeatmap(beatmapId).then(({ contents }) => contents, () => null));
+    if (!mapData) return [performanceUnavailableEmbed()];
 
     const performancesAsync = [];
     const accuracyList = [98, 97, 95];
@@ -37,7 +39,7 @@ export async function beatmapBuilder({ beatmapId, mods }: BeatmapBuilderOptions)
 
     const [a98, a97, a95] = performances;
     if (a98 === null || a97 === null || a95 === null) {
-        return [simpleErrorEmbed("I couldn't calculate performance for that beatmap. Please try again in a moment.")];
+        return [performanceUnavailableEmbed()];
     }
 
     const { difficultyAttrs, mapValues } = a98;

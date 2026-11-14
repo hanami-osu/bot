@@ -56,6 +56,23 @@ describe("pagination interaction runtime", () => {
         });
     });
 
+    test("replies with an ephemeral error when pagination state can't be read", async () => {
+        get.mockRejectedValueOnce(new Error("Redis is not available"));
+        const reply = mock(() => Promise.resolve());
+
+        await expect(handlePaginationInteraction(createButtonInteraction(reply) as never)).rejects.toThrow("Redis is not available");
+
+        expect(reply).toHaveBeenCalledWith({
+            ephemeral: true,
+            embeds: [
+                expect.objectContaining({
+                    color: EMBED_COLORS.error,
+                    description: "I couldn't load these controls right now. Please try again in a moment.",
+                }),
+            ],
+        });
+    });
+
     test("rejects pagination input from a user other than the command initiator", async () => {
         get.mockResolvedValueOnce({
             type: EmbedBuilderType.PLAYS,

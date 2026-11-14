@@ -42,7 +42,7 @@ export async function handlePaginationInteraction(interaction: Interaction): Pro
 async function handleComponent(interaction: Interaction): Promise<void> {
     if (!interaction.isMessageComponentInteraction()) return;
 
-    const builderOptions = await ButtonStateCache.get(interaction.message.id);
+    const builderOptions = await getButtonState(interaction, interaction.message.id);
     if (!builderOptions) {
         await interaction.reply({
             ephemeral: true,
@@ -161,7 +161,7 @@ async function handlePaginationModal(interaction: Interaction): Promise<boolean>
     const rawValue = getModalInputValue(interaction.data.components, PAGINATION_JUMP_INPUT_ID);
     const requestedValue = rawValue ? Number(rawValue.trim()) : Number.NaN;
 
-    const builderOptions = await ButtonStateCache.get(modalData.messageId);
+    const builderOptions = await getButtonState(interaction, modalData.messageId);
     if (!builderOptions) {
         await interaction.reply({
             ephemeral: true,
@@ -215,6 +215,18 @@ async function handlePaginationModal(interaction: Interaction): Promise<boolean>
         throw error;
     }
     return true;
+}
+
+async function getButtonState(interaction: Interaction, messageId: string): Promise<EmbedBuilderOptions | null> {
+    try {
+        return await ButtonStateCache.get(messageId);
+    } catch (error) {
+        await interaction.reply({
+            ephemeral: true,
+            embeds: [simpleErrorEmbed("I couldn't load these controls right now. Please try again in a moment.")],
+        });
+        throw error;
+    }
 }
 
 function disablePaginationComponents(components: Array<Message.Component.Structure>): Array<Message.Component.Structure> {

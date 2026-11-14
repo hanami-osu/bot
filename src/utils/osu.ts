@@ -1,4 +1,5 @@
 import { bulkInsertData, getEntry, insertData } from "@utils/database";
+import { logger } from "@utils/logger";
 import { Mode } from "@type/osu";
 import { Tables, type ScoreData } from "@type/database";
 import { calculateClassicAccuracy, getLegacyOnlyQueryValue, shouldUseLazerPerformance } from "@utils/score-preference";
@@ -40,12 +41,14 @@ export async function getBeatmapTopScores({
     mode,
     mods,
     authorDb,
+    timeoutMs = 10000,
 }: {
     beatmapId: number;
     isGlobal: boolean;
     mode: GameMode;
     mods: Array<string> | undefined;
     authorDb: User | null;
+    timeoutMs?: number;
 }): Promise<Array<LeaderboardScore>> {
     const url = new URL(`https://osu.ppy.sh/beatmaps/${beatmapId}/scores`);
     url.searchParams.append("mode", mode);
@@ -65,6 +68,7 @@ export async function getBeatmapTopScores({
             "Accept": "application/json",
             "Cookie": `osu_session=${process.env.OSU_ACCESS_TOKEN}`,
         },
+        signal: AbortSignal.timeout(timeoutMs),
     });
 
     if (!req.ok) {
@@ -355,7 +359,9 @@ export async function downloadBeatmap(
         throw new Error("Beatmap download returned invalid .osu content");
     }
 
-    await insertData({ table: Tables.MAP, id, data: [{ key: "data", value: contents }] });
+    await insertData({ table: Tables.MAP, id, data: [{ key: "data", value: contents }] }).catch((error: unknown) =>
+        logger.error("Failed to cache beatmap", error, { beatmapId: id }),
+    );
     return { id, contents };
 }
 
@@ -507,7 +513,11 @@ export async function saveScoreDatas(scores: Array<Score>, mode: Mode, mapTemp?:
         if (score.passed) scoresList.push(saveScore(score, mode, mapTemp));
     }
 
-    if (scoresList.length > 0) await bulkInsertData(scoresList);
+    if (scoresList.length === 0) return;
+
+    await bulkInsertData(scoresList).catch((error: unknown) =>
+        logger.error("Failed to cache scores", error, { count: scoresList.length }),
+    );
 }
 
 function saveScore(

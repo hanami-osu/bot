@@ -58,6 +58,10 @@ export function beatmapNotFoundEmbed(): Embed.Structure {
     return simpleErrorEmbed("I couldn't find that beatmap.", "Nothing found");
 }
 
+export function performanceUnavailableEmbed(): Embed.Structure {
+    return simpleErrorEmbed("I couldn't calculate performance for that beatmap. Please try again in a moment.");
+}
+
 export function supporterRequiredEmbed(): Embed.Structure {
     return simpleErrorEmbed(
         "This leaderboard needs an active osu!supporter tag on the bot's osu! account. "

@@ -113,6 +113,7 @@ export interface ScoreStatistics {
     ignore_miss?: number;
     large_bonus?: number;
     large_tick_hit?: number;
+    large_tick_miss?: number;
     legacy_combo_increase?: number;
     meh?: number;
     miss?: number;

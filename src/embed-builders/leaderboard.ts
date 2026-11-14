@@ -8,7 +8,7 @@ import { EmbedType } from "lilybird";
 import type { LeaderboardBuilderOptions } from "@type/builders";
 import type { Embed } from "lilybird";
 import type { Beatmap, LeaderboardScore, Mode, ScoresInfo } from "@type/osu";
-import { simpleInfoEmbed } from "./common";
+import { performanceUnavailableEmbed, simpleInfoEmbed } from "./common";
 
 export async function leaderboardBuilder({
     scores,
@@ -31,7 +31,9 @@ async function getPlays(
 ): Promise<Array<Embed.Structure>> {
     const beatmapId = beatmap.id;
     const mode = beatmap.mode as Mode;
-    const mapData = (await getEntry(Tables.MAP, beatmapId))?.data ?? (await downloadBeatmap(beatmapId)).contents;
+    const mapData = (await getEntry(Tables.MAP, beatmapId))?.data
+        ?? (await downloadBeatmap(beatmapId).then(({ contents }) => contents, () => null));
+    if (!mapData) return [performanceUnavailableEmbed()];
 
     const pageStart = page * ITEMS_PER_PAGE;
     const pageEnd = pageStart + ITEMS_PER_PAGE;

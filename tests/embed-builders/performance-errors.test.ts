@@ -11,15 +11,18 @@ const safeParse = mock(() => Promise.resolve<any>({ success: true, data: beatmap
 
 mock.module("@utils/safe-parse", () => ({ safeParse }));
 
+const downloadBeatmap = mock(() => Promise.resolve({ contents: "osu file format v14\n[Metadata]\n[HitObjects]\n" }));
+const getPerformanceResults = mock(() => Promise.resolve(null));
+
 mock.module("@utils/database", () => ({
     getEntry: mock(() => Promise.resolve({ data: "" })),
 }));
 
 mock.module("@utils/osu", () => ({
     accuracyCalculator: mock(() => 0),
-    downloadBeatmap: mock(() => Promise.resolve({ contents: "" })),
+    downloadBeatmap,
     formatDuration: mock(() => ""),
-    getPerformanceResults: mock(() => Promise.resolve(null)),
+    getPerformanceResults,
     gradeCalculator: mock(() => ""),
     hitValueCalculator: mock(() => ""),
 }));
@@ -77,5 +80,22 @@ describe("performance embed failures", () => {
             description: "I couldn't calculate performance for that beatmap. Please try again in a moment.",
         });
         expect(embeds[0]?.description).not.toContain("PERFORMANCES IS NULL");
+    });
+
+    test.each([
+        ["beatmap", () => beatmapBuilder({ beatmapId: 72727 } as never)],
+        ["simulation", () => simulateBuilder({ beatmapId: 72727, options: {} } as never)],
+    ])("shows a friendly error when the %s download fails", async (_name, build) => {
+        downloadBeatmap.mockRejectedValueOnce(new Error("Beatmap download failed with HTTP 500"));
+        getPerformanceResults.mockClear();
+
+        const embeds = await build();
+
+        expect(embeds[0]).toMatchObject({
+            title: "Something went wrong",
+            color: EMBED_COLORS.error,
+            description: "I couldn't calculate performance for that beatmap. Please try again in a moment.",
+        });
+        expect(getPerformanceResults).not.toHaveBeenCalled();
     });
 });

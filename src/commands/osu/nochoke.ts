@@ -75,7 +75,7 @@ export async function run(ctx: CommandContext): Promise<void> {
                     mode: user.mode,
                     beatmapId: score.beatmap.id,
                     maxCombo: score.max_combo,
-                    hitValues: normalizeScoreStatistics(score.statistics),
+                    hitValues: normalizeScoreStatistics(score.statistics, user.mode),
                     mods: score.mods,
                     passed: score.passed,
                     scoreData: user.authorDb?.score_data,
