@@ -78,7 +78,7 @@ describe("unlink command", () => {
                 expect.objectContaining({
                     title: "Nothing to unlink",
                     color: EMBED_COLORS.warning,
-                    description: expect.stringContaining("You aren't linked"),
+                    description: expect.stringContaining("isn't using an osu! account"),
                 }),
             ],
         });

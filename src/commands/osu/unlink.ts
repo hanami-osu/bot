@@ -17,7 +17,7 @@ export async function run(ctx: CommandContext): Promise<void> {
         await ctx.editReply({
             embeds: [
                 simpleWarningEmbed(
-                    `You aren't linked to Hanami yet. Use ${linkCommand} to connect your osu! account.`,
+                    `Hanami Bot isn't using an osu! account for you yet. Use ${linkCommand} to connect one.`,
                     "Nothing to unlink",
                 ),
             ],
@@ -29,11 +29,19 @@ export async function run(ctx: CommandContext): Promise<void> {
     await ctx.editReply({
         embeds: [
             simpleSuccessEmbed(
-                `Sad to see you go :(\nYou can reconnect anytime with ${linkCommand}.`,
+                `Sad to see you go :(\nHanami Bot will no longer use this osu! account for your commands.${getWebAccountNotice()}\nYou can reconnect anytime with ${linkCommand}.`,
                 "Account unlinked",
             ),
         ],
     });
+}
+
+// The bot link is only the bot's own preference. Any osu! identity on the Hanami account is left as is.
+function getWebAccountNotice(): string {
+    const webUrl = process.env.HANAMI_WEB_URL;
+    if (!webUrl) return "";
+
+    return ` Your Hanami account isn't changed. You can manage it on [Hanami Web](<${new URL("/profile", webUrl).toString()}>).`;
 }
 
 export const data = {
