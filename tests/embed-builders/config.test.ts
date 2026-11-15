@@ -26,7 +26,7 @@ describe("config embed builder", () => {
         expect(embed.color).toBe(EMBED_COLORS.brand);
         expect(embed.fields).toContainEqual({ name: "Score layout", value: "Maximized" });
         expect(embed.fields).toContainEqual({ name: "Game mode", value: "osu" });
-        expect(embed.fields).toContainEqual({ name: "Score data", value: "Stable" });
+        expect(embed.fields).toContainEqual({ name: "Score data", value: "Automatic" });
         expect(embed.fields).toContainEqual({ name: "Embed style", value: "hanami" });
     });
 });

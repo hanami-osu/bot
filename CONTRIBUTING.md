@@ -90,8 +90,8 @@ Set this to `1` to enable development mode, or `0` for production. For local dev
 Hanami uses MariaDB (MySQL) with Prisma as the ORM. You need to set this up for the bot to run properly:
 
 1. Install MariaDB/MySQL on your system or use Docker.
-2. Create a database for the bot (e.g., `CREATE DATABASE hanami;`).
-3. Set the `DATABASE_URL` in your `.env` to point to your database (e.g., `DATABASE_URL="mysql://username:password@localhost:3306/hanami"`).
+2. Create a database for the bot (e.g., `CREATE DATABASE hanami_bot;`). Keep it separate from Hanami Web's own database.
+3. Set the `DATABASE_URL` in your `.env` to point to your database (e.g., `DATABASE_URL="mysql://username:password@localhost:3306/hanami_bot"`). Hanami Web's `BOT_DATABASE_URL` must point to this same database.
 
 ### Redis Configuration
 

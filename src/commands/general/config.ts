@@ -1,9 +1,12 @@
 import { configListEmbed, configUpdatedEmbed, type ConfigChange } from "@builders";
 import type { CommandData } from "@type/commands";
-import { ScoreEmbed, Tables } from "@type/database";
+import { ScoreData, ScoreEmbed, Tables } from "@type/database";
 import { ApplicationCommandOptionType } from "lilybird";
 import { CommandContext } from "@utils/command-context";
 import { getEntry, insertData } from "@utils/database";
+
+// Discord choices can't be null, so this stands in for "unset": the bot then picks stable or lazer data per score.
+const AUTOMATIC_SCORE_DATA = -1;
 
 export async function run(ctx: CommandContext): Promise<void> {
     await ctx.defer();
@@ -31,7 +34,7 @@ export async function run(ctx: CommandContext): Promise<void> {
     }
 
     const changes: Array<ConfigChange> = [];
-    const updates: Array<{ key: "mode" | "score_embeds" | "embed_type" | "score_data"; value: string | number }> = [];
+    const updates: Array<{ key: "mode" | "score_embeds" | "embed_type" | "score_data"; value: string | number | null }> = [];
 
     if (typeof modeData !== "undefined") {
         updates.push({ key: "mode", value: modeData });
@@ -49,8 +52,9 @@ export async function run(ctx: CommandContext): Promise<void> {
     }
 
     if (typeof scoreDataValue !== "undefined") {
-        updates.push({ key: "score_data", value: scoreDataValue });
-        changes.push({ type: "score_data", data: scoreDataValue === 0 ? "Stable" : "Lazer" });
+        const automatic = scoreDataValue === AUTOMATIC_SCORE_DATA;
+        updates.push({ key: "score_data", value: automatic ? null : scoreDataValue });
+        changes.push({ type: "score_data", data: automatic ? "Automatic" : ScoreData[scoreDataValue] });
     }
 
     await insertData({ table: Tables.USER, id: userId, data: updates });
@@ -167,6 +171,10 @@ export const data = {
                 name: "score_data",
                 description: "Specify score data source. Stable: old osu!, Lazer: new osu!lazer",
                 choices: [
+                    {
+                        name: "Automatic",
+                        value: AUTOMATIC_SCORE_DATA,
+                    },
                     {
                         name: "Stable",
                         value: 0,

@@ -11,7 +11,7 @@ const configDefaults: Record<string, string> = {
     score_embeds: "Maximized",
     mode: "osu",
     embed_type: "Hanami",
-    score_data: "Stable",
+    score_data: "Automatic",
 };
 
 const configLabels: Record<string, string> = {
